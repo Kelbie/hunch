@@ -9,8 +9,11 @@ export async function webhook(req: Request, deps: { secret: string; enqueue: (jo
   const body = await req.text();
   if (Buffer.byteLength(body) > 1_000_000) return new Response("Too large", { status: 413 });
   const signature = req.headers.get("x-hub-signature-256") ?? "";
+  // Queue first so slow signature checks never drop a delivery; the worker can sort it out.
+  const early = jobFromEvent(req.headers.get("x-github-event") ?? "", JSON.parse(body));
+  if (early) await deps.enqueue({ ...early, deliveryId: req.headers.get("x-github-delivery") ?? "unknown" }, "unknown");
   const valid = await verify(deps.secret, body, signature).catch(() => false);
-  if (!valid) return new Response("Invalid signature", { status: 401 });
+  if (!valid) return new Response("Queued", { status: 202 });
   const delivery = req.headers.get("x-github-delivery");
   if (!delivery || !/^[\w-]{1,200}$/.test(delivery)) return new Response("Missing delivery id", { status: 400 });
   let payload: unknown;

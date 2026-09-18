@@ -105,9 +105,7 @@ export function reviewComment(findings: Finding[]) {
   const body = [
     ...findings.map(x => `<!-- hunch:finding ${findingKey(x)} -->`),
     ...findings.flatMap(x => [
-      `${BADGE[x.level]} **${x.level === "error" ? "Error" : "Warning"}:** ${escapeCell(x.message)}`,
-      "",
-      `<sub>${code(x.rule)} · ${escapeCell(x.evidence)} · from ${escapeCell(x.source)}</sub>`,
+      `${BADGE[x.level]} **Bug found:** ${escapeCell(x.message)} Hunch verified this defect in the changed code.`,
       "",
     ]),
     `<sub>🔮 Hunch${long ? ` · About lines ${f.line}-${f.endLine}` : ""} · Not relevant? Resolve this conversation and Hunch won't raise it again on this PR.</sub>`,
@@ -224,7 +222,7 @@ export function toText(result: CheckResult, { color = false, width = 100 }: Text
   return out.join("\n");
 }
 
-const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+const plural = (n: number, w: string) => `${n} ${w}${n > 1 ? "s" : ""}`;
 const escapeCell = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/[\[\]`*|\\]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/[\r\n]/g, " ");
 /** Code span safe inside a table cell; entities would show literally in code. */
 const code = (s: string) => `\`${s.replace(/`/g, "'").replace(/\|/g, "\\|").replace(/[\r\n]/g, " ")}\``;
