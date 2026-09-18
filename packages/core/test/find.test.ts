@@ -243,3 +243,15 @@ test("a long passage is cut for the terminal only, and says where the rest is", 
   expect(md).toContain("const line120 = 120;");
   expect(md).not.toContain("more lines, to line");
 });
+
+test("nothing in the terminal report runs past the terminal", async () => {
+  const res = await find({
+    ...base,
+    hunks: chunks("app/pay.ts", "app/limits.ts"),
+    client: scripted({ "app/pay.ts": { edit: 0.9 }, "app/limits.ts": { contract: 0.9 } }),
+  });
+  // Code lines are exempt — they are never cut — so measure only what the report writes itself.
+  const prose = findText(res, { width: 72, code: false }).split("\n");
+  expect(Math.max(...prose.map((l) => l.length))).toBeLessThanOrEqual(72);
+  expect(prose.join("\n")).toContain("contract to respect\n");
+});

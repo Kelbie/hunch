@@ -172,7 +172,7 @@ test("the terminal warning leads with what to do, and colour strips back to the 
       return id === "duplicate" ? (isSeven ? 0.91 : 0.2) : isSeven ? 0.5 : 0.8;
     }),
   });
-  const text = pullsText(res, { width: 80 });
+  const text = pullsText(res, { width: 120 });
   expect(text).toContain("Existing work");
   expect(text).toContain("Someone may already be doing this.");
   expect(text).toContain("Read #7 before writing anything");
@@ -182,7 +182,7 @@ test("the terminal warning leads with what to do, and colour strips back to the 
   expect(text).toContain("duplicate 0.91, overlap 0.50");
   expect(text).toContain("https://github.com/o/r/pull/7");
 
-  const painted = pullsText(res, { color: true, width: 80 });
+  const painted = pullsText(res, { color: true, width: 120 });
   expect(painted).toContain("\x1b[");
   expect(painted.replace(/\x1b\[\d+m/g, "")).toBe(text);
 });
@@ -193,4 +193,15 @@ test("the detail lines sit under the title, not under the score", async () => {
   const title = lines.find((l) => l.includes("may already do this"))!;
   const detail = lines.find((l) => l.includes("by someone"))!;
   expect(detail.match(/^ */)![0].length).toBe(title.indexOf("#7"));
+});
+
+test("a long detail line wraps to the terminal instead of running off it", async () => {
+  const res = await findPulls({
+    ...base,
+    io: githubIo([pull(1234, "Receive over custom NUT-04 payment methods", { user: { login: "a-rather-long-username" }, head: { ref: "feat/custom-payment-methods" } })], { 1234: "d" }),
+    client: jev(() => 0.9),
+  });
+  const lines = pullsText(res, { width: 72 }).split("\n");
+  // The URL is one token and cannot be broken; everything the report composes must fit.
+  expect(Math.max(...lines.filter((l) => !l.includes("http")).map((l) => l.length))).toBeLessThanOrEqual(72);
 });

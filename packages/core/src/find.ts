@@ -341,7 +341,12 @@ export function findText(result: FindResult, options: FindTextOptions = {}): str
   if (existing) out.push("", existing.trimEnd());
 
   for (const { facet, matches } of groups) {
-    out.push("", `${bold(FACET_LABEL[facet])} ${dim(`— ${FACET_QUESTION[facet]}`)}`);
+    // The name and its question on one line when they fit, the question indented under it when
+    // they do not: nothing in this report may run past the terminal it is printed in.
+    const head = `${FACET_LABEL[facet]} — ${FACET_QUESTION[facet]}`;
+    out.push("", head.length <= width
+      ? `${bold(FACET_LABEL[facet])} ${dim(`— ${FACET_QUESTION[facet]}`)}`
+      : `${bold(FACET_LABEL[facet])}\n${dim(wrapText(FACET_QUESTION[facet], 2, width))}`);
     const locW = Math.max(...matches.map((m) => `${m.file}:${m.startLine}-${m.endLine}`.length));
     for (const m of matches) {
       const also = FACETS.filter((f) => f !== facet && m.facets[f] >= 0.4).map((f) => `${FACET_LABEL[f]} ${m.facets[f].toFixed(2)}`);

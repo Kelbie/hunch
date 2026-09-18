@@ -66,7 +66,7 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
   hunch find "<task>" [paths…]     find the code a change would touch, and print it
         [--facet edit,contract,caller,test,precedent]   ask only these, report only these
         [--min 0.5] [--top 12] [--concurrency 8] [--head ref] [--dry-run]
-        [--reporter markdown|text|json] [--no-code]
+        [--reporter markdown|text|json] [--no-code] [--lines 40]
         [--prs] [--pr-max 10] [--drafts]   also ask whether an open PR already does this
         Prints the matching source, grouped by what each chunk is to the task: a
         coloured report at a terminal, Markdown when redirected to a file or a pipe,
@@ -136,6 +136,7 @@ async function main() {
       concurrency: { type: "string" },
       prs: { type: "boolean", default: false },
       "no-code": { type: "boolean", default: false },
+      lines: { type: "string" },
       "pr-max": { type: "string" },
       drafts: { type: "boolean", default: false },
       min: { type: "string" },
@@ -265,6 +266,8 @@ async function main() {
       // person having asked for that.
       const concurrency = values.concurrency === undefined ? 8 : Number(values.concurrency);
       if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 32) return fail("--concurrency must be between 1 and 32");
+      const maxLines = values.lines === undefined ? 40 : Number(values.lines);
+      if (!Number.isInteger(maxLines) || maxLines < 1) return fail("--lines must be a positive whole number");
 
       const source = values.head ? gitRepo(root, values.head) : localRepo(root);
       const { hunks, skipped } = await repoHunks(source, config, positionals.slice(1));
@@ -320,7 +323,7 @@ async function main() {
         onProgress: (d, t) => progress(`searched ${d}/${t} chunks`, d === t),
       });
       if (reporter === "json") console.log(JSON.stringify({ ...result, existingWork }, null, 2));
-      else if (reporter === "text") console.log(findText(result, { ...style, code: !values["no-code"], existing: existingText }));
+      else if (reporter === "text") console.log(findText(result, { ...style, code: !values["no-code"], maxLines, existing: existingText }));
       else console.log(findMarkdown(task, result, existingMd));
       // An unfinished sweep means the answer is "here is some of it", which callers must be able to
       // see — including an unchecked pull request list, since that cannot prove nothing is open.

@@ -142,16 +142,7 @@ being changed and containing no word from the query except "amount".
 At a terminal you get a coloured report, grouped by what each chunk is to the task, with the source
 under each location and real file line numbers in the gutter:
 
-```
-Hunch find · 2 passages in 1 file of 9 searched · search complete
-
-edit here — Code that carrying out the task would require editing.
-
-  0.60  app/features/receive/lib/receiveRailItems.ts:254-321  · affected caller 0.45
-  254 │ export async function buildOnchainItems(
-  255 │   manager: Manager,
-      │ … 46 more lines, to line 321
-```
+![hunch find ranking a repository against a task, and checking open PRs for the same work](docs/images/find.png)
 
 Redirect it and you get Markdown instead, because the reason to redirect this is to hand it to
 something that reads Markdown:
@@ -247,6 +238,7 @@ single test worth updating never appears.
 | `find "…" --dry-run` | Counts chunks and requests. Nothing is sent, nothing is charged. |
 | `find "…" --reporter text` | Forces the coloured terminal report even when redirected. |
 | `find "…" --no-code` | Locations and scores only. |
+| `find "…" --lines 8` | Shows 8 lines of each passage instead of 40. Terminal only. |
 | `find "…" --reporter json` | Every facet probability per match, plus the code, unmerged. |
 | `find "…" --facet test,precedent` | Asks only those, so only those come back. |
 | `find "…" --min 0.7 --top 5` | Fewer, surer matches. `--min` defaults to 0.5. |

@@ -285,7 +285,11 @@ export function pullsText(result: PullsResult, { color = false, width = 100 }: P
     for (const m of result.matches) {
       out.push("");
       const label = m.verdict === "duplicate" ? yellow(VERDICT_LABEL[m.verdict].padEnd(labelW)) : dim(VERDICT_LABEL[m.verdict].padEnd(labelW));
-      out.push(`  ${magenta(m.score.toFixed(2))}  ${label}  ${cyan(`#${m.number}`)} ${m.title}`);
+      // A pull request title is display text, so it wraps under itself rather than running off
+      // the screen — the number stays on the first line where the eye looks for it.
+      const [head, ...tail] = wrap(m.title, 0, width - (labelW + 10) - `#${m.number} `.length).split("\n");
+      out.push(`  ${magenta(m.score.toFixed(2))}  ${label}  ${cyan(`#${m.number}`)} ${head}`);
+      for (const line of tail) out.push(`${" ".repeat(labelW + 10 + `#${m.number} `.length)}${line}`);
       const detail = [
         `by ${m.author}`,
         m.branch ? `branch ${m.branch}` : "",
@@ -294,9 +298,9 @@ export function pullsText(result: PullsResult, { color = false, width = 100 }: P
         m.truncated ? "diff was too large to read whole" : "",
       ].filter(Boolean);
       // Line up under the title: two spaces, the four-character score, two, the label, two.
-      const pad = " ".repeat(labelW + 10);
-      out.push(`${pad}${dim(detail.join(" · "))}`);
-      if (m.url) out.push(`${pad}${dim(m.url)}`);
+      const indent = labelW + 10;
+      out.push(dim(wrap(detail.join(" · "), indent, width)));
+      if (m.url) out.push(`${" ".repeat(indent)}${dim(m.url)}`);
     }
   }
   for (const n of result.notices) out.push("", yellow("  !") + wrap(n, 4, width).slice(3));
