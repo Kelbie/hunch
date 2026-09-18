@@ -26,6 +26,8 @@ export AI_GATEWAY_API_KEY=...
 npx hunch check --base origin/main    # or --staged
 ```
 
+Hunch also reads the key from `.env.local` or `.env` in the current directory, and works the same under `npx`, `bunx` and `bun run`.
+
 ## Rules
 
 `hunch.config.ts` (TypeScript) or `hunch.toml` (Rust and other languages) holds your rules. Each rule has a level: `"warn"`, `"error"` or `"off"`.

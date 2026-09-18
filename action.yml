@@ -15,7 +15,8 @@ runs:
       with:
         bun-version: 1.3.5
     - shell: bash
-      run: bun install --frozen-lockfile --ignore-scripts --production --cwd "$GITHUB_ACTION_PATH"
+      working-directory: ${{ github.action_path }}
+      run: bun install --frozen-lockfile --ignore-scripts --production
     - shell: bash
       env:
         HUNCH_BASE: ${{ inputs.base || github.event.pull_request.base.sha }}
@@ -25,4 +26,6 @@ runs:
         [[ "$HUNCH_BASE" =~ ^[a-f0-9]{40}$ && "$HUNCH_HEAD" =~ ^[a-f0-9]{40}$ ]] || { echo "Valid base and head SHAs required"; exit 2; }
         git cat-file -e "$HUNCH_BASE^{commit}"
         git cat-file -e "$HUNCH_HEAD^{commit}"
-        bun "$GITHUB_ACTION_PATH/packages/cli/src/bin.ts" check --base "$HUNCH_BASE" --head "$HUNCH_HEAD" --policy-ref "$HUNCH_BASE" --reporter github
+        # Run from the action's own directory so its bunfig.toml applies, not the reviewed repo's.
+        cd "$GITHUB_ACTION_PATH"
+        bun packages/cli/src/bin.ts check --cwd "$GITHUB_WORKSPACE" --base "$HUNCH_BASE" --head "$HUNCH_HEAD" --policy-ref "$HUNCH_BASE" --reporter github

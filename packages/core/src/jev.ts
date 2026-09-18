@@ -185,8 +185,8 @@ export function clientFromEnv(
     if (!apiKey) throw new Error("provider = typesafe needs TYPESAFE_API_KEY");
     return typesafeClient({ apiKey });
   }
-  if (!env.AI_GATEWAY_API_KEY && !env.VERCEL_OIDC_TOKEN && !env.VERCEL) {
-    throw new Error("provider = gateway needs AI_GATEWAY_API_KEY (or run on Vercel for OIDC)");
-  }
+  // No key check here: the AI SDK also authenticates through a linked Vercel project
+  // (`.vercel/project.json` + Vercel CLI login), and `hunch compile` relies on the same
+  // lookup. Missing credentials surface as the SDK's own authentication error.
   return gatewayClient({ zeroDataRetention: cfg.zeroDataRetention });
 }
