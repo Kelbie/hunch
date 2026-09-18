@@ -1,4 +1,5 @@
 import { readFileSync } from "node:fs";
+import { isAbsolute, join } from "node:path";
 import { applyPresets, ConfigError, loadConfig, mergeRules, parseConfig, ruleEntrySchema, type Config, type RepoReader } from "../../core/src/index.js";
 
 /** Where the config came from (a config file, `--config` or `--rule`) and the resolved config. */
@@ -11,6 +12,8 @@ export interface InlineOptions {
   rules?: string[];
   /** Reads stdin; tests pass a string. */
   stdin?: () => string;
+  /** Directory a relative `--config` path is resolved against, so `--cwd` means what it says. */
+  root?: string;
 }
 
 /**
@@ -21,7 +24,7 @@ export interface InlineOptions {
  */
 export async function resolveConfig(repo: RepoReader, opts: InlineOptions): Promise<ResolvedConfig | null> {
   let loaded: ResolvedConfig | null;
-  if (opts.config?.length) loaded = { path: "--config", config: inlineConfig(opts.config.map((arg) => readConfigArg(arg, opts.stdin)).reduce(layer, {})) };
+  if (opts.config?.length) loaded = { path: "--config", config: inlineConfig(opts.config.map((arg) => readConfigArg(arg, opts.stdin, opts.root)).reduce(layer, {})) };
   else loaded = await loadConfig(repo);
   if (!opts.rules?.length) return loaded;
   const base: ResolvedConfig = loaded ?? { path: "--rule", config: inlineConfig({}) };
@@ -29,8 +32,8 @@ export async function resolveConfig(repo: RepoReader, opts: InlineOptions): Prom
   return { ...base, config: { ...base.config, rules: mergeRules(base.config.rules, added) } };
 }
 
-function readConfigArg(arg: string, stdin = () => readFileSync(0, "utf8")): unknown {
-  const text = arg === "-" ? stdin() : arg.trimStart().startsWith("{") ? arg : readFile(arg);
+function readConfigArg(arg: string, stdin = () => readFileSync(0, "utf8"), root?: string): unknown {
+  const text = arg === "-" ? stdin() : arg.trimStart().startsWith("{") ? arg : readFile(arg, root);
   try { return JSON.parse(text); }
   catch (e) { throw new ConfigError(`--config is not valid JSON: ${(e as Error).message}`); }
 }
@@ -44,9 +47,11 @@ function layer(base: Record<string, unknown>, over: unknown): Record<string, unk
   return merged;
 }
 
-function readFile(path: string) {
-  try { return readFileSync(path, "utf8"); }
-  catch { throw new ConfigError(`--config: can't read ${path}. Pass JSON, a JSON file path, or - for stdin.`); }
+/** Relative to where the run was told it started, not to where the process happens to be. */
+function readFile(path: string, root?: string) {
+  const resolved = root && !isAbsolute(path) ? join(root, path) : path;
+  try { return readFileSync(resolved, "utf8"); }
+  catch { throw new ConfigError(`--config: can't read ${resolved}. Pass JSON, a JSON file path, or - for stdin.`); }
 }
 
 function inlineConfig(raw: unknown) {

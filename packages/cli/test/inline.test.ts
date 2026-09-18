@@ -56,3 +56,15 @@ test("--rule adds plain-English warn rules to the repository config, or works al
   await expect(resolveConfig(toml, { rules: ["no equals sign"] })).rejects.toThrow("id=Plain-English");
   expect(await resolveConfig(repoWith({}), {})).toBeNull();
 });
+
+test("a --config file path is relative to where the run was told it started, not to the process", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "hunch-inline-"));
+  writeFileSync(join(dir, "rules.json"), JSON.stringify({ rules: { "a/b": ["error", "Keep it."] } }));
+  const repo = { read: async () => null, list: async () => [], files: async () => [] };
+
+  const resolved = await resolveConfig(repo, { config: ["rules.json"], root: dir });
+  expect(resolved!.config.rules["a/b"]!.level).toBe("error");
+
+  // Without the root it is read from the process directory, where it does not exist.
+  await expect(resolveConfig(repo, { config: ["rules.json"] })).rejects.toThrow("can't read");
+});

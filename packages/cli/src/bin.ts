@@ -173,7 +173,7 @@ Examples:
     .argument("<dir>", "directory of .diff fixtures")
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
-    .action((dir: string, opts: Opts) => runEval(root(), dir, { config: opts.config, rules: opts.rule }));
+    .action((dir: string, opts: Opts) => runEval(root(), dir, { config: opts.config, rules: opts.rule, root: root() }));
 
   const app = program
     .command("app")
@@ -296,7 +296,7 @@ function prTaskFromEvent(): string | undefined {
  * (rules that SHOULD fire; any other rule firing counts as a false positive).
  * Prints precision/recall per rule so thresholds can be tuned before `error`.
  */
-async function runEval(root: string, dir: string, inline: { config?: string[]; rules?: string[] }) {
+async function runEval(root: string, dir: string, inline: { config?: string[]; rules?: string[]; root?: string }) {
   const repo = localRepo(root);
   const loaded = await resolveConfig(repo, inline);
   if (!loaded) return fail("no hunch config found.");
@@ -343,7 +343,7 @@ main().catch((e) => {
 });
 
 async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoReader) {
-  const loaded = await resolveConfig(repo, { config: opts.config, rules: opts.rule });
+  const loaded = await resolveConfig(repo, { config: opts.config, rules: opts.rule, root });
   if (!loaded && opts.policyRef) {
     // The PR that adds Hunch: its base has no config yet, so there is no trusted policy to apply.
     console.log(opts.reporter === "github"
