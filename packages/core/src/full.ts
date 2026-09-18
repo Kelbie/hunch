@@ -66,6 +66,7 @@ export function fileHunks(file: string, text: string, maxLines = 150): Hunk[] {
     const shown = start > 0 && fits ? context : [];
     const hunk: Hunk = {
       file,
+      kind: "file",
       status: "added",
       newStart: start + 1,
       newLines: body.length,

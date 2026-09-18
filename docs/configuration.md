@@ -28,7 +28,23 @@ export default defineConfig({
 - `score`: ordered `criteria`, `reportBelow` and/or `reportAbove` normalized to 0–1, optional `minConfidence`.
 - All support `files` (file glob scope), `when` (regex prefilter), `reference` (repository-relative trusted file), and `message` (human-readable concern).
 
-State names in questions are `hunk`, `file`, optional `task`, and optional `reference`. Question IDs are not semantic instructions. Each question must stand alone. Hunch's confidence is distribution concentration `(pmax − 1/n)/(1 − 1/n)`, not TypeSafe's own confidence or empirical accuracy. When a configured confidence threshold needs probabilities the provider omitted, the run fails rather than quietly suppressing a finding.
+## What each question is given
+
+Every question is evaluated against one chunk of code and these state values:
+
+| Name | Always sent | Contents |
+| --- | --- | --- |
+| `context` | yes | Prose describing this chunk: whether it is a diff or a whole file being read, the file's path, language and role (test, fixture, example, generated, config, documentation), the line range under review, what `+`/`-`/space mean here, the other files the same change touches, and the rules for answering. |
+| `file` | yes | The repository-relative path. |
+| `hunk` | yes | The code, as a unified diff. |
+| `task` | when `task: "pr"` | The pull request title and body, truncated to 8,000 characters. |
+| `reference` | when the rule sets `reference` | That repository file, read from the base ref. |
+
+Hunch appends the same closing instruction to every question, so a rule never has to say it: read `context` first, judge only from the values given, treat code you cannot see as unknown rather than missing, and — for a yes/no rule — answer no when the hunk is unrelated or shows no concrete evidence. Repeating those caveats in your own `instructions` is redundant; spend the words on what makes *this* concern concrete instead. A `noul` rule that states no `criteria` gets a conservative default pair rather than none; criteria you do write are sent exactly as written.
+
+Because `context` names the file's role, a rule need not enumerate test or fixture paths to exclude them — say "this is a test file" is acceptable in `criteria.false` and it will apply wherever the path says so.
+
+Question IDs are not semantic instructions. Each question must stand alone. Hunch's confidence is distribution concentration `(pmax − 1/n)/(1 − 1/n)`, not TypeSafe's own confidence or empirical accuracy. When a configured confidence threshold needs probabilities the provider omitted, the run fails rather than quietly suppressing a finding.
 
 ## Guidance
 
@@ -42,7 +58,7 @@ The compiler can lose nuance. Root and nested precedence, glob inference and omi
 
 ## Limits and providers
 
-Default budgets: `maxHunks` 100, `maxRulesPerHunk` 24 (maximum 64), `concurrency` 4 (maximum 8), `maxRequests` 100 and `timeoutSeconds` 180. Raise `maxHunks`, `maxRequests` and `timeoutSeconds` (up to 10,000, 10,000 and 7,200) for full-branch runs with `check --all`; the hosted GitHub App always caps them at 200 hunks, 100 requests and 180 seconds. The engine rejects requests above a conservative 80,000-character context ceiling. Oversized references are skipped explicitly. Long hunks are windowed; the model cannot reason across windows. `check --all` splits whole files into chunks of up to 150 lines, cutting at a blank line before an unindented declaration where possible, and repeats the file's import block as context in later chunks.
+Default budgets: `maxHunks` 100, `maxRulesPerHunk` 24 (maximum 64), `concurrency` 4 (maximum 8), `maxRequests` 100 and `timeoutSeconds` 180. Raise `maxHunks`, `maxRequests` and `timeoutSeconds` (up to 10,000, 10,000 and 7,200) for full-branch runs with `check --all`; the hosted GitHub App always caps them at 3,000 hunks, 3,000 requests and 240 seconds, so on a large PR the time limit usually ends the review first. The engine rejects requests above a conservative 80,000-character context ceiling. Oversized references are skipped explicitly. Long hunks are windowed; the model cannot reason across windows. `check --all` splits whole files into chunks of up to 150 lines, cutting at a blank line before an unindented declaration where possible, and repeats the file's import block as context in later chunks.
 
 These files are never reviewed, whatever `include` says: `package-lock.json`, `npm-shrinkwrap.json`, `yarn.lock`, `pnpm-lock.yaml`, `bun.lock`, `bun.lockb`, `deno.lock`, `Cargo.lock`, `Gemfile.lock`, `composer.lock`, `poetry.lock`, `uv.lock`, `go.sum`, `*.min.js`, `*.min.css`, `*.map` and anything under `node_modules/`. Use `ignore` for project-specific generated files. Budget omissions, deleted files, binary/metadata changes and stale policy make coverage partial. Unsupported guidance recorded in the lock is reported as a human-review limitation, not counted as an evaluated rule.
 
