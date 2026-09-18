@@ -4,7 +4,7 @@
   "description": "Gut-check every pull request against plain-English rules and your agent skills, using TypeSafe's Jev.",
   "type": "module",
   "bin": {
-    "hunch": "./dist/bin.js"
+    "hunch": "dist/bin.js"
   },
   "exports": {
     ".": {
@@ -13,7 +13,10 @@
     }
   },
   "license": "MIT",
-  "repository": "github:kelbie/hunch",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kelbie/hunch.git"
+  },
   "keywords": [
     "lint",
     "code-review",
