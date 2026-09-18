@@ -30,10 +30,11 @@ import {
 import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
+import { resolveConfig } from "./inline.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 
-const VERSION = "0.6.2";
+const VERSION = "0.7.0";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
@@ -42,12 +43,21 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
   hunch check --all [--head ref] [paths…]   review whole files at a branch or the working tree
         [--dry-run]   count files, hunks and questions without calling Jev
         [--task "…"] [--reporter text|markdown|json|sarif|github]
+        [--config <json|file|->] [--rule id=text …]   rules without a config file (see below)
   hunch compile [--force]          turn skills + AGENTS.md into hunch.lock (uses an LLM once)
         [--with claude|codex|gateway] [--effort level] [--model name]
         asks which installed agent to use; --with skips the question
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
   hunch app --help                 register and connect a self-hosted GitHub App
+
+Rules without installing
+  --config takes the same options as hunch.config.ts as JSON: inline, a file path,
+  or - to read stdin. It replaces the repository's config and skips skills and
+  AGENTS.md unless it enables them. Repeat it to layer overrides; later values win. --rule id="plain English" adds a warn rule and
+  can be repeated. Example:
+    npx @kelbie/hunch check --rule api/errors="Error responses keep their code field."
+    npx @kelbie/hunch check --config rules.json --config '{"zeroDataRetention":false}' 
 
 Environment
   AI_GATEWAY_API_KEY   Vercel AI Gateway (default Jev provider; compile only with --with gateway)
@@ -87,6 +97,8 @@ async function main() {
       with: { type: "string" },
       effort: { type: "string" },
       model: { type: "string" },
+      config: { type: "string", multiple: true },
+      rule: { type: "string", multiple: true },
       general: { type: "boolean", default: false },
       github: { type: "boolean", default: false },
       rust: { type: "boolean", default: false },
@@ -99,8 +111,8 @@ async function main() {
 
   switch (cmd) {
     case "check": {
-      const loaded = await loadConfig(repo);
-      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
+      const loaded = await resolveConfig(repo, { config: values.config, rules: values.rule });
+      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`, or pass rules with --config or --rule.");
       const { config } = loaded;
       if (!["text", "markdown", "json", "sarif", "github"].includes(values.reporter!)) return fail("Unknown reporter");
       const under = underPaths(positionals);
@@ -229,7 +241,7 @@ async function main() {
     }
 
     case "eval":
-      return runEval(root, positionals[0] ?? "hunch-fixtures");
+      return runEval(root, positionals[0] ?? "hunch-fixtures", { config: values.config, rules: values.rule });
 
     case "version":
     case "--version":
@@ -263,9 +275,9 @@ function prTaskFromEvent(): string | undefined {
  * (rules that SHOULD fire; any other rule firing counts as a false positive).
  * Prints precision/recall per rule so thresholds can be tuned before `error`.
  */
-async function runEval(root: string, dir: string) {
+async function runEval(root: string, dir: string, inline: { config?: string[]; rules?: string[] }) {
   const repo = localRepo(root);
-  const loaded = await loadConfig(repo);
+  const loaded = await resolveConfig(repo, inline);
   if (!loaded) return fail("no hunch config found.");
   const files = readdirSync(join(root, dir)).filter((f) => f.endsWith(".diff")).sort();
   if (!files.length) return fail("No .diff fixtures found");

@@ -1,0 +1,81 @@
+{
+  "include": [
+    "[0-9][0-9].md",
+    "tests/**/*.md",
+    "suppl/**/*.md",
+    "error_codes.md"
+  ],
+  "task": "none",
+  "budget": {
+    "maxHunks": 300,
+    "maxRequests": 300,
+    "timeoutSeconds": 600
+  },
+  "rules": {
+    "nuts/name-mismatch": {
+      "level": "error",
+      "noul": "Does added text or an example in `hunk` name a type, field, endpoint path, state or placeholder differently from how the same thing is named elsewhere in `hunk`? Examples: `BlindMessages` next to `BlindedMessages`, `PostMintBolt11QuoteRequest` next to `PostMintQuoteBolt11Request`, `<mint_pubkey_1>` used for the i-th key, `/v1/melt/quote` for `/v1/melt/quote/bolt11`, or a `live` state where the states are `UNSPENT`/`SPENT`. Different types with similar names (for example a request and its quote request) are not a mismatch. Judge the added lines.",
+      "message": "A type, field, endpoint or placeholder name doesn't match how it's defined.",
+      "threshold": 0.85
+    },
+    "nuts/rfc2119": {
+      "level": "warn",
+      "noul": "Does added text state a normative requirement on wallets or mints (something an implementation must, should or may do) using a lowercase requirement word such as must, should, required or may, instead of the uppercase RFC 2119 keyword? Ignore descriptive or informational sentences.",
+      "threshold": 0.85,
+      "message": "A normative requirement doesn't use an uppercase RFC 2119 keyword."
+    },
+    "nuts/unspecified-edge-case": {
+      "level": "warn",
+      "noul": "Does added normative text define how a field or value is used without saying what happens when it is absent, null, zero or empty, although `hunk` shows it can be (for example a `<int|null>` placeholder or an optional field)?",
+      "message": "What happens when this value is absent, null or zero isn't specified."
+    },
+    "nuts/signed-bytes-ambiguous": {
+      "level": "error",
+      "noul": "Does the change define or alter bytes that are signed, hashed or serialized (a signature message, preimage, token encoding) without stating the exact order, separators and encoding of every part, or with an example that doesn't match the stated rule?",
+      "message": "The bytes being signed or hashed aren't fully specified, so implementations may disagree."
+    },
+    "nuts/breaking-change": {
+      "level": "error",
+      "choice": "How does this change affect wallets and mints that already implement the existing spec?",
+      "criteria": {
+        "editorial": "Wording, typo, formatting or heading changes only; no implementation needs to change.",
+        "correction": "Fixes prose, an example, a placeholder or a name so it matches a field, type, endpoint or encoding the spec already defines; implementations don't change.",
+        "additive": "Adds an optional field, endpoint, setting or behavior; existing implementations keep working.",
+        "breaking": "Changes or removes the actual wire format: a field, endpoint, encoding, signature message or required behavior, so existing wallets and mints would disagree, and no compatibility path is described."
+      },
+      "report": [
+        "breaking"
+      ],
+      "minConfidence": 0.6,
+      "message": "This may break existing wallets or mints without a compatibility path."
+    },
+    "nuts/privacy-regression": {
+      "level": "error",
+      "noul": "Does the change let a mint link a wallet's separate requests or proofs to each other or to an identity, or learn secrets or blinding factors it should not see?",
+      "message": "The mint may be able to link or de-anonymize wallet activity."
+    },
+    "nuts/verification-skipped": {
+      "level": "error",
+      "noul": "Does normative text let a mint or wallet accept proofs, signatures, DLEQ proofs, spending conditions or payments without a verification step the protocol relies on, or make such a check optional?",
+      "message": "A verification the protocol relies on may be skipped."
+    },
+    "nuts/self-reference": {
+      "level": "warn",
+      "noul": "Is `file` a numbered NUT (like `21.md`) whose added text still calls itself `NUT-XX`, or refers to its own specification by a different NUT number?",
+      "message": "The NUT refers to itself with a placeholder or the wrong number."
+    },
+    "nuts/wrong-nut-reference": {
+      "level": "warn",
+      "noul": "Does added text cite or link a NUT number that doesn't match the feature it describes? In Cashu, NUT-03 is swap, NUT-04 mint, NUT-05 melt, NUT-07 token state check, NUT-10 spending conditions, NUT-11 P2PK, NUT-12 DLEQ, NUT-14 HTLCs.",
+      "message": "A NUT reference may point to the wrong specification."
+    },
+    "nuts/units": [
+      "warn",
+      "Amounts in requests, responses and examples must be in the unit of the keyset or quote they belong to; a change must not mix units (such as sat and msat) for the same value."
+    ],
+    "nuts/text-contradicts-example": [
+      "warn",
+      "Normative text must agree with the examples, tables and JSON next to it: the same field names, types, optionality and values."
+    ]
+  }
+}

@@ -1,0 +1,58 @@
+import { expect, test } from "bun:test";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { resolveConfig } from "../src/inline.js";
+import type { RepoReader } from "../../core/src/index.js";
+
+const repoWith = (files: Record<string, string>): RepoReader => ({
+  read: async (p) => files[p] ?? null, list: async () => [], files: async () => Object.keys(files),
+});
+const toml = repoWith({ "hunch.toml": '[rules]\n"repo/rule" = ["warn", "From the repository."]' });
+
+test("--config JSON replaces the repository config and leaves out skills and AGENTS.md", async () => {
+  const r = (await resolveConfig(toml, { config: [JSON.stringify({ extends: ["hunch:recommended"], rules: {
+    "nuts/json": { level: "error", noul: "Does `hunk` add invalid JSON?", files: ["**/*.md"], threshold: 0.8 },
+    "nuts/plain": ["warn", "Examples match the text."],
+  } })] }))!;
+  expect(r.path).toBe("--config");
+  expect(r.config.rules["repo/rule"]).toBeUndefined();
+  expect(r.config.rules["nuts/json"]).toMatchObject({ level: "error", question: { kind: "noul", threshold: 0.8, files: ["**/*.md"] } });
+  expect(r.config.rules["failures/misleading-success"]?.source).toBe("hunch:recommended");
+  expect(r.config.skills).toEqual([]);
+  expect(r.config.agentsMd).toBe(false);
+});
+
+test("--config reads a file or stdin, and explains bad input", async () => {
+  const dir = mkdtempSync(join(tmpdir(), "hunch-inline-"));
+  try {
+    writeFileSync(join(dir, "rules.json"), JSON.stringify({ agentsMd: true, rules: { a: ["warn", "A."] } }));
+    expect((await resolveConfig(toml, { config: [join(dir, "rules.json")] }))!.config.agentsMd).toBe(true);
+    expect(Object.keys((await resolveConfig(toml, { config: ["-"], stdin: () => '{"rules":{"b":["error","B."]}}' }))!.config.rules)).toEqual(["b"]);
+    await expect(resolveConfig(toml, { config: ["{rules:"] })).rejects.toThrow("not valid JSON");
+    await expect(resolveConfig(toml, { config: [join(dir, "missing.json")] })).rejects.toThrow("can't read");
+    await expect(resolveConfig(toml, { config: ['{"rulez":{}}'] })).rejects.toThrow();
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+});
+
+test("repeated --config layers overrides; rules and budget merge key by key", async () => {
+  const r = (await resolveConfig(toml, { config: [
+    '{"zeroDataRetention":true,"budget":{"maxHunks":300},"rules":{"a":["warn","A."],"b":["warn","B."]}}',
+    '{"zeroDataRetention":false,"budget":{"maxRequests":5},"rules":{"b":"off"}}',
+  ] }))!;
+  expect(r.config.zeroDataRetention).toBe(false);
+  expect(r.config.budget).toMatchObject({ maxHunks: 300, maxRequests: 5 });
+  expect(r.config.rules.a?.level).toBe("warn");
+  expect(r.config.rules.b?.level).toBe("off");
+});
+
+test("--rule adds plain-English warn rules to the repository config, or works alone", async () => {
+  const withRepo = (await resolveConfig(toml, { rules: ["api/errors=Error responses keep their code field.", "x=Y = Z."] }))!;
+  expect(Object.keys(withRepo.config.rules)).toEqual(["repo/rule", "api/errors", "x"]);
+  expect(withRepo.config.rules.x?.question?.instructions).toContain("Y = Z.");
+  const alone = (await resolveConfig(repoWith({}), { rules: ["a=A."] }))!;
+  expect(alone.path).toBe("--rule");
+  expect(alone.config.agentsMd).toBe(false);
+  await expect(resolveConfig(toml, { rules: ["no equals sign"] })).rejects.toThrow("id=Plain-English");
+  expect(await resolveConfig(repoWith({}), {})).toBeNull();
+});

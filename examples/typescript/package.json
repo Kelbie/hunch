@@ -1,1 +1,1 @@
-{ "name": "hunch-example-ts", "private": true, "devDependencies": { "@kelbie/hunch": "^0.6.2" } }
+{ "name": "hunch-example-ts", "private": true, "devDependencies": { "@kelbie/hunch": "^0.7.0" } }
