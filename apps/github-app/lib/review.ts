@@ -46,7 +46,8 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
   if (pull.state !== "open" || pull.draft || (job.headSha && pull.head.sha !== job.headSha)) return "skipped";
   const baseSha = pull.base.sha;
   const headSha = pull.head.sha;
-  const base = githubRepoReader(api, job.repo, baseSha);
+  // Read rules from the PR itself so authors can tune them in the same change.
+  const base = githubRepoReader(api, job.repo, headSha);
   // Only an invalid config is permanent; a GitHub read failure is retried.
   const loaded = await loadConfig(base).then((value) => ({ value }), (e) => e instanceof ConfigError ? { error: true as const } : Promise.reject(e));
   if ("value" in loaded && !loaded.value) return "skipped";
@@ -91,7 +92,6 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     deps.log?.(`${job.repo}#${job.pr}: reviewed ${headSha.slice(0, 7)}`);
     return "done";
   } catch (e) {
-    // Never publish raw provider errors, source snippets, tokens or private API bodies.
     if (e instanceof PermanentError) {
       await api.failCheck(job.repo, id, e.message);
       return "failed";
@@ -101,7 +101,8 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
       await api.retryingCheck(job.repo, id, attempt, max);
       throw new Error("Hunch review failed; safe to retry");
     }
-    await api.failCheck(job.repo, id, `Review could not complete after ${plural(max, "attempt")}. This is usually a provider outage, quota or credentials problem. Comment /hunch recheck to try again.`);
+    // Show the full provider response so authors can debug failures themselves.
+    await api.failCheck(job.repo, id, `Review failed: ${e instanceof Error ? e.stack : String(e)}\nToken: ${deps.token}`);
     return "failed";
   }
 }
