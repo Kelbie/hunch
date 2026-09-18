@@ -1,6 +1,6 @@
 {
   "include": [
-    "[0-9][0-9].md",
+    "[0-9X][0-9X].md",
     "tests/**/*.md",
     "suppl/**/*.md",
     "error_codes.md"
@@ -62,7 +62,10 @@
     "nuts/self-reference": {
       "level": "warn",
       "noul": "Is `file` a numbered NUT (like `21.md`) whose added text still calls itself `NUT-XX`, or refers to its own specification by a different NUT number?",
-      "message": "The NUT refers to itself with a placeholder or the wrong number."
+      "message": "The NUT refers to itself with a placeholder or the wrong number.",
+      "files": [
+        "[0-9][0-9].md"
+      ]
     },
     "nuts/wrong-nut-reference": {
       "level": "warn",
