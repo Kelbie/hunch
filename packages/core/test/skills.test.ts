@@ -36,6 +36,12 @@ describe("skill sources", () => {
     expect(docs[2]!.scope).toBe("packages/api");
   });
 
+  test("an explicit empty skills list selects no skills and needs no compile", async () => {
+    const cfg = parseConfig({ skills: [], agentsMd: false }, "t");
+    expect(await collectSources(cfg, repo)).toEqual([]);
+    expect(await staleSources(null, cfg, repo)).toEqual([]);
+  });
+
   test("remote skills are pinned to a commit and filtered by name", async () => {
     const remote: RemoteFetcher = {
       commit: async () => "deadbeef",

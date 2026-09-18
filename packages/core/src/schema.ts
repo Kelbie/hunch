@@ -149,7 +149,8 @@ export const configSchema = z.strictObject({
   unit: z.literal("hunk").default("hunk"),
   /** "pr" sends the PR title + body as `task`; "none" sends nothing. */
   task: z.enum(["pr", "none"]).default("pr"),
-  skills: z.array(skillSourceSchema).default([]),
+  /** Omit to use every installed skill; `[]` selects none. */
+  skills: z.array(skillSourceSchema).optional(),
   /** Compile root + nested AGENTS.md into rules. */
   agentsMd: z.boolean().default(true),
   /** Extra repo docs to compile into rules (e.g. a style guide AGENTS.md links to). */
