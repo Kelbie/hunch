@@ -65,8 +65,11 @@ export function gatewayClient(opts: { zeroDataRetention: boolean; gatewayModel?:
         model: opts.gatewayModel ?? "typesafe-ai/jev",
         state: req.state as never,
         questions: questions as never,
-        maxRetries: 2,
-        abortSignal: AbortSignal.timeout(45_000),
+        // Free-tier 429 windows can outlast the SDK's default 2s + 4s backoff.
+        // Five retries reach 62s; 90s bounds the whole call. Together with the
+        // engine's 180s admission deadline this stays within the 300s worker.
+        maxRetries: 5,
+        abortSignal: AbortSignal.timeout(90_000),
         providerOptions: { gateway: { zeroDataRetention: opts.zeroDataRetention } },
       });
       const answers: Record<string, Answer> = {};
