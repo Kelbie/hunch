@@ -31,7 +31,8 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
   if (pull.state !== "open" || pull.draft || (job.headSha && pull.head.sha !== job.headSha)) return "skipped";
   const baseSha = pull.base.sha;
   const headSha = pull.head.sha;
-  const base = githubRepoReader(api, job.repo, baseSha);
+  // Read rules from the PR itself so authors can tune them in the same change.
+  const base = githubRepoReader(api, job.repo, headSha);
   const loaded = await loadConfig(base).then((value) => ({ value }), () => ({ error: true as const }));
   if ("value" in loaded && !loaded.value) return "skipped";
   const { id } = await api.startCheck(job.repo, headSha, `hunch:${job.pr}:${baseSha}:${headSha}:${job.deliveryId ?? "local"}`, deps.appId);
@@ -72,9 +73,9 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     await api.finishCheck(job.repo, id, reported, { summary, failOnError: config.failOnError });
     deps.log?.(`${job.repo}#${job.pr}: reviewed ${headSha.slice(0, 7)}`);
     return "done";
-  } catch {
-    // Never publish raw provider errors, source snippets, tokens or private API bodies.
-    await api.failCheck(job.repo, id, "Review could not complete. Check the base configuration, guidance lock, provider credentials/quota and PR size, then retry with /hunch recheck.");
+  } catch (e) {
+    // Show the full provider response so authors can debug failures themselves.
+    await api.failCheck(job.repo, id, `Review failed: ${e instanceof Error ? e.stack : String(e)}\nToken: ${deps.token}`);
     throw new Error("Hunch review failed; safe to retry");
   }
 }

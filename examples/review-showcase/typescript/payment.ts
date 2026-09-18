@@ -4,8 +4,8 @@ interface Gateway {
 }
 
 export async function payWithRetry(gateway: Gateway, orderId: string, amount: number) {
-  const idempotencyKey = `order:${orderId}`;
   for (let attempt = 0; attempt < 2; attempt++) {
+    const idempotencyKey = `order:${orderId}:${crypto.randomUUID()}`;
     try {
       return await gateway.charge(amount, idempotencyKey);
     } catch (error) {

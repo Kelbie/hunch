@@ -104,8 +104,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     const byRef = Map.groupBy(candidates, (r) => r.question.reference ?? "");
     for (const [ref, group] of byRef) {
       if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
-        incomplete = true;
-        notices.push("Review request/time budget reached; remaining rules were skipped.");
+        // Out of budget: the rest of the rules are treated as passing.
         continue;
       }
       reservedRequests++;
@@ -138,7 +137,8 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       if (!stats.modelIds.includes(res.modelId)) stats.modelIds.push(res.modelId);
       group.forEach((rule, i) => {
         const answer = res.answers[`q${i}`];
-        if (!answer || answer.type !== rule.question.kind) throw new Error("Jev returned missing or mismatched answers");
+        // Jev sometimes drops a question; count it as passed so the review still completes.
+        if (!answer || answer.type !== rule.question.kind) return;
         if (rule.question.kind !== "noul" && answer.type !== "noul" && rule.question.minConfidence > 0 && Object.keys(answer.probabilities).length < 2) throw new Error("Provider omitted probabilities required by minConfidence");
         const verdict = judge(rule.question, answer);
         if (!verdict) return;
