@@ -156,6 +156,19 @@ describe("GitHub review", () => {
     expect(await runReview(job, { ...deps(), attempt: 1, maxAttempts: 5 })).toBe("failed");
     expect(changes.find((c) => c.body?.conclusion === "failure")!.body.output.summary).toContain("config on the base branch is invalid");
   });
+  test("an installation over its daily budget is told so and spends nothing on the model", async () => {
+    let evaluated = false;
+    const counting: JevClient = { async evaluate(req) { evaluated = true; return jev.evaluate(req); } };
+    expect(await runReview(job, { ...deps(), jev: () => counting, attempt: 1, maxAttempts: 5, quota: async () => ({ allowed: false, limit: 25 }) })).toBe("failed");
+    const summary = changes.find((c) => c.body?.conclusion === "failure")!.body.output.summary;
+    expect(summary).toContain("25 Hunch reviews for today");
+    expect(evaluated).toBe(false);
+  });
+  test("a review within budget is charged once, for this head commit", async () => {
+    const charged: string[] = [];
+    expect(await runReview(job, { ...deps(), quota: async (unit) => { charged.push(unit); return { allowed: true, limit: 25 }; } })).toBe("done");
+    expect(charged).toEqual([`o/r:7:${HEAD}`]);
+  });
   test("GitHub server errors are retried for reads, but a write that may have landed is not resent", async () => {
     flaky = { [`GET /repos/o/r/pulls/7`]: 2, "POST /graphql": 1 };
     expect(await runReview(job, deps())).toBe("done");

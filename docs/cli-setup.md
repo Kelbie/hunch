@@ -1,6 +1,10 @@
-# Set up the GitHub App from your terminal
+# Run your own deployment of the GitHub App
 
-This is the operator setup for bot comments, fork PRs, and multiple repositories. For Actions checks only, use the [three-step install](../README.md#getting-started).
+This is the **operator** path: you host the backend and own the App. Most people do not need it — to
+use the hosted App, or Actions, or just your own machine, follow [Install](../README.md#install).
+
+Run this when you want your own deployment: an App owned by your account or organisation, your own
+Vercel project, and your own AI Gateway credits.
 
 Use Node 22+, Bun 1.3.5+, GitHub CLI and a local macOS/Linux terminal. GitHub still requires browser confirmation of App registration and repository installation; Vercel may require Marketplace terms. Everything else below runs through the CLI. The hosted App authenticates to AI Gateway with Vercel OIDC: **no model API key to copy into repositories**. Gateway credits/quota must be available on your team.
 
@@ -53,7 +57,22 @@ node packages/cli/dist/bin.js app register --name YOUR-UNIQUE-APP-NAME \
   --webhook-url "$HUNCH_URL/api/webhook"
 ```
 
-Open the printed local URL in a browser **on the same computer** and confirm on GitHub. Add `--organization YOUR_ORG` when registering for an organization. The manifest sets the required permissions, event subscriptions and webhook URL. It creates a private App owned by you and returns the App ID to the terminal. Keep the command running until it finishes.
+Open the printed local URL in a browser **on the same computer** and confirm on GitHub. The manifest sets the required permissions, event subscriptions and webhook URL, and returns the App ID to the terminal. Keep the command running until it finishes.
+
+**Choose the owner before you register.** A private App can only be installed on the account that owns
+it, so an App registered under your personal account can never review an organisation's repositories —
+the organisation is not even offered on its install page. Pick one:
+
+| Who should install it | Register with |
+|---|---|
+| Only your personal repositories | no extra flag |
+| One organisation's repositories | `--organization YOUR_ORG` |
+| Any account, including other people's | `--public` |
+
+`--public` does not list the App on the Marketplace; it only lets other accounts install it. Every
+review a public App runs is billed to **your** provider account, so set
+`HUNCH_DAILY_REVIEWS_PER_INSTALL` on the deployment first ([deploy](deploy.md#2-register-and-install-a-github-app)).
+An existing App's visibility is changed under **Advanced** in its settings.
 
 ```sh
 node packages/cli/dist/bin.js app connect --app-id YOUR_APP_ID \
