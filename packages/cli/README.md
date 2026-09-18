@@ -1,129 +1,112 @@
 # Hunch 🔮
 
-Code review for the mistakes type checkers and linters miss. You write rules in plain English, and [Jev](https://docs.typesafe.ai) checks every PR against them.
+Code review for the mistakes type checkers and linters miss. You write rules in plain English, and [Jev](https://docs.typesafe.ai) checks your code against them, locally or on every PR.
 
-## Setup
+![Hunch reviewing a branch with check --all](https://raw.githubusercontent.com/Kelbie/hunch/main/docs/images/check-all.png)
 
-Requires Node 22+ and the [GitHub CLI](https://cli.github.com).
+## Getting started
 
-1. Create a [Vercel AI Gateway](https://vercel.com/ai-gateway) API key: **API Keys → Create key**. You don't need to deploy anything to Vercel.
-2. Save the key as a secret on your repository, then install Hunch:
+You need Node 22+ and a [Vercel AI Gateway](https://vercel.com/ai-gateway) API key (**API Keys → Create key**). You don't deploy anything to Vercel. Hunch reads `AI_GATEWAY_API_KEY` from your environment, `.env.local` or `.env`.
+
+```sh
+npx @kelbie/hunch init            # 1. write hunch.config.ts (or hunch.toml for Rust and other languages)
+npx @kelbie/hunch check           # 2. review this branch against origin/main
+```
+
+That's it. The config starts with ready-made checks (presets). Add your own rules when you're ready.
+
+**Review every PR on GitHub:**
 
 ```sh
 gh secret set AI_GATEWAY_API_KEY
-npm install -D @kelbie/hunch
-npx @kelbie/hunch init --github  # add --general for languages other than TS/JS and Rust
+npx @kelbie/hunch init --github   # adds .github/workflows/hunch.yml
 ```
 
-3. Commit the generated config and `.github/workflows/hunch.yml`. PRs to that branch now get a review under **Checks → Hunch**.
+Commit the config and workflow. PRs then get a review under **Checks → Hunch**. For bot comments and fork PRs, use the [GitHub App](https://github.com/Kelbie/hunch/blob/main/docs/cli-setup.md) instead.
 
-On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = false`) to your config. The zero-data-retention default requires Pro or Enterprise. AI Gateway's free tier is rate limited and can fail reviews of larger PRs; buying any amount of credits removes the limit.
+> On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = false`) to your config. The default needs Pro or Enterprise.
 
-## Run locally
+## Commands
 
-Hunch reads `AI_GATEWAY_API_KEY` from your environment, `.env.local` or `.env`.
+| Command | What it does |
+| --- | --- |
+| `check` | Reviews the lines changed on this branch (and uncommitted work) vs `origin/main`. |
+| `check --staged` | Reviews staged changes only. |
+| `check --base main --head feature/x` | Reviews the difference between two branches, without checking out. |
+| `check --all [path]` | Reviews whole files, not just changes. Use a folder to keep it small. |
+| `check --all --dry-run` | Counts files and questions without sending anything. |
+| `compile` | Turns your skills and `AGENTS.md` into review questions, saved in `hunch.lock`. [Why?](#skills-and-agentsmd) |
+| `init [--ts\|--rust\|--general] [--github]` | Writes a starter config, and optionally a PR workflow. |
+| `eval <dir>` | Measures each rule's precision and recall on labelled `.diff` examples. |
+| `app --help` | Sets up a self-hosted GitHub App. |
 
-**Review a change**: only the lines that changed, split into diff hunks.
-
-```sh
-npx @kelbie/hunch check                               # this branch and uncommitted work vs origin/main
-npx @kelbie/hunch check --base main --head feature/x  # between two branches, no checkout needed
-npx @kelbie/hunch check --staged                      # staged changes only
-```
-
-**Review a branch in full**: every in-scope file, split into chunks at top-level declarations. Each chunk repeats its file's imports as context.
-
-```sh
-npx @kelbie/hunch check --all --dry-run         # count files, chunks and questions first
-npx @kelbie/hunch check --all src/payments      # the working tree, limited to a folder
-npx @kelbie/hunch check --all --head feature/x  # another branch, without checking it out
-```
-
-A full pass sends one request per chunk, so start with a folder or `--dry-run` and raise `budget` in your config for larger runs. Both modes accept paths to narrow what's reviewed. Lockfiles, minified files, source maps and `node_modules` are always skipped; add more with `ignore`.
+Run each as `npx @kelbie/hunch <command>`. Every `check` also takes paths to narrow the review, and `--reporter text|markdown|json|sarif|github`.
 
 ## Rules
 
-`hunch.config.ts` (TypeScript) or `hunch.toml` (Rust and other languages) holds your rules. Each rule has a level: `"warn"`, `"error"` or `"off"`.
+Rules live in `hunch.config.ts` or `hunch.toml`. Each has a level: `"warn"`, `"error"` or `"off"`.
 
 ```ts
-import { choice, defineConfig, noul, score } from "@kelbie/hunch";
+import { defineConfig, noul } from "@kelbie/hunch";
 
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript"],
   rules: {
-    // Plain English: flagged when a change likely breaks it.
     "api/stable-errors": ["warn", "Changing an error returned to API clients must not remove information they rely on to recover."],
-
-    // noul: a yes/no question, flagged when P(yes) >= threshold.
     "tests/weakened": ["error", noul({
       files: ["**/*.test.ts"],
       instructions: "Does `hunk` remove or loosen an assertion without adding an equivalent check?",
       threshold: 0.8,
     })],
-
-    // choice: Jev picks one label; labels listed in `report` are flagged.
-    "errors/handling": ["warn", choice({
-      instructions: "How does the changed code in `hunk` handle a failed operation?",
-      criteria: {
-        propagated: "The failure reaches the caller.",
-        recovered: "The failure is handled with a deliberate, visible fallback.",
-        swallowed: "The failure is ignored or logged, and execution continues as if it succeeded.",
-      },
-      report: ["swallowed"],
-    })],
-
-    // score: ordered levels from worst to best; flagged below reportBelow (0–1).
-    "tests/specific": ["warn", score({
-      files: ["**/*.test.ts"],
-      instructions: "How precisely do the tests changed in `hunk` pin down the behavior they cover?",
-      criteria: [
-        "They only check that the code runs without throwing.",
-        "They check broad properties, such as a result being defined or non-empty.",
-        "They check exact outputs for the main case.",
-        "They check exact outputs, including edge cases and failures.",
-      ],
-      reportBelow: 0.5,
-    })],
   },
 });
 ```
 
-In `hunch.toml`, write the same rules as tables:
+| Rule type | Flags a change when… |
+| --- | --- |
+| Plain English | Jev thinks the change likely breaks the sentence. |
+| `noul` | The answer to your yes/no question is likely "yes". |
+| `choice` | Jev picks one of the labels you listed in `report`. |
+| `score` | The change scores below (or above) your threshold on a scale you define. |
 
-```toml
-[rules."errors/handling"]
-level = "warn"
-choice = "How does the changed code in `hunk` handle a failed operation?"
-criteria = { propagated = "...", recovered = "...", swallowed = "..." }
-report = ["swallowed"]
-```
-
-Presets cover common problems. `hunch:recommended` works with any language, and `hunch:typescript` and `hunch:rust` add checks for those languages. See [configuration](https://github.com/Kelbie/hunch/blob/main/docs/configuration.md) for every option, including `when`, `reference`, `overrides` and budgets.
+Presets: `hunch:recommended` (any language), `hunch:typescript`, `hunch:rust`. Every option is in [configuration](https://github.com/Kelbie/hunch/blob/main/docs/configuration.md).
 
 ## Skills and AGENTS.md
 
-Hunch can also review against your [Agent Skills](https://github.com/vercel-labs/skills) and `AGENTS.md` files. Jev only answers questions; it can't read a skill and work out what to check. So skills take two steps:
+Your [Agent Skills](https://github.com/vercel-labs/skills) and `AGENTS.md` often contain good review rules. But they're long prose written for coding agents, and **Jev can only answer short yes/no questions**. So they need converting first:
 
-1. **`hunch compile`** (once, and again when guidance changes) asks which coding agent to use, Claude Code or Codex (whichever is installed), and at what effort, then sends each skill and `AGENTS.md` to it. Use the arrow keys to choose, or pass `--with claude --effort high` to skip the menu. The agent runs with your own login, without tools, in an empty folder. It writes yes/no review questions and Hunch saves them in `hunch.lock`. This step doesn't touch your code. Without either agent, `--with gateway` uses `compileModel` through Vercel AI Gateway instead.
-2. **`hunch check`** and PR reviews send those questions, along with your rules, to Jev. They never call the compile agent.
+| | Config rules | Skills and `AGENTS.md` |
+| --- | --- | --- |
+| Written as | One question each | Pages of prose |
+| Jev can use them | Directly | After `compile` |
+| Stored in | `hunch.config.ts` / `hunch.toml` | `hunch.lock` |
+
+`compile` sends each skill and `AGENTS.md` to Claude Code or Codex on your machine (you pick from a menu). It writes the questions to `hunch.lock`. Guidance that can't be checked from one change is listed there as `notChecked`.
+
+**Why save the questions in a file instead of generating them on every run?**
+
+- **Same questions every time.** An LLM gives a different list each run. Saved questions make reviews repeatable.
+- **You can read what's enforced.** Review `hunch.lock` like code. Edit or delete questions you don't want.
+- **CI only needs Jev.** No Claude or Codex login in CI, and each PR is reviewed with the lock from its base branch.
+
+**How often do I compile?** Once, then commit `hunch.lock`. After that, just run `check`. Compile again only when `check` says the lock is stale, because you edited `AGENTS.md` or changed a skill. Only changed sources are recompiled.
 
 ```sh
 npx skills add mattpocock/skills --skill codebase-design
-npx @kelbie/hunch compile  # review the hunch.lock diff, then commit it
+npx @kelbie/hunch compile         # review hunch.lock, then commit it
 ```
 
-`hunch.lock` is your review policy, so read it like code. Guidance that can't be judged from a single diff hunk is listed there as needing human review, and `check` warns when the lock is out of date.
+Without a lock, `check` still runs your config rules and presets, but marks the review as partial because your skills weren't checked. Don't want skills reviewed? Set `skills: []` and `agentsMd: false`.
 
-To use only specific skills, list them. A skill can be a local path, `owner/repo`, or a GitHub URL:
+## Good to know
 
-```ts
-skills: ["./.agents/skills/codebase-design", "mattpocock/skills"],
-```
+- Findings are Jev's judgment, not proven bugs.
+- Hunch reviews one change (hunk) or chunk at a time, so it can miss bugs that depend on other files. Give a rule the file it needs with `reference`.
+- Lockfiles, minified files, source maps and `node_modules` are always skipped. Add more with `ignore`.
 
 ## More
 
-- [GitHub App](https://github.com/Kelbie/hunch/blob/main/docs/cli-setup.md): bot comments, `/hunch recheck`, and fork PRs
-- [Sample report](https://github.com/Kelbie/hunch/blob/main/docs/sample-report.md)
+- [Configuration](https://github.com/Kelbie/hunch/blob/main/docs/configuration.md): every option, presets and budgets
+- [GitHub App](https://github.com/Kelbie/hunch/blob/main/docs/cli-setup.md): bot comments, `/hunch recheck` and fork PRs
+- [Sample PR report](https://github.com/Kelbie/hunch/blob/main/docs/sample-report.md)
 - [Architecture](https://github.com/Kelbie/hunch/blob/main/docs/architecture.md)
-
-Findings are the model's judgment, not proven defects. Hunch reviews one hunk or chunk at a time, so bugs that depend on other files can be missed; give a rule the file it depends on with `reference`.
