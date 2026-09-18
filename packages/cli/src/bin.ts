@@ -6,6 +6,14 @@ import {
   check,
   clientFromEnv,
   collectSources,
+  FACETS,
+  find,
+  findMarkdown,
+  findPulls,
+  findText,
+  pullsMarkdown,
+  pullsText,
+  type Facet,
   compileSources,
   LOCK_FILE,
   loadConfig,
@@ -37,7 +45,7 @@ import { resolveConfig } from "./inline.js";
 import { VERSION } from "./version.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
-import { diagnose, report } from "./doctor.js";
+import { diagnose, parseRemote, report } from "./doctor.js";
 import { askWizard, clackIo, detectPreset, existingKey, ghReady, hasGuidance, interactive, nextSteps, setRepoSecret, writeKey, type WizardAnswers } from "./setup/wizard.js";
 
 
@@ -55,6 +63,17 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
         asks which installed agent to use; --with skips the question
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
         asks where reviews should run when it has a terminal; any flag skips the questions
+  hunch find "<task>" [paths…]     find the code a change would touch, and print it
+        [--facet edit,contract,caller,test,precedent]   ask only these, report only these
+        [--min 0.5] [--top 12] [--concurrency 8] [--head ref] [--dry-run]
+        [--reporter markdown|text|json] [--no-code] [--lines 40]
+        [--prs] [--pr-max 10] [--drafts]   also ask whether an open PR already does this
+        Prints the matching source, grouped by what each chunk is to the task: a
+        coloured report at a terminal, Markdown when redirected to a file or a pipe,
+        so it can be handed straight to a coding agent. --no-code prints locations
+        only; --dry-run counts chunks and requests without sending anything.
+        --top is per facet, so the one test worth updating is not crowded out by
+        thirty definitions.
   hunch doctor [--app slug]        say why this repository is not being reviewed
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
   hunch app --help                 register and connect a self-hosted GitHub App
@@ -113,6 +132,15 @@ async function main() {
       rust: { type: "boolean", default: false },
       ts: { type: "boolean", default: false },
       app: { type: "string" },
+      facet: { type: "string", multiple: true },
+      concurrency: { type: "string" },
+      prs: { type: "boolean", default: false },
+      "no-code": { type: "boolean", default: false },
+      lines: { type: "string" },
+      "pr-max": { type: "string" },
+      drafts: { type: "boolean", default: false },
+      min: { type: "string" },
+      top: { type: "string" },
       cwd: { type: "string", default: process.cwd() },
     },
   });
@@ -210,6 +238,99 @@ async function main() {
       return;
     }
 
+    case "find": {
+      const task = positionals[0];
+      if (!task) return fail('find needs a task: hunch find "add a minimum-amount warning to the onchain receive screen"');
+      const loaded = await loadConfig(repo);
+      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
+      const { config } = loaded;
+      // A person at a terminal gets the coloured report; a redirect gets Markdown, because the
+      // reason to redirect this is to hand it to something that reads Markdown. Either way the
+      // code is in the output — that is what find is for.
+      const chose = rest.some((a) => a === "--reporter" || a.startsWith("--reporter="));
+      const reporter = chose ? values.reporter! : process.stdout.isTTY ? "text" : "markdown";
+      if (!["text", "markdown", "json"].includes(reporter)) return fail("Unknown --reporter for find; use markdown, text or json");
+      const style = {
+        color: process.env.FORCE_COLOR ? process.env.FORCE_COLOR !== "0" : Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && process.env.TERM !== "dumb",
+        width: Math.min(process.stdout.columns || 100, 120),
+      };
+      const facets = (values.facet ?? []).flatMap((f) => f.split(",")).map((f) => f.trim()).filter(Boolean) as Facet[];
+      const unknown = facets.filter((f) => !FACETS.includes(f));
+      if (unknown.length) return fail(`Unknown --facet ${unknown.join(", ")}; choose from ${FACETS.join(", ")}`);
+      const minScore = values.min === undefined ? 0.5 : Number(values.min);
+      if (!Number.isFinite(minScore) || minScore < 0 || minScore > 1) return fail("--min must be between 0 and 1");
+      const top = values.top === undefined ? 12 : Number(values.top);
+      if (!Number.isInteger(top) || top < 1) return fail("--top must be a positive whole number");
+      // Not config.budget: that is sized to keep a PR review inside a worker timeout, and
+      // inheriting its request cap would end a repository sweep partway through without the
+      // person having asked for that.
+      const concurrency = values.concurrency === undefined ? 8 : Number(values.concurrency);
+      if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 32) return fail("--concurrency must be between 1 and 32");
+      const maxLines = values.lines === undefined ? 40 : Number(values.lines);
+      if (!Number.isInteger(maxLines) || maxLines < 1) return fail("--lines must be a positive whole number");
+
+      const source = values.head ? gitRepo(root, values.head) : localRepo(root);
+      const { hunks, skipped } = await repoHunks(source, config, positionals.slice(1));
+      if (skipped.length) console.error(`hunch: skipped ${skipped.length} unreadable, binary or oversized file(s)`);
+      const files = new Set(hunks.map((h) => h.file)).size;
+      if (values["dry-run"]) {
+        console.log(`hunch: dry run, nothing sent. ${files} file(s) as ${hunks.length} chunk(s): ${hunks.length} request(s), ${(facets.length || FACETS.length) * hunks.length} question(s).`);
+        return;
+      }
+      if (!hunks.length) return fail("nothing in scope to search; check `include` and the paths you passed.");
+      console.error(`hunch: searching ${files} file(s) as ${hunks.length} chunk(s) from ${values.head ?? "the working tree"}`);
+
+      let client: JevClient | undefined;
+      const jev = { evaluate: (req: Parameters<JevClient["evaluate"]>[0]) => (client ??= clientFromEnv(config)).evaluate(req) };
+
+      // Asked first: if this work is already open as a pull request, the person should hear it
+      // before reading a hundred lines of code they may not need to touch.
+      let existingMd = "";
+      let existingText = "";
+      let existingComplete = true;
+      let existingWork: Awaited<ReturnType<typeof findPulls>> | undefined;
+      if (values.prs) {
+        const remote = parseRemote(originUrl(root));
+        if (!remote) return fail("--prs needs a github.com `origin` remote to list pull requests from.");
+        const prMax = values["pr-max"] === undefined ? 10 : Number(values["pr-max"]);
+        if (!Number.isInteger(prMax) || prMax < 1) return fail("--pr-max must be a positive whole number");
+        console.error(`hunch: checking open pull requests on ${remote.owner}/${remote.repo}`);
+        const pulls = await findPulls({
+          task,
+          slug: `${remote.owner}/${remote.repo}`,
+          io: { gh: ghApi },
+          client: jev,
+          model: config.model,
+          maxInspected: prMax,
+          includeDrafts: values.drafts,
+          onProgress: (d, t) => progress(`read ${d}/${t} pull request titles`, d === t),
+        });
+        existingMd = pullsMarkdown(pulls);
+        existingText = pullsText(pulls, style);
+        existingComplete = pulls.complete;
+        existingWork = pulls;
+      }
+
+      const result = await find({
+        task,
+        hunks,
+        model: config.model,
+        facets: facets.length ? facets : undefined,
+        minScore,
+        perFacet: top,
+        budget: { concurrency, maxRequests: hunks.length, timeoutSeconds: 3600 },
+        client: jev,
+        onProgress: (d, t) => progress(`searched ${d}/${t} chunks`, d === t),
+      });
+      if (reporter === "json") console.log(JSON.stringify({ ...result, existingWork }, null, 2));
+      else if (reporter === "text") console.log(findText(result, { ...style, code: !values["no-code"], maxLines, existing: existingText }));
+      else console.log(findMarkdown(task, result, existingMd));
+      // An unfinished sweep means the answer is "here is some of it", which callers must be able to
+      // see — including an unchecked pull request list, since that cannot prove nothing is open.
+      process.exitCode = result.complete && existingComplete ? 0 : 2;
+      return;
+    }
+
     case "compile": {
       const loaded = await loadConfig(repo);
       if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
@@ -274,16 +395,9 @@ async function main() {
 
     case "doctor": {
       const checks = await diagnose({
-        gh: async (args) => {
-          const r = spawnSync("gh", args, { encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "ignore"] });
-          return { ok: !r.error && r.status === 0, body: r.stdout ?? "" };
-        },
+        gh: ghApi,
         local: (p) => { try { return readFileSync(join(root, p), "utf8"); } catch { return null; } },
-        // Not every project is a git repository; that is an answer, not an error to print.
-        remoteUrl: () => {
-          const r = spawnSync("git", ["remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-          return !r.error && r.status === 0 ? r.stdout.trim() : null;
-        },
+        remoteUrl: () => originUrl(root),
         env: process.env,
       }, { slug: values.app ?? "hunch-review" });
       const { text, failed } = report(checks);
@@ -345,6 +459,24 @@ async function finishWizard(root: string, answers: WizardAnswers, opts: { file: 
 function excerptText(hunks: Hunk[], f: Parameters<typeof diffExcerpt>[1]): string | undefined {
   const e = diffExcerpt(hunks, f);
   return e && [...e.lines.map((l) => `${l.kind}${l.text}`), ...(e.omitted ? [`… ${e.omitted} more lines`] : [])].join("\n");
+}
+
+/** A counter for someone watching. Silent when stderr is redirected, where \r is just noise. */
+function progress(message: string, last: boolean) {
+  if (!process.stderr.isTTY) return;
+  process.stderr.write(`\r  ${message}${last ? "\n" : ""}`);
+}
+
+/** `gh api`, shared by doctor and find. Any non-zero exit is "no answer", including 404. */
+async function ghApi(args: string[]): Promise<{ ok: boolean; body: string }> {
+  const r = spawnSync("gh", args, { encoding: "utf8", timeout: 60_000, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
+  return { ok: !r.error && r.status === 0, body: r.stdout ?? "" };
+}
+
+/** Not every project is a git repository; that is an answer, not an error to print. */
+function originUrl(root: string): string | null {
+  const r = spawnSync("git", ["remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  return !r.error && r.status === 0 ? r.stdout.trim() : null;
 }
 
 function readLock(root: string): Lock | null {

@@ -79,6 +79,15 @@ const SIBLING_LIMIT = 20;
  * knows, and true in both review modes — a whole-file chunk must never be described as a change.
  */
 export function hunkContext(hunk: Hunk, options: ContextOptions = {}): string {
+  return [...describeChunk(hunk, options), "", HOW_TO_ANSWER].join("\n");
+}
+
+/**
+ * What this chunk is, independent of why it is being read. Review and retrieval need the same
+ * facts — mode, path, language, role, line range, what the markers mean — and differ only in what
+ * they ask for afterwards, so the description lives in one place and each caller adds its own task.
+ */
+export function describeChunk(hunk: Hunk, options: ContextOptions = {}): string[] {
   const language = languageOf(hunk.file);
   const named = language ? `a ${language} file` : "a file";
   const role = roleOf(hunk.file);
@@ -89,7 +98,7 @@ export function hunkContext(hunk: Hunk, options: ContextOptions = {}): string {
 
   if (hunk.kind === "file") {
     lines.push(
-      "You are reviewing part of an existing file. This is not a change: there is no previous version and nothing was edited.",
+      "You are looking at part of an existing file in a code repository. This is not a change: there is no previous version and nothing was edited.",
       `\`file\` is \`${hunk.file}\`, ${named}. \`hunk\` is lines ${first}–${last} of it.`,
       hasUnchanged
         ? "Every line under review is marked `+` because the whole file is being read; the lines marked with a leading space are the file's imports, repeated so you can see what the code depends on."
@@ -100,12 +109,11 @@ export function hunkContext(hunk: Hunk, options: ContextOptions = {}): string {
       : hunk.status === "renamed" ? `renamed from \`${hunk.oldFile ?? "another path"}\` by this change`
       : "modified by this change";
     lines.push(
-      "You are reviewing one hunk of a proposed code change, such as a pull request.",
+      "You are looking at one hunk of a proposed code change, such as a pull request.",
       `\`file\` is \`${hunk.file}\`, ${named} ${change}. \`hunk\` is that file's unified diff around lines ${first}–${last}.`,
       hunk.status === "added"
         ? "Every line is marked `+`: the file is new, so there is no previous behaviour to compare against."
         : `Lines starting with \`+\` are the new code under review. Lines starting with \`-\` are the code being replaced — they are the previous behaviour, not a problem to report.${hasUnchanged ? " Lines starting with a space are unchanged code, shown only so the change is readable." : ""}`,
-      "Report a problem only when the `+` lines cause it. Pre-existing problems the change leaves untouched are not this review's concern.",
     );
   }
 
@@ -118,8 +126,7 @@ export function hunkContext(hunk: Hunk, options: ContextOptions = {}): string {
     lines.push(`The same change also touches ${shown.map((f) => `\`${f}\``).join(", ")}${siblings.length > shown.length ? `, and ${siblings.length - shown.length} more` : ""}. Their contents are not shown.`);
   }
 
-  lines.push("", HOW_TO_ANSWER);
-  return lines.join("\n");
+  return lines;
 }
 
 /**
@@ -128,6 +135,7 @@ export function hunkContext(hunk: Hunk, options: ContextOptions = {}): string {
  * and because rule authors who forget to say it are the ones whose rules most need it said.
  */
 export const HOW_TO_ANSWER = `How to answer:
+- Report a problem only when the lines under review cause it. Pre-existing problems the change leaves untouched are not this review's concern.
 - Nothing else is visible to you: not the rest of this file, not its callers, not any other file, not the project's conventions beyond what you are told here.
 - So absent code is not evidence. A guard, check, test, cleanup or caller you cannot see may well exist elsewhere; never report a problem that depends only on your not seeing something.
 - Judge from these values alone. Do not assume callers, configuration, requirements or behaviour outside them, and do not answer from what code like this usually does.

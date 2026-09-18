@@ -46,6 +46,43 @@ Because `context` names the file's role, a rule need not enumerate test or fixtu
 
 Question IDs are not semantic instructions. Each question must stand alone. Hunch's confidence is distribution concentration `(pmax − 1/n)/(1 − 1/n)`, not TypeSafe's own confidence or empirical accuracy. When a configured confidence threshold needs probabilities the provider omitted, the run fails rather than quietly suppressing a finding.
 
+## Finding code for a change
+
+`hunch find "<task>"` scores every in-scope chunk against a task and prints the ones worth reading
+first. It uses the same `include`/`ignore` scope and the same chunking as `check --all`, and the same
+`model`/`provider` settings, but none of the repository's rules: the questions are fixed and the task
+is sent as state, so nothing needs compiling and a config with no rules in it still works.
+
+Five `noul` questions are asked per chunk in one request — `edit`, `contract`, `caller`, `test`,
+`precedent` — and every probability is kept. Matches are grouped by their strongest facet, and
+`--top` applies per facet so that a facet with a higher base rate cannot crowd the others out of the
+result. Ranking compares raw probabilities across facets, which are not calibrated against each
+other; treat the grouping as the signal and the number as a within-facet ordering.
+
+The reporter defaults to the coloured terminal report when stdout is a terminal and to Markdown when
+it is redirected; `--reporter` overrides either way, and `--no-code` drops the source from the
+terminal form. The terminal form cuts a passage after 40 lines and says how many were left and where
+they end; Markdown keeps every line. The Markdown reporter prints the source of each match beneath a heading naming its
+exact file and line range, and merges chunks of one file whose ranges touch so a file split for
+budgeting reads as one passage. Only added lines are quoted, so the code shown always matches the
+range printed above it; `--reporter json` keeps every match separate and unmerged, with each facet's
+probability.
+
+`--prs` adds a second source: every open pull request on the `origin` remote, listed through the `gh`
+CLI. Titles are judged first, one cheap request each, and only titles above 0.5 have their diff
+fetched and judged for whether they already make the change (`duplicate`) or merely edit the same
+code (`overlap`). At most `--pr-max` diffs are read, drafts are excluded unless `--drafts` is passed,
+and a diff over roughly 12,000 tokens is truncated with the truncation reported. Anything that could
+not be listed, read or judged is a notice and makes the run incomplete: "no duplicate found" and
+"could not check" must not be reported the same way.
+
+`find` does not use `budget`: those limits are sized to keep a pull-request review inside a worker
+timeout, and applying them here would end a repository sweep partway through. It runs one request per
+chunk at `--concurrency` (default 8, maximum 32) with a one-hour ceiling. A chunk whose request fails
+costs that chunk, not the sweep: it is named in a notice. Any unsearched chunk makes the run
+incomplete, which is reported in the output and as exit code 2. Use `--dry-run` to count chunks and
+requests before spending anything.
+
 ## Guidance
 
 Without an explicit `skills` selection, discovery checks `.agents/skills/*` then `.claude/skills/*`, deduplicating names. An explicit list selects only those sources; `skills: []` selects none. Use local directories or `./path/*`, `owner/repo`, `{ repo, skill?, ref? }`, or `https://github.com/owner/repo/tree/ref/path`. For refs containing `/`, use the object form rather than the ambiguous URL form. Duplicate explicit skill names are errors. Skill Markdown is loaded recursively up to four directory levels, without executing scripts or loading binary assets. Hosted policy must be committed regular files; choose copied project skill installations instead of external symlinks.

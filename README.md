@@ -113,6 +113,7 @@ Running your own deployment of the App instead of the hosted one: [operator setu
 | `check --show-diff` | Prints the changed lines under each finding. Handy for agents fixing findings. Works with `--reporter json` too. |
 | `check --config <json\|file\|->` | Uses rules from JSON instead of the repo's config. [Details](#rules-without-a-config-file) |
 | `check --rule id="…"` | Adds a plain-English rule for this run. Repeatable. |
+| `find "<task>"` | Finds the code a change would touch, anywhere in the repo, and prints it. [Details](#finding-the-code-for-a-change) |
 | `compile` | Turns your skills and `AGENTS.md` into review questions, saved in `hunch.lock`. [Why?](#skills-and-agentsmd) |
 | `init [--ts\|--rust\|--general] [--github]` | Writes a starter config, and optionally a PR workflow. Asks where reviews should run when it has a terminal; any flag skips the questions. |
 | `doctor` | Says why this repository is not being reviewed, and what to do about it. |
@@ -120,6 +121,147 @@ Running your own deployment of the App instead of the hosted one: [operator setu
 | `app --help` | Sets up a self-hosted GitHub App. |
 
 Run each as `npx @kelbie/hunch <command>`. Every `check` also takes paths to narrow the review, and `--reporter text|markdown|json|sarif|github`.
+
+## Finding the code for a change
+
+`check` asks whether code is wrong. `find` asks **where the code is**: it scores every chunk of the
+repository against a change you are about to make, and prints the matching source.
+
+```sh
+npx @kelbie/hunch find "warn on the amountless onchain receive QR with the mint's minimum and maximum"
+```
+
+Use it when you know what you want to build and not yet where it lives — before planning a change in
+an unfamiliar area, or to hand a coding agent its opening context. It searches the whole repository,
+so it finds the code you would not have thought to grep for: on a React Native wallet, the query
+above ranked `wallet/src/mint-capabilities.ts` top, a file three directories away from the screen
+being changed and containing no word from the query except "amount".
+
+### The output
+
+At a terminal you get a coloured report, grouped by what each chunk is to the task, with the source
+under each location and real file line numbers in the gutter:
+
+![hunch find ranking a repository against a task, and checking open PRs for the same work](docs/images/find.png)
+
+Redirect it and you get Markdown instead, because the reason to redirect this is to hand it to
+something that reads Markdown:
+
+```sh
+hunch find "add a rate limit to the upload endpoint" > context.md
+```
+
+The Markdown opens with a map of every match, keeps every line of every passage (a model reads it,
+nobody scrolls it), and prints each one under a heading giving its exact file and line range:
+
+````md
+## What was found
+
+- **edit here** — Code that carrying out the task would require editing.
+  - `src/api/upload.ts`:1-150 (0.81)
+- **contract to respect** — Definitions the task hinges on.
+  - `src/config/limits.ts`:1-64 (0.74)
+
+## edit here
+
+### `src/api/upload.ts`:1-150
+
+edit here 0.81 · also affected caller 0.69
+
+```ts
+export async function upload(req: Request) {
+…
+````
+
+The code under a heading is exactly the lines that heading names, so a line number you cite from it
+is correct. Chunks of one file that touch are printed as a single passage rather than split at the
+150-line boundary they were chunked on. Colour follows `NO_COLOR` and `FORCE_COLOR`, like `check`.
+
+### Am I duplicating someone's work?
+
+Add `--prs` and `find` also asks every open pull request whether it is already doing this. The answer
+goes **above** the file list, because a duplicate makes the file list beside the point:
+
+```sh
+hunch find "show onchain min and max on the receive QR" --prs
+```
+
+```md
+## Existing work
+
+**Someone may already be doing this.** An open pull request appears to make this change.
+Read #276 before writing anything — reviewing or finishing it is probably cheaper than
+starting again.
+
+- [#276 Show onchain min and max on the receive QR](https://github.com/o/r/pull/276) — may already do this (0.91)
+  by kelbie · branch `feat/onchain-limits` · duplicate 0.91, overlap 0.55
+```
+
+Two passes, so it stays cheap. Every open pull request is judged on its **title** alone — one small
+request each — and only the ones that could plausibly be the same work have their **diff** fetched
+and read. Those get two questions:
+
+| Verdict | Meaning |
+| --- | --- |
+| `may already do this` | The diff makes the change you described. Read it before starting. |
+| `would touch the same code` | Not the same change, but it edits what you would edit, so one of you rebases. |
+
+Needs the [`gh` CLI](https://cli.github.com) installed and authenticated, and a `github.com` `origin`
+remote. `--pr-max` (default 10) caps how many diffs are read; `--drafts` includes draft PRs, which
+are excluded by default because a draft is not work you would merge instead. If pull requests cannot
+be listed or a diff cannot be read, the report says so and the run exits `2` — "no duplicate found"
+and "could not check" must never look the same.
+
+### The five facets
+
+Each chunk is asked five questions at once, because "show me the tests" and "show me where to type"
+are different requests that a single relevance score blurs together:
+
+| Facet | Question asked of every chunk |
+| --- | --- |
+| `edit` | Would carrying out the task require editing these lines? |
+| `contract` | Does this define the value, limit, type or interface the task hinges on? |
+| `caller` | Does this consume the behaviour that would change, so it would see the difference? |
+| `test` | Does this test the area, so it would need updating or would catch a mistake? |
+| `precedent` | Does this already solve the same kind of problem somewhere else? |
+
+Matches are grouped by their strongest facet. `--top` (default 12) applies **per facet**, because
+the facets do not share a scale — one global cut lets a generous facet crowd the others out, and the
+single test worth updating never appears.
+
+### Options
+
+| Command | What it does |
+| --- | --- |
+| `find "…"` | Searches everything, prints Markdown with the code. |
+| `find "…" src/api test` | Narrows to those paths. Much cheaper when you already know the area. |
+| `find "…" --dry-run` | Counts chunks and requests. Nothing is sent, nothing is charged. |
+| `find "…" --reporter text` | Forces the coloured terminal report even when redirected. |
+| `find "…" --no-code` | Locations and scores only. |
+| `find "…" --lines 8` | Shows 8 lines of each passage instead of 40. Terminal only. |
+| `find "…" --reporter json` | Every facet probability per match, plus the code, unmerged. |
+| `find "…" --facet test,precedent` | Asks only those, so only those come back. |
+| `find "…" --min 0.7 --top 5` | Fewer, surer matches. `--min` defaults to 0.5. |
+| `find "…" --concurrency 16` | More requests in flight. Default 8, maximum 32. |
+| `find "…" --head v1.2.0` | Searches a branch or tag instead of the working tree. |
+| `find "…" --prs` | Also checks whether an open pull request already does this. |
+| `find "…" --prs --pr-max 25 --drafts` | Reads more PR diffs, and includes drafts. |
+
+### What to trust
+
+- **Scores are probabilities from a classifier that saw one chunk in isolation**, with no view of
+  callers or of the rest of the file. Treat the grouping as the signal and verify before relying on
+  it. A high score means "worth reading", never "correct" or "sufficient".
+- **Relevant code can be missing.** Nothing here proves the list is complete.
+- **A cut-short sweep says so** in the output and exits `2`. Exit `0` means every in-scope chunk was
+  scored. A partial answer that looks whole is worse than no answer, so check the exit code if you
+  are consuming this programmatically.
+- **It costs one request per chunk.** A 2,000-file repository is roughly 4,000 requests and a couple
+  of minutes. Run `--dry-run` first if that matters; pass paths to cut it down. `--prs` adds one
+  small request per open pull request, plus one per diff actually read.
+- Scope comes from your config's `include` and `ignore`, the same as `check --all`. `find` ignores
+  your rules entirely — the questions are fixed — so it needs a config file for scope but no rules
+  in it.
 
 ## Rules without a config file
 

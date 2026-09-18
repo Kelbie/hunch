@@ -14,4 +14,6 @@ Every finding is a configured concern supported by a model score, not a generate
 
 Use `bun install --frozen-lockfile`, `bun run typecheck`, `bun test`, and `bun run build`. Exercise the packed npm artifact under Node 22+, including its generated declarations. Tests should cross real module interfaces and challenge trust, error and publication behavior.
 
+Every image under `docs/images` is rendered by `scripts/terminal-shot.mjs` from real captured output, so they share one theme and can be remade when a report changes. Capture with `FORCE_COLOR=1`, then pass the file, the destination and the command that produced it; never paste a hand-taken screenshot.
+
 Do not claim live Jev quality or Vercel/GitHub App deployment validation from mocks. See `docs/architecture.md`, `docs/deploy.md` and `docs/research.md`.
