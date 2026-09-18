@@ -96,7 +96,7 @@ test("terminal report shows every concern's line range and message, grouped by p
   expect(toText({ ...result, findings: [], notices: [] }).split("\n")[0]).toBe("Hunch · no findings · review complete");
 });
 
-test("--show-diff prints the changed lines around each place with new-file line numbers", () => {
+test("--code prints the changed lines around each place with new-file line numbers", () => {
   const hunks = parseHunks([
     "diff --git a/src/pay.ts b/src/pay.ts", "--- a/src/pay.ts", "+++ b/src/pay.ts",
     "@@ -10,6 +10,6 @@ export function pay() {",
