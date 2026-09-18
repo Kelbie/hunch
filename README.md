@@ -171,6 +171,41 @@ The code under a heading is exactly the lines that heading names, so a line numb
 is correct. Chunks of one file that touch are printed as a single passage rather than split at the
 150-line boundary they were chunked on.
 
+### Am I duplicating someone's work?
+
+Add `--prs` and `find` also asks every open pull request whether it is already doing this. The answer
+goes **above** the file list, because a duplicate makes the file list beside the point:
+
+```sh
+hunch find "show onchain min and max on the receive QR" --prs
+```
+
+```md
+## Existing work
+
+**Someone may already be doing this.** An open pull request appears to make this change.
+Read #276 before writing anything — reviewing or finishing it is probably cheaper than
+starting again.
+
+- [#276 Show onchain min and max on the receive QR](https://github.com/o/r/pull/276) — may already do this (0.91)
+  by kelbie · branch `feat/onchain-limits` · duplicate 0.91, overlap 0.55
+```
+
+Two passes, so it stays cheap. Every open pull request is judged on its **title** alone — one small
+request each — and only the ones that could plausibly be the same work have their **diff** fetched
+and read. Those get two questions:
+
+| Verdict | Meaning |
+| --- | --- |
+| `may already do this` | The diff makes the change you described. Read it before starting. |
+| `would touch the same code` | Not the same change, but it edits what you would edit, so one of you rebases. |
+
+Needs the [`gh` CLI](https://cli.github.com) installed and authenticated, and a `github.com` `origin`
+remote. `--pr-max` (default 10) caps how many diffs are read; `--drafts` includes draft PRs, which
+are excluded by default because a draft is not work you would merge instead. If pull requests cannot
+be listed or a diff cannot be read, the report says so and the run exits `2` — "no duplicate found"
+and "could not check" must never look the same.
+
 ### The five facets
 
 Each chunk is asked five questions at once, because "show me the tests" and "show me where to type"
@@ -201,6 +236,8 @@ single test worth updating never appears.
 | `find "…" --min 0.7 --top 5` | Fewer, surer matches. `--min` defaults to 0.5. |
 | `find "…" --concurrency 16` | More requests in flight. Default 8, maximum 32. |
 | `find "…" --head v1.2.0` | Searches a branch or tag instead of the working tree. |
+| `find "…" --prs` | Also checks whether an open pull request already does this. |
+| `find "…" --prs --pr-max 25 --drafts` | Reads more PR diffs, and includes drafts. |
 
 ### What to trust
 
@@ -212,7 +249,8 @@ single test worth updating never appears.
   scored. A partial answer that looks whole is worse than no answer, so check the exit code if you
   are consuming this programmatically.
 - **It costs one request per chunk.** A 2,000-file repository is roughly 4,000 requests and a couple
-  of minutes. Run `--dry-run` first if that matters; pass paths to cut it down.
+  of minutes. Run `--dry-run` first if that matters; pass paths to cut it down. `--prs` adds one
+  small request per open pull request, plus one per diff actually read.
 - Scope comes from your config's `include` and `ignore`, the same as `check --all`. `find` ignores
   your rules entirely — the questions are fixed — so it needs a config file for scope but no rules
   in it.

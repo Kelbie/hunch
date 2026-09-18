@@ -65,6 +65,14 @@ budgeting reads as one passage. Only added lines are quoted, so the code shown a
 range printed above it; `--reporter json` keeps every match separate and unmerged, with each facet's
 probability.
 
+`--prs` adds a second source: every open pull request on the `origin` remote, listed through the `gh`
+CLI. Titles are judged first, one cheap request each, and only titles above 0.5 have their diff
+fetched and judged for whether they already make the change (`duplicate`) or merely edit the same
+code (`overlap`). At most `--pr-max` diffs are read, drafts are excluded unless `--drafts` is passed,
+and a diff over roughly 12,000 tokens is truncated with the truncation reported. Anything that could
+not be listed, read or judged is a notice and makes the run incomplete: "no duplicate found" and
+"could not check" must not be reported the same way.
+
 `find` does not use `budget`: those limits are sized to keep a pull-request review inside a worker
 timeout, and applying them here would end a repository sweep partway through. It runs one request per
 chunk at `--concurrency` (default 8, maximum 32) with a one-hour ceiling. A chunk whose request fails

@@ -10,6 +10,7 @@ export * from "./jev.js";
 export * from "./load/index.js";
 export * from "./lock.js";
 export * from "./presets.js";
+export * from "./pulls.js";
 export * from "./report.js";
 export * from "./schema.js";
 export * from "./skills.js";

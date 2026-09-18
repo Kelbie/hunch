@@ -268,7 +268,7 @@ export function mergeAdjacent(matches: FindMatch[]): FindMatch[] {
 }
 
 /** Matches as one Markdown document, which is the point: paste it into a larger model. */
-export function findMarkdown(task: string, result: FindResult): string {
+export function findMarkdown(task: string, result: FindResult, existing = ""): string {
   const out = [
     `# Code relevant to: ${task}`,
     "",
@@ -279,6 +279,8 @@ export function findMarkdown(task: string, result: FindResult): string {
     "nothing here has been checked for correctness.",
     "",
   ];
+  // Above the file list on purpose: if this work already exists, the file list is beside the point.
+  if (existing) out.push(existing, "");
   const groups = FACETS.map((facet) => ({ facet, matches: mergeAdjacent(result.matches.filter((m) => m.facet === facet)) })).filter((g) => g.matches.length);
   if (!groups.length) out.push("No chunk scored above the threshold.", "");
 
@@ -319,8 +321,8 @@ const FENCE: Record<string, string> = {
 const fence = (language: string | null) => (language ? FENCE[language] : undefined);
 
 /** One line per match, densest first. */
-export function findText(result: FindResult): string {
-  const out: string[] = [];
+export function findText(result: FindResult, existing = ""): string {
+  const out: string[] = existing ? [existing] : [];
   for (const facet of FACETS) {
     const group = result.matches.filter((m) => m.facet === facet);
     if (!group.length) continue;

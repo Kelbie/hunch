@@ -9,7 +9,10 @@ import {
   FACETS,
   find,
   findMarkdown,
+  findPulls,
   findText,
+  pullsMarkdown,
+  pullsText,
   type Facet,
   compileSources,
   LOCK_FILE,
@@ -42,7 +45,7 @@ import { resolveConfig } from "./inline.js";
 import { VERSION } from "./version.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
-import { diagnose, report } from "./doctor.js";
+import { diagnose, parseRemote, report } from "./doctor.js";
 import { askWizard, clackIo, detectPreset, existingKey, ghReady, hasGuidance, interactive, nextSteps, setRepoSecret, writeKey, type WizardAnswers } from "./setup/wizard.js";
 
 
@@ -64,6 +67,7 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
         [--facet edit,contract,caller,test,precedent]   ask only these, report only these
         [--min 0.5] [--top 12] [--concurrency 8] [--head ref] [--dry-run]
         [--reporter markdown|text|json]
+        [--prs] [--pr-max 10] [--drafts]   also ask whether an open PR already does this
         Prints the matching source, grouped by what each chunk is to the task, as one
         Markdown document to hand to a coding agent. --reporter text lists the
         locations only; --dry-run counts chunks and requests without sending anything.
@@ -129,6 +133,9 @@ async function main() {
       app: { type: "string" },
       facet: { type: "string", multiple: true },
       concurrency: { type: "string" },
+      prs: { type: "boolean", default: false },
+      "pr-max": { type: "string" },
+      drafts: { type: "boolean", default: false },
       min: { type: "string" },
       top: { type: "string" },
       cwd: { type: "string", default: process.cwd() },
@@ -264,6 +271,36 @@ async function main() {
       console.error(`hunch: searching ${files} file(s) as ${hunks.length} chunk(s) from ${values.head ?? "the working tree"}`);
 
       let client: JevClient | undefined;
+      const jev = { evaluate: (req: Parameters<JevClient["evaluate"]>[0]) => (client ??= clientFromEnv(config)).evaluate(req) };
+
+      // Asked first: if this work is already open as a pull request, the person should hear it
+      // before reading a hundred lines of code they may not need to touch.
+      let existingMd = "";
+      let existingText = "";
+      let existingComplete = true;
+      let existingWork: Awaited<ReturnType<typeof findPulls>> | undefined;
+      if (values.prs) {
+        const remote = parseRemote(originUrl(root));
+        if (!remote) return fail("--prs needs a github.com `origin` remote to list pull requests from.");
+        const prMax = values["pr-max"] === undefined ? 10 : Number(values["pr-max"]);
+        if (!Number.isInteger(prMax) || prMax < 1) return fail("--pr-max must be a positive whole number");
+        console.error(`hunch: checking open pull requests on ${remote.owner}/${remote.repo}`);
+        const pulls = await findPulls({
+          task,
+          slug: `${remote.owner}/${remote.repo}`,
+          io: { gh: ghApi },
+          client: jev,
+          model: config.model,
+          maxInspected: prMax,
+          includeDrafts: values.drafts,
+          onProgress: (d, t) => progress(`read ${d}/${t} pull request titles`, d === t),
+        });
+        existingMd = pullsMarkdown(pulls);
+        existingText = pullsText(pulls);
+        existingComplete = pulls.complete;
+        existingWork = pulls;
+      }
+
       const result = await find({
         task,
         hunks,
@@ -272,15 +309,15 @@ async function main() {
         minScore,
         perFacet: top,
         budget: { concurrency, maxRequests: hunks.length, timeoutSeconds: 3600 },
-        client: { evaluate: (req) => (client ??= clientFromEnv(config)).evaluate(req) },
-        onProgress: (d, t) => process.stderr.write(`\r  searched ${d}/${t} chunks`),
+        client: jev,
+        onProgress: (d, t) => progress(`searched ${d}/${t} chunks`, d === t),
       });
-      process.stderr.write("\n");
-      if (reporter === "json") console.log(JSON.stringify(result, null, 2));
-      else if (reporter === "text") console.log(findText(result));
-      else console.log(findMarkdown(task, result));
-      // An unfinished sweep means the answer is "here is some of it", which callers must be able to see.
-      process.exitCode = result.complete ? 0 : 2;
+      if (reporter === "json") console.log(JSON.stringify({ ...result, existingWork }, null, 2));
+      else if (reporter === "text") console.log(findText(result, existingText));
+      else console.log(findMarkdown(task, result, existingMd));
+      // An unfinished sweep means the answer is "here is some of it", which callers must be able to
+      // see — including an unchecked pull request list, since that cannot prove nothing is open.
+      process.exitCode = result.complete && existingComplete ? 0 : 2;
       return;
     }
 
@@ -348,16 +385,9 @@ async function main() {
 
     case "doctor": {
       const checks = await diagnose({
-        gh: async (args) => {
-          const r = spawnSync("gh", args, { encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "ignore"] });
-          return { ok: !r.error && r.status === 0, body: r.stdout ?? "" };
-        },
+        gh: ghApi,
         local: (p) => { try { return readFileSync(join(root, p), "utf8"); } catch { return null; } },
-        // Not every project is a git repository; that is an answer, not an error to print.
-        remoteUrl: () => {
-          const r = spawnSync("git", ["remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
-          return !r.error && r.status === 0 ? r.stdout.trim() : null;
-        },
+        remoteUrl: () => originUrl(root),
         env: process.env,
       }, { slug: values.app ?? "hunch-review" });
       const { text, failed } = report(checks);
@@ -419,6 +449,24 @@ async function finishWizard(root: string, answers: WizardAnswers, opts: { file: 
 function excerptText(hunks: Hunk[], f: Parameters<typeof diffExcerpt>[1]): string | undefined {
   const e = diffExcerpt(hunks, f);
   return e && [...e.lines.map((l) => `${l.kind}${l.text}`), ...(e.omitted ? [`… ${e.omitted} more lines`] : [])].join("\n");
+}
+
+/** A counter for someone watching. Silent when stderr is redirected, where \r is just noise. */
+function progress(message: string, last: boolean) {
+  if (!process.stderr.isTTY) return;
+  process.stderr.write(`\r  ${message}${last ? "\n" : ""}`);
+}
+
+/** `gh api`, shared by doctor and find. Any non-zero exit is "no answer", including 404. */
+async function ghApi(args: string[]): Promise<{ ok: boolean; body: string }> {
+  const r = spawnSync("gh", args, { encoding: "utf8", timeout: 60_000, stdio: ["ignore", "pipe", "ignore"], maxBuffer: 64 * 1024 * 1024 });
+  return { ok: !r.error && r.status === 0, body: r.stdout ?? "" };
+}
+
+/** Not every project is a git repository; that is an answer, not an error to print. */
+function originUrl(root: string): string | null {
+  const r = spawnSync("git", ["remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+  return !r.error && r.status === 0 ? r.stdout.trim() : null;
 }
 
 function readLock(root: string): Lock | null {
