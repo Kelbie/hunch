@@ -19,6 +19,7 @@ import {
   toSarif,
   toText,
   toWorkflowCommands,
+  type JevClient,
   type Lock,
 } from "../../core/src/index.js";
 import { branchDiff, localRepo, gitRepo, git } from "./local.js";
@@ -84,12 +85,14 @@ async function main() {
       const lock = lockText ? parseLock(lockText) : null;
       const stale = await staleSources(lock, config, repo);
       const task = values.task ?? prTaskFromEvent();
+      // Created on first request, so a diff with nothing to review needs no API key.
+      let client: JevClient | undefined;
       const result = await check({
         config,
         hunks: parseHunks(diff),
         task,
         lock,
-        client: clientFromEnv(config),
+        client: { evaluate: (req) => (client ??= clientFromEnv(config)).evaluate(req) },
         readFile: (p) => repo.read(p),
         onProgress: (d, t) => values.reporter === "text" && process.stderr.write(`\r  checked ${d}/${t} hunks`),
       });
