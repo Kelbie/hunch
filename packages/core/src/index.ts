@@ -1,5 +1,6 @@
 export * from "./check.js";
 export * from "./compile.js";
+export * from "./context.js";
 export * from "./define.js";
 export * from "./diff.js";
 export * from "./full.js";

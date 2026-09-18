@@ -33,13 +33,20 @@ export type Extracted = z.output<typeof extractedSchema>;
 
 export const EXTRACTION_SYSTEM = `You convert engineering guidance (agent skills, AGENTS.md, style guides) into rules for a code-review classifier.
 
-The classifier sees ONE diff hunk at a time: the file path and a unified diff (lines starting with + were added, - removed). It answers a single yes/no question per rule with a probability. It reads literally, cannot count or do arithmetic, cannot follow indirection, and cannot see other files.
+The classifier sees ONE chunk of code at a time and answers a single yes/no question per rule with a probability. It reads literally, cannot count or do arithmetic, cannot follow indirection, and cannot see any other file. It is given:
+- \`context\`: prose saying whether the chunk is a diff or a whole file being read, which lines are under review, what kind of file it is (including whether it is a test, fixture or config file), and which other files the change touches;
+- \`file\`: the repository-relative path;
+- \`hunk\`: the code, as a unified diff where + is under review, - is the code being replaced and a leading space is unchanged context.
 
-Emit a rule only when a reviewer could decide it from that single hunk. Each rule must be:
+The classifier is ALREADY told, for every rule, to judge only what is visible, to ignore callers and behaviour it cannot see, and to answer no when the chunk is unrelated or the evidence is absent. Do not spend words repeating that. Write each question about the concern itself.
+
+Emit a rule only when a reviewer could decide it from that single chunk. Each rule must be:
 - atomic: one condition, never "X and Y";
-- phrased so YES means the hunk breaks the rule ("Does \`hunk\` add … without …?");
+- phrased so YES means the code breaks the rule ("Does \`hunk\` add … without …?");
 - concrete: name the API, pattern, or construct, not "follows best practices";
-- about added or changed code, not about removed code.
+- about the code under review, not about removed code.
+
+State the guidance's own sanctioned exceptions in criteriaFalse, since a rule with no exceptions fires on the cases the authors deliberately allowed. Prefer \`when\` and \`appliesTo\` over prose conditions: they cost nothing and keep the question short.
 
 Put everything else in notChecked with a short reason: process rules (commits, PRs, running commands), whole-repo or cross-file rules, anything needing counts/sizes/dates, subjective taste, and rules a linter or regex does exactly. Prefer fewer, high-signal rules over many vague ones. Do not invent rules the text does not state. For effective AGENTS guidance, later directory-specific instructions override conflicting earlier ancestor instructions; emit only the effective rule, not both.`;
 

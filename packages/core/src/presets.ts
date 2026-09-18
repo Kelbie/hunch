@@ -1,13 +1,17 @@
 import { noul } from "./define.js";
 import { type RuleEntry, ruleEntrySchema } from "./schema.js";
 
-/** Presets ask about observable consequences, never syntax or a preferred style. */
+/**
+ * Presets ask about observable consequences, never syntax or a preferred style. Scope — what is
+ * visible, and what to answer when nothing is — comes from the engine's judging contract, so these
+ * questions say only what is specific to the concern.
+ */
 const concern = (instructions: string, message: string, files?: string[]): RuleEntry =>
   ruleEntrySchema.parse(["warn", noul({
-    instructions: `${instructions} Judge only behavior introduced or changed in \`hunk\`, using the visible before/after code and any stated contract. Do not invent missing callers or requirements.`,
+    instructions,
     criteria: {
       true: "The visible change provides concrete evidence of this problem.",
-      false: "The concern is absent, the change is intentional and consistent with the visible contract, or there is not enough evidence.",
+      false: "The concern is absent, or the change is intentional and consistent with the visible contract.",
     },
     message,
     threshold: 0.85,

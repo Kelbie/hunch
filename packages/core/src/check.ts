@@ -1,4 +1,5 @@
 import picomatch from "picomatch";
+import { hunkContext } from "./context.js";
 import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
 import { inScope as scopeFilter } from "./full.js";
 import type { Answer, JevClient, WireQuestion } from "./jev.js";
@@ -71,6 +72,9 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     hunks = hunks.slice(0, config.budget.maxHunks);
   }
   stats.hunks = hunks.length;
+  // The other files this change touches, so a hunk can be told what it is part of without being
+  // sent their contents. A whole-file run is not a change and has no siblings to name.
+  const siblings = [...new Set(inScope.filter((h) => h.kind !== "file").map((h) => h.file))];
 
   const referenceCache = new Map<string, Promise<string | null>>();
   const readReference = (path: string) => {
@@ -113,7 +117,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
         continue;
       }
       reservedRequests++;
-      const state: Record<string, unknown> = { file: hunk.file, hunk: hunk.text };
+      const state: Record<string, unknown> = { context: hunkContext(hunk, { siblings }), file: hunk.file, hunk: hunk.text };
       if (config.task === "pr" && input.task) state.task = input.task.slice(0, 8000);
       if (ref) {
         const text = await readReference(ref);
@@ -217,14 +221,37 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null) {
   return { jev };
 }
 
+/**
+ * Appended to every question, so that no rule has to repeat it. These are facts about the review
+ * itself rather than about any one rule: what the reviewer may look at, and what it must do when the
+ * hunk simply has nothing to say. Rule authors who state them anyway lose nothing; authors who
+ * forget — which is most of them — no longer get confident answers drawn from imagined callers.
+ */
+export const JUDGING_CONTRACT =
+  " Read `context` first: it says what `hunk` is, which lines are under review, and what you cannot see. Follow its \"How to answer\" rules.";
+
+/** Absent evidence has to land somewhere, and for a yes/no rule that somewhere is "no". */
+export const NO_EVIDENCE_CLAUSE =
+  " Answer no if this hunk is unrelated to the question, or shows no concrete evidence either way.";
+
+/** Used when a noul rule states no criteria, so an unqualified question still fails safe. */
+export const DEFAULT_NOUL_CRITERIA = {
+  true: "The visible lines give concrete evidence of exactly what the question asks about.",
+  false: "They do not, the hunk is unrelated, or there is not enough visible evidence to tell.",
+} as const;
+
 export function toWire(q: Question): WireQuestion {
   switch (q.kind) {
     case "noul":
-      return { type: "noul", instructions: q.instructions, ...(q.criteria ? { criteria: q.criteria } : {}) };
+      return {
+        type: "noul",
+        instructions: q.instructions + JUDGING_CONTRACT + NO_EVIDENCE_CLAUSE,
+        criteria: q.criteria ?? DEFAULT_NOUL_CRITERIA,
+      };
     case "choice":
-      return { type: "choice", instructions: q.instructions, criteria: q.criteria };
+      return { type: "choice", instructions: q.instructions + JUDGING_CONTRACT, criteria: q.criteria };
     case "score":
-      return { type: "score", instructions: q.instructions, criteria: q.criteria };
+      return { type: "score", instructions: q.instructions + JUDGING_CONTRACT, criteria: q.criteria };
   }
 }
 

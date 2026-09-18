@@ -5,6 +5,12 @@ export interface Hunk {
   /** Previous path when the file was renamed or deleted. */
   oldFile?: string;
   status: "added" | "deleted" | "modified" | "renamed";
+  /**
+   * Where the hunk came from: a real diff, or a whole file split for `check --all`. The reviewer is
+   * told which, because "every line is `+`" means "newly added" in one mode and "read the whole
+   * file" in the other. Absent means diff, the only shape a parsed patch produces.
+   */
+  kind?: "diff" | "file";
   /** First line of the hunk in the new file (for annotations). */
   newStart: number;
   newLines: number;
@@ -31,6 +37,7 @@ export function parseHunks(diff: string): Hunk[] {
       }
       hunks.push({
         file,
+        kind: "diff",
         oldFile: f.from !== file ? f.from : undefined,
         status,
         newStart: chunk.newStart,
