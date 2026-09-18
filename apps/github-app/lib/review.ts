@@ -25,7 +25,10 @@ const WRITERS = ["admin", "maintain", "write"];
 /** Links for every open concern, including comments just posted. */
 async function threadLinks(api: ReturnType<typeof githubApi>, repo: string, pr: number) {
   const { threads } = await api.reviewThreads(repo, pr);
-  return new Map(threads.filter((t) => t.mine && !t.resolved).flatMap((t) => findingKeysIn(t.body).map((k) => [k, t.url] as const)));
+  const open = threads.filter((t) => t.mine && !t.resolved);
+  // Per place first; per rule and file as a fallback, keeping the first thread.
+  return new Map([...open.flatMap((t) => findingKeysIn(t.body).map((k) => [k, t.url] as const)).reverse(),
+    ...open.flatMap((t) => findingKeysIn(t.body).map((k) => [`${k}@${t.line}`, t.url] as const))]);
 }
 
 /**

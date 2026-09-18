@@ -4,7 +4,7 @@ import { findingKey } from "../src/report.js";
 import { planThreads, type ReviewThread } from "../src/threads.js";
 
 const f: Finding = { rule: "billing/retry", level: "error", file: "src/pay.ts", line: 3, endLine: 5, message: "m", evidence: "e", source: "config" };
-const t = (over: Partial<ReviewThread>): ReviewThread => ({ id: "T", resolved: false, resolvedBy: null, body: `<!-- hunch:finding ${findingKey(f)} -->`, url: "u", mine: true, ...over });
+const t = (over: Partial<ReviewThread>): ReviewThread => ({ id: "T", resolved: false, resolvedBy: null, line: null, body: `<!-- hunch:finding ${findingKey(f)} -->`, url: "u", mine: true, ...over });
 const opts = { self: "hunch[bot]", canDismiss: (login: string) => login === "maintainer", complete: true };
 
 test("a concern Hunch closed as fixed gets a new comment when it comes back", () => {
@@ -24,4 +24,14 @@ test("a partial review never closes threads as fixed", () => {
   expect(planThreads([], [t({})], { ...opts, complete: false }).resolve).toEqual([]);
   expect(planThreads([], [t({})], opts).resolve.map((x) => x.id)).toEqual(["T"]);
   expect(planThreads([], [t({ mine: false })], opts).resolve).toEqual([]);
+});
+
+test("one rule raised at two places in a file links each place to its own thread", async () => {
+  const { summaryMarkdown } = await import("../src/report.js");
+  const a = { ...f, line: 10, endLine: 10 }, b = { ...f, line: 40, endLine: 41 };
+  const plan = planThreads([a, b], [t({ id: "A", line: 10, url: "urlA" }), t({ id: "B", line: 41, url: "urlB" })], opts);
+  expect(plan.post).toEqual([]);
+  const md = summaryMarkdown({ complete: true, findings: [a, b], notices: [], stats: { hunks: 2, skippedHunks: 0, requests: 2, questions: 2, inputTokens: 0, modelIds: [] } }, { threads: plan.links });
+  expect(md).toContain("[`pay.ts:10`](urlA)");
+  expect(md).toContain("[`pay.ts:40-41`](urlB)");
 });

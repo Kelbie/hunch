@@ -64,7 +64,7 @@ export function githubApi(token: string, baseUrl = "https://api.github.com", { s
       const [owner, name] = repo.split("/");
       type Page = { viewer: { login: string }; repository: { pullRequest: { reviewThreads: {
         pageInfo: { hasNextPage: boolean; endCursor: string | null };
-        nodes: { id: string; isResolved: boolean; resolvedBy: { login: string } | null; comments: { nodes: { body: string; url: string; viewerDidAuthor: boolean }[] } }[];
+        nodes: { id: string; isResolved: boolean; line: number | null; originalLine: number | null; resolvedBy: { login: string } | null; comments: { nodes: { body: string; url: string; viewerDidAuthor: boolean }[] } }[];
       } } | null } | null };
       const threads: ReviewThread[] = [];
       let self = "", after: string | null = null;
@@ -73,7 +73,7 @@ export function githubApi(token: string, baseUrl = "https://api.github.com", { s
           viewer { login }
           repository(owner: $owner, name: $name) { pullRequest(number: $pr) { reviewThreads(first: 100, after: $after) {
             pageInfo { hasNextPage endCursor }
-            nodes { id isResolved resolvedBy { login } comments(first: 1) { nodes { body url viewerDidAuthor } } }
+            nodes { id isResolved line originalLine resolvedBy { login } comments(first: 1) { nodes { body url viewerDidAuthor } } }
           } } }
         }`, { owner, name, pr, after });
         self = data.viewer.login;
@@ -81,7 +81,7 @@ export function githubApi(token: string, baseUrl = "https://api.github.com", { s
         if (!connection) throw new Error("Pull request review threads unavailable");
         for (const t of connection.nodes) {
           const first = t.comments.nodes[0];
-          if (first) threads.push({ id: t.id, resolved: t.isResolved, resolvedBy: t.resolvedBy?.login ?? null, body: first.body, url: first.url, mine: first.viewerDidAuthor });
+          if (first) threads.push({ id: t.id, resolved: t.isResolved, line: t.line ?? t.originalLine, resolvedBy: t.resolvedBy?.login ?? null, body: first.body, url: first.url, mine: first.viewerDidAuthor });
         }
         if (!connection.pageInfo.hasNextPage) return { self, threads };
         after = connection.pageInfo.endCursor;

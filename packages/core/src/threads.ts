@@ -1,5 +1,5 @@
 import type { Finding } from "./check.js";
-import { findingKey, findingKeysIn } from "./report.js";
+import { findingKey, findingKeysIn, threadKey } from "./report.js";
 
 /** An inline review thread on the PR, as GitHub reports it. */
 export interface ReviewThread {
@@ -10,6 +10,8 @@ export interface ReviewThread {
   /** First comment. */
   body: string;
   url: string;
+  /** The line the thread is anchored to, or null when GitHub can't place it. */
+  line: number | null;
   /** The first comment was written by this app. Only these threads are trusted. */
   mine: boolean;
 }
@@ -23,7 +25,7 @@ export interface ThreadPlan {
   post: Finding[][];
   /** Open threads whose concerns were not raised again. */
   resolve: ReviewThread[];
-  /** Thread URL per finding key, for summary links. */
+  /** Thread URL per `threadKey` and per finding key, for summary links. */
   links: Map<string, string>;
 }
 
@@ -49,7 +51,11 @@ export function planThreads(findings: Finding[], threads: ReviewThread[], opts: 
     if (t?.resolved && t.resolvedBy && t.resolvedBy !== opts.self && opts.canDismiss(t.resolvedBy)) { plan.dismissed.push(f); continue; }
     plan.active.push(f);
     if (!t || resolvedBySelf(t, opts.self)) unposted.push(f);
-    else plan.links.set(key, t.url);
+    else {
+      const here = threads.find(x => x.mine && x.line === Number(threadKey(f).split("@").pop()) && findingKeysIn(x.body).includes(key));
+      plan.links.set(threadKey(f), (here ?? t).url);
+      if (!plan.links.has(key)) plan.links.set(key, t.url);
+    }
   }
   plan.post = [...Map.groupBy(unposted, f => JSON.stringify([f.file, f.line, f.endLine])).values()];
   if (opts.complete) {
