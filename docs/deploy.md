@@ -70,7 +70,7 @@ This repository's self-review workflow uses a trusted base checkout and the curr
 
 ## Publishing npm
 
-The package is `@hunch/cli`; it is not published as part of local development. The `@hunch` organization must be owned or grant the publishing account access; an unpublished package name does not establish scope ownership. Authenticate an authorized npm maintainer, run `bun run check` and `node scripts/package-smoke.mjs`, then from `packages/cli` run `npm publish --access public`. `prepack` builds the artifact. The published package contains Node ESM, declarations and runtime dependencies; it has no workspace dependencies. Prefer npm trusted publishing/provenance when configuring a release pipeline.
+The package is `@kelbie/hunch`, under the maintainer's personal npm scope; it is not published as part of local development. Authenticate as that npm user, run `bun run check` and `node scripts/package-smoke.mjs`, then from `packages/cli` run `bun run build && npm publish --ignore-scripts --access public`. Build before publishing and skip scripts: npm 11 validates the manifest before `prepack` runs, and `prepack` cleans `dist`, so a plain `npm publish` drops the `hunch` bin from the published package. The published package contains Node ESM, declarations and runtime dependencies; it has no workspace dependencies. Prefer npm trusted publishing/provenance when configuring a release pipeline.
 
 ## Build from source
 
@@ -81,4 +81,4 @@ node scripts/package-smoke.mjs
 (cd packages/cli && npm pack --ignore-scripts)
 ```
 
-Install the resulting `hunch-cli-0.3.0.tgz` in a consumer project. Bun is needed to build Hunch; the distributed CLI runs on Node 22+.
+Install the resulting `kelbie-hunch-0.3.1.tgz` in a consumer project. Bun is needed to build Hunch; the distributed CLI runs on Node 22+.

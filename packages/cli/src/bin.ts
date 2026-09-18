@@ -25,7 +25,7 @@ import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
 
-const VERSION = "0.3.0";
+const VERSION = "0.3.1";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 

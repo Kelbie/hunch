@@ -95,7 +95,7 @@ export function evaluateConfigSource(source: string, filename = "hunch.config.ts
     switch (stmt.type) {
       case "ImportDeclaration":
         if (stmt.importKind === "type") break;
-        if (!["@hunch/cli", "@kelbie/hunch"].includes(stmt.source.value)) fail(stmt, "imports must come from @hunch/cli");
+        if (!["@kelbie/hunch", "@hunch/cli"].includes(stmt.source.value)) fail(stmt, "imports must come from @kelbie/hunch");
         for (const s of stmt.specifiers) {
           if (s.type !== "ImportSpecifier") continue;
           const imported = s.imported.type === "Identifier" ? s.imported.name : s.imported.value;

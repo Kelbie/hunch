@@ -1,4 +1,4 @@
-export const TS_TEMPLATE = `import { defineConfig } from "@hunch/cli";
+export const TS_TEMPLATE = `import { defineConfig } from "@kelbie/hunch";
 
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript"],

@@ -11,13 +11,13 @@ Requires Node 22+ and the [GitHub CLI](https://cli.github.com).
 
 ```sh
 gh secret set AI_GATEWAY_API_KEY
-npm install -D https://github.com/Kelbie/hunch/releases/download/v0.3.0/hunch-cli-0.3.0.tgz
+npm install -D @kelbie/hunch
 npx hunch init --github    # add --general for languages other than TS/JS and Rust
 ```
 
 3. Commit the generated config and `.github/workflows/hunch.yml`. PRs to that branch now get a review under **Checks → Hunch**.
 
-On Vercel Hobby, add `zeroDataRetention: false` to your config. The zero-data-retention default requires Pro or Enterprise.
+On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = false`) to your config. The zero-data-retention default requires Pro or Enterprise. AI Gateway's free tier is rate limited and can fail reviews of larger PRs; buying any amount of credits removes the limit.
 
 ## Run locally
 
@@ -31,7 +31,7 @@ npx hunch check --base origin/main    # or --staged
 `hunch.config.ts` (TypeScript) or `hunch.toml` (Rust and other languages) holds your rules. Each rule has a level: `"warn"`, `"error"` or `"off"`.
 
 ```ts
-import { choice, defineConfig, noul, score } from "@hunch/cli";
+import { choice, defineConfig, noul, score } from "@kelbie/hunch";
 
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript"],
