@@ -1,5 +1,6 @@
 import { expect, test } from "bun:test";
-import { findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
+import { diffExcerpt, findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
+import { parseHunks } from "../src/diff.js";
 import type { CheckResult } from "../src/check.js";
 
 const result: CheckResult = {
@@ -74,7 +75,7 @@ test("identical concerns from multiple rules appear once without losing their at
   expect(markdown).toContain("billing/retry");
 });
 
-test("terminal report lists findings as rows per file and prints each rule's text once", () => {
+test("terminal report shows every concern's line range and message, grouped by place", () => {
   const text = toText({
     ...result,
     findings: [
@@ -84,14 +85,37 @@ test("terminal report lists findings as rows per file and prints each rule's tex
   }, { width: 80 });
   expect(text).not.toContain("\x1b[");
   expect(text.split("\n")[0]).toBe("Hunch · 3 findings in 2 files (2 errors, 1 warning) · review complete");
-  expect(text).toMatch(/^src\/pay\.ts\n  L12  ✖ error  billing\/retry +choice=duplicate_charge/m);
-  expect(text).toContain("failures/misleading-success  p(yes)=0.96 ≥ 0.85 · hunch:recommended");
-  expect(text.split("Retrying after a timeout").length - 1).toBe(1);
-  expect(text).toContain("billing/retry  2 findings");
+  // Both concerns at src/pay.ts:12-20 share one location label, each with its own message.
+  expect(text).toMatch(/^src\/pay\.ts\n  L12-20  ✖ error  billing\/retry +choice=duplicate_charge.*\n +Retrying after a timeout may charge the customer twice\.\n +▲ warn   failures\/misleading-success +p\(yes\)=0\.96 ≥ 0\.85 · hunch:recommended\n +A failed operation/m);
+  expect(text).toMatch(/^src\/refund\.ts\n  L3 +✖ error  billing\/retry/m);
+  expect(text).toMatch(/billing\/retry +2 findings/);
   expect(text).toContain("Notes\n  ! skill/codebase-design");
   expect(text.trim().split("\n").at(-1)).toBe("1 hunk · 1 request · 1,234 input tokens · typesafe-ai/jev");
   expect(toText(result, { color: true })).toContain("\x1b[31m✖ error\x1b[0m");
   expect(toText({ ...result, findings: [], notices: [] }).split("\n")[0]).toBe("Hunch · no findings · review complete");
+});
+
+test("--show-diff prints the changed lines around each place with new-file line numbers", () => {
+  const hunks = parseHunks([
+    "diff --git a/src/pay.ts b/src/pay.ts", "--- a/src/pay.ts", "+++ b/src/pay.ts",
+    "@@ -10,6 +10,6 @@ export function pay() {",
+    " const a = 1;", " const b = 2;", "-const key = order.id;", "+const key = crypto.randomUUID();", " retry(key);", " const c = 3;", " const d = 4;",
+  ].join("\n"));
+  const f = { ...result.findings[0]!, line: 12, endLine: 12 };
+  expect(diffExcerpt(hunks, f, { context: 2 })).toEqual({ omitted: 0, lines: [
+    { kind: " ", line: 10, text: "const a = 1;" }, { kind: " ", line: 11, text: "const b = 2;" },
+    { kind: "-", text: "const key = order.id;" }, { kind: "+", line: 12, text: "const key = crypto.randomUUID();" },
+    { kind: " ", line: 13, text: "retry(key);" }, { kind: " ", line: 14, text: "const c = 3;" },
+  ] });
+  const text = toText({ ...result, findings: [f] }, { hunks });
+  expect(text).toContain("12 │ + const key = crypto.randomUUID();");
+  expect(text).toContain("   │ - const key = order.id;");
+  expect(toText({ ...result, findings: [f] })).not.toContain("│");
+  // A long new file keeps its start and says what was left out.
+  const big = parseHunks(`diff --git a/n.ts b/n.ts\nnew file mode 100644\n--- /dev/null\n+++ b/n.ts\n@@ -0,0 +1,40 @@\n${Array.from({ length: 40 }, (_, i) => `+line ${i + 1}`).join("\n")}\n`);
+  const e = diffExcerpt(big, { file: "n.ts", line: 1, endLine: 40 })!;
+  expect(e.lines[0]).toEqual({ kind: "+", line: 1, text: "line 1" });
+  expect(e.omitted).toBe(24);
 });
 
 test("locations use the shortest path that tells files apart", () => {

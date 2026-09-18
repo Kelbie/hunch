@@ -18,6 +18,7 @@ import {
   summaryMarkdown,
   toSarif,
   toText,
+  diffExcerpt,
   toWorkflowCommands,
   underPaths,
   inScope,
@@ -43,6 +44,7 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
   hunch check --all [--head ref] [paths…]   review whole files at a branch or the working tree
         [--dry-run]   count files, hunks and questions without calling Jev
         [--task "…"] [--reporter text|markdown|json|sarif|github]
+        [--show-diff]   print the changed lines under each finding (text and json)
         [--config <json|file|->] [--rule id=text …]   rules without a config file (see below)
   hunch compile [--force]          turn skills + AGENTS.md into hunch.lock (uses an LLM once)
         [--with claude|codex|gateway] [--effort level] [--model name]
@@ -90,6 +92,7 @@ async function main() {
       staged: { type: "boolean", default: false },
       all: { type: "boolean", default: false },
       "dry-run": { type: "boolean", default: false },
+      "show-diff": { type: "boolean", default: false },
       diff: { type: "string" },
       task: { type: "string" },
       reporter: { type: "string", default: process.env.GITHUB_ACTIONS ? "github" : "text" },
@@ -175,7 +178,7 @@ async function main() {
           console.log(summaryMarkdown(result));
           break;
         case "json":
-          console.log(JSON.stringify(result, null, 2));
+          console.log(JSON.stringify(values["show-diff"] ? { ...result, findings: result.findings.map((f) => ({ ...f, diff: excerptText(hunks, f) })) } : result, null, 2));
           break;
         case "sarif":
           console.log(JSON.stringify(toSarif(result.findings, VERSION), null, 2));
@@ -191,6 +194,7 @@ async function main() {
           console.log(toText(result, {
             color: process.env.FORCE_COLOR ? process.env.FORCE_COLOR !== "0" : Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && process.env.TERM !== "dumb",
             width: Math.min(process.stdout.columns || 100, 120),
+            hunks: values["show-diff"] ? hunks : undefined,
           }));
       }
       const failed = config.failOnError && result.findings.some((f) => f.level === "error");
@@ -262,6 +266,12 @@ async function main() {
     default:
       fail(`Unknown command: ${cmd}`);
   }
+}
+
+/** A finding's diff excerpt as plain unified-diff lines, for `--reporter json --show-diff`. */
+function excerptText(hunks: Hunk[], f: Parameters<typeof diffExcerpt>[1]): string | undefined {
+  const e = diffExcerpt(hunks, f);
+  return e && [...e.lines.map((l) => `${l.kind}${l.text}`), ...(e.omitted ? [`… ${e.omitted} more lines`] : [])].join("\n");
 }
 
 function readLock(root: string): Lock | null {

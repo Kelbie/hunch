@@ -1,4 +1,5 @@
 import type { CheckResult, Finding } from "./check.js";
+import type { Hunk } from "./diff.js";
 
 /** Hidden marker so the app/action updates one comment instead of posting new ones. */
 export const STICKY_MARKER = "<!-- hunch:summary -->";
@@ -160,10 +161,47 @@ export interface TextOptions {
   color?: boolean;
   /** Terminal width for wrapping. */
   width?: number;
+  /** Reviewed hunks; when set, each place shows the diff around its lines. */
+  hunks?: Hunk[];
 }
 
-/** Terminal report: findings grouped by file, a per-rule summary, then notes and totals. */
-export function toText(result: CheckResult, { color = false, width = 100 }: TextOptions = {}): string {
+/** One line of a diff excerpt: `+`, `-` or ` `, with its line number in the new file (none for removed lines). */
+export interface ExcerptLine { kind: "+" | "-" | " "; line?: number; text: string }
+
+/**
+ * The changed lines a finding points at, from the hunk that contains them, with
+ * `context` unchanged lines around them. Long ranges keep their start and say how
+ * many lines were left out.
+ */
+export function diffExcerpt(hunks: Hunk[], f: Pick<Finding, "file" | "line" | "endLine">, { context = 3, maxLines = 16 } = {}): { lines: ExcerptLine[]; omitted: number } | undefined {
+  const hunk = hunks.find(h => h.file === f.file && h.newStart <= f.line && f.line < h.newStart + Math.max(h.newLines, 1));
+  if (!hunk) return undefined;
+  const all: ExcerptLine[] = [];
+  let next = hunk.newStart;
+  for (const raw of hunk.text.split("\n").slice(1)) {
+    const kind = raw[0] === "+" || raw[0] === "-" ? raw[0] : " ";
+    if (raw.startsWith("\\")) continue; // "\ No newline at end of file"
+    all.push({ kind, ...(kind === "-" ? {} : { line: next++ }), text: raw.slice(1) });
+  }
+  const at = (i: number) => all[i]!.line ?? all.slice(i).find(l => l.line)?.line ?? next;
+  let start = all.findIndex((l, i) => at(i) >= f.line && l.kind !== " ");
+  if (start < 0) start = all.findIndex((_, i) => at(i) >= f.line);
+  if (start < 0) return undefined;
+  let end = start;
+  for (let i = start; i < all.length; i++) if (all[i]!.kind !== " " && at(i) <= f.endLine) end = i;
+  // Removed lines just before the first changed line belong to the change.
+  while (start > 0 && all[start - 1]!.kind === "-") start--;
+  const from = Math.max(0, start - context), to = Math.min(all.length - 1, end + context);
+  const span = all.slice(from, to + 1);
+  return span.length > maxLines ? { lines: span.slice(0, maxLines), omitted: span.length - maxLines } : { lines: span, omitted: 0 };
+}
+
+/**
+ * Terminal report: findings grouped by file, then by place. Every concern shows its
+ * line range and message, so a reader (or an agent) can act on it without the PR;
+ * `hunks` adds the diff around each place. A per-rule tally, notes and totals follow.
+ */
+export function toText(result: CheckResult, { color = false, width = 100, hunks }: TextOptions = {}): string {
   const paint = (codes: string) => (s: string) => (color ? `\x1b[${codes}m${s}\x1b[0m` : s);
   const bold = paint("1"), dim = paint("2"), red = paint("31"), yellow = paint("33"), green = paint("32"), cyan = paint("36");
   const wrap = (text: string, indent: number) => {
@@ -183,7 +221,7 @@ export function toText(result: CheckResult, { color = false, width = 100 }: Text
   const errors = findings.filter((f) => f.level === "error").length;
   const out: string[] = [];
 
-  // Files with errors first; each finding is one aligned row, and each rule's text is printed once below.
+  // Files with errors first; within a file, places in line order, errors first at each place.
   const hasError = (fs: Finding[]) => fs.some((f) => f.level === "error");
   const files = [...Map.groupBy(findings, (f) => f.file)]
     .sort((a, b) => Number(hasError(b[1])) - Number(hasError(a[1])) || a[0].localeCompare(b[0]));
@@ -193,13 +231,32 @@ export function toText(result: CheckResult, { color = false, width = 100 }: Text
     : green("no findings");
   out.push(`${bold("Hunch")} · ${summary} · ${result.complete ? green("review complete") : yellow("partial review, see notes")}`);
 
-  const lineW = Math.max(0, ...findings.map((f) => String(f.line).length)) + 1;
+  const range = (f: Finding) => (f.endLine > f.line ? `L${f.line}-${f.endLine}` : `L${f.line}`);
+  const lineW = Math.max(0, ...findings.map((f) => range(f).length));
   const ruleW = Math.max(0, ...findings.map((f) => f.rule.length));
+  const indent = 2 + lineW + 2;
   for (const [file, group] of files) {
     out.push("", bold(file));
-    for (const f of group.sort((a, b) => a.line - b.line)) {
-      const origin = f.source === "config" ? "" : ` · ${f.source}`;
-      out.push(`  ${dim(`L${f.line}`.padEnd(lineW))}  ${badge(f.level)}  ${cyan(f.rule.padEnd(ruleW))}  ${dim(f.evidence + origin)}`);
+    const places = [...Map.groupBy(group, (f) => `${f.line}-${f.endLine}`).values()].sort((a, b) => a[0]!.line - b[0]!.line);
+    for (const [p, place] of places.entries()) {
+      if (p && (hunks || place.length > 1 || places[p - 1]!.length > 1)) out.push("");
+      place.sort((a, b) => Number(b.level === "error") - Number(a.level === "error"));
+      for (const [i, f] of place.entries()) {
+        const origin = f.source === "config" ? "" : ` · ${f.source}`;
+        out.push(`  ${dim((i ? "" : range(f)).padEnd(lineW))}  ${badge(f.level)}  ${cyan(f.rule.padEnd(ruleW))}  ${dim(f.evidence + origin)}`);
+        out.push(wrap(f.message, indent));
+      }
+      const excerpt = hunks && diffExcerpt(hunks, place[0]!);
+      if (excerpt) {
+        const numW = Math.max(...excerpt.lines.map((l) => String(l.line ?? "").length), 1);
+        for (const l of excerpt.lines) {
+          // Code is never cut: an agent reading this needs the whole line.
+          const text = `${l.kind} ${l.text}`;
+          const body = l.kind === "+" ? green(text) : l.kind === "-" ? red(text) : dim(text);
+          out.push(`${" ".repeat(indent)}${dim(`${String(l.line ?? "").padStart(numW)} │`)} ${body}`);
+        }
+        if (excerpt.omitted) out.push(`${" ".repeat(indent)}${dim(`${" ".repeat(numW)} │ … ${plural(excerpt.omitted, "more line")}`)}`);
+      }
     }
   }
 
@@ -207,11 +264,8 @@ export function toText(result: CheckResult, { color = false, width = 100 }: Text
     const rules = [...Map.groupBy(findings, (f) => f.rule)]
       .sort((a, b) => Number(hasError(b[1])) - Number(hasError(a[1])) || b[1].length - a[1].length || a[0].localeCompare(b[0]));
     out.push("", bold("Rules"));
-    for (const [i, [rule, fs]] of rules.entries()) {
-      if (i) out.push("");
-      out.push(`  ${badge(fs[0]!.level)}  ${cyan(rule)}  ${dim(plural(fs.length, "finding"))}`);
-      out.push(wrap(fs[0]!.message, 4));
-    }
+    const w = Math.max(...rules.map(([rule]) => rule.length));
+    for (const [rule, fs] of rules) out.push(`  ${badge(fs[0]!.level)}  ${cyan(rule.padEnd(w))}  ${dim(plural(fs.length, "finding"))}`);
   }
 
   if (result.notices.length) {
