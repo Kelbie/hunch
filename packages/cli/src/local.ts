@@ -1,7 +1,7 @@
 import { execFileSync } from "node:child_process";
 import { readdirSync, readFileSync, realpathSync, statSync } from "node:fs";
 import { resolve, relative, isAbsolute } from "node:path";
-import { repoPath, type RepoReader } from "@kelbie/hunch-core";
+import { repoPath, type RepoReader } from "../../core/src/index.js";
 
 /** Files can be symlinks inside the repository, never outside it. */
 export function localRepo(root: string): RepoReader {

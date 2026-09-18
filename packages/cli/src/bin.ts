@@ -20,7 +20,7 @@ import {
   toText,
   toWorkflowCommands,
   type Lock,
-} from "@kelbie/hunch-core";
+} from "../../core/src/index.js";
 import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 

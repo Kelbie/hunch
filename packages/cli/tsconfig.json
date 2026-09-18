@@ -3,12 +3,5 @@
   "include": [
     "src",
     "test"
-  ],
-  "compilerOptions": {
-    "paths": {
-      "@kelbie/hunch-core": [
-        "../core/src/index.ts"
-      ]
-    }
-  }
+  ]
 }

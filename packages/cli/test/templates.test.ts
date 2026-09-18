@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { applyPresets, evaluateConfigSource, parseConfig, rulesFor, tomlToConfig } from "@kelbie/hunch-core";
+import { applyPresets, evaluateConfigSource, parseConfig, rulesFor, tomlToConfig } from "../../core/src/index.js";
 import { TOML_TEMPLATE, TS_TEMPLATE } from "../src/templates.js";
 
 test("init templates are valid configs", () => {
