@@ -32,7 +32,7 @@ import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
 
-const VERSION = "0.4.0";
+const VERSION = "0.4.1";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
@@ -163,7 +163,10 @@ async function main() {
           break;
         }
         default:
-          console.log(toText(result));
+          console.log(toText(result, {
+            color: process.env.FORCE_COLOR ? process.env.FORCE_COLOR !== "0" : Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && process.env.TERM !== "dumb",
+            width: Math.min(process.stdout.columns || 100, 120),
+          }));
       }
       const failed = config.failOnError && result.findings.some((f) => f.level === "error");
       process.exitCode = !result.complete ? 2 : failed ? 1 : 0;

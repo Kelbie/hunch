@@ -26,7 +26,7 @@
     },
     "packages/cli": {
       "name": "@kelbie/hunch",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "bin": {
         "hunch": "dist/bin.js",
       },
