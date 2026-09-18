@@ -129,7 +129,7 @@ export const ruleEntrySchema = z.union([
   z.tuple([levelSchema, questionSchema]).transform(([level, question]) => ({ level, question: question as Question | undefined })),
   tomlTableSchema,
 ]);
-export type RuleEntry = { level: Level; question: Question | undefined };
+export type RuleEntry = { level: Level; question: Question | undefined; /** Assigned while resolving presets, never read from config input. */ source?: string };
 
 /** Skill source, following the `npx skills add` conventions. */
 export const skillSourceSchema = z.union([
@@ -172,7 +172,7 @@ export const configSchema = z.strictObject({
 });
 
 export type ConfigInput = z.input<typeof configSchema>;
-export type Config = z.output<typeof configSchema>;
+export type Config = Omit<z.output<typeof configSchema>, "rules"> & { rules: Record<string, RuleEntry> };
 
 export function parseConfig(raw: unknown, origin: string): Config {
   const res = configSchema.safeParse(raw);

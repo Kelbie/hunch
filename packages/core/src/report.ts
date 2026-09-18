@@ -10,34 +10,53 @@ export interface ReportContext {
 }
 
 export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): string {
-  const { findings, stats, notices } = result;
-  const errors = findings.filter((f) => f.level === "error").length;
-  const warns = findings.length - errors;
-  const head =
-    findings.length === 0
-      ? result.complete ? "**Hunch** found no concerns in the reviewed changes." : "**Hunch** found no concerns in the checked portion. Review is incomplete."
-      : `**hunch** flagged ${plural(findings.length, "finding")}: ${errors} error, ${warns} warning.`;
-
-  const lines = [STICKY_MARKER, `### 🔮 hunch`, "", head, ""];
-  if (findings.length) {
-    lines.push("| | Rule | Where | Why |", "|---|---|---|---|");
-    for (const f of findings.slice(0, 50)) {
-      const location = escapeCell(`${f.file}:${f.line}`);
-      const where = ctx.blobBase ? `[${location}](${ctx.blobBase}/${f.file.split("/").map(encodeURIComponent).join("/")}#L${f.line})` : location;
-      lines.push(`| ${f.level === "error" ? "🔴" : "🟡"} | ${escapeCell(f.rule)} | ${where} | ${escapeCell(f.message)}<br><sub>${escapeCell(f.evidence)}</sub> |`);
-    }
-    if (findings.length > 50) lines.push("", `…and ${findings.length - 50} more in the check run annotations.`);
+  const complete = result.complete && !ctx.staleLock;
+  // Keep error-level concerns visible first if a large review needs truncation.
+  const shown = [...result.findings].sort((a, b) => Number(b.level === "error") - Number(a.level === "error")).slice(0, 50);
+  const headline = result.findings.length
+    ? `**${plural(result.findings.length, "possible issue")} to review.**`
+    : complete ? "No concerns found in the reviewed changes." : "No concerns found in the checked portion.";
+  const lines = [STICKY_MARKER, "## Hunch review", "", headline, ""];
+  if (!complete) {
+    lines.push("> **Review is incomplete.** Some changes or guidance could not be checked.", "");
+    for (const notice of result.notices) lines.push(`- ${escapeCell(notice)}`);
+    if (ctx.staleLock) lines.push("- Guidance is out of date. Run `npx hunch compile` and commit `hunch.lock`.");
     lines.push("");
   }
-  if (!result.complete) lines.push("**Coverage: partial.** This is not a passing audit.", "");
-  for (const n of notices) lines.push(`> ${escapeCell(n)}`);
-  if (ctx.blobBase) lines.push("", `Reviewed commit: [${ctx.blobBase.split("/").at(-1)?.slice(0, 7)}](${ctx.blobBase}).`);
-  if (ctx.staleLock) lines.push("> `hunch.lock` is out of date with your skills or AGENTS.md. Run `npx hunch compile` and commit it.");
-  lines.push(
-    "",
-    `<sub>${stats.hunks} hunks · ${stats.requests} Jev requests · ${stats.questions} questions · ${stats.inputTokens.toLocaleString("en")} input tokens` +
-      `${stats.modelIds.length ? ` · ${stats.modelIds.map((id) => escapeCell(id.slice(0, 200))).join(", ")}` : ""}. Scores are model estimates, not measured accuracy. Messages state configured concerns; Jev does not generate explanations. Locations identify hunks, not a proven offending line.</sub>`,
-  );
+  const sections = Map.groupBy(shown, f => `${f.file}:${f.line}:${f.endLine}`);
+  let issue = 0;
+  for (const group of sections.values()) {
+    const first = group[0]!;
+    const range = first.endLine > first.line ? `${first.line}–${first.endLine}` : String(first.line);
+    const label = escapeCell(`${first.file}:${range}`);
+    const anchor = `#L${first.line}${first.endLine > first.line ? `-L${first.endLine}` : ""}`;
+    const location = ctx.blobBase ? `[${label}](${ctx.blobBase}/${first.file.split("/").map(encodeURIComponent).join("/")}${anchor})` : label;
+    lines.push(`### ${location}`, "");
+    for (const finding of group) {
+      lines.push(`${++issue}. ${finding.level === "error" ? "**Error:** " : ""}${escapeCell(finding.message)}`);
+    }
+    lines.push("");
+  }
+  if (result.findings.length > shown.length) lines.push(`${result.findings.length - shown.length} more concerns are available in the check annotations.`, "");
+  if (ctx.blobBase) lines.push(`Reviewed [${escapeCell(ctx.blobBase.split("/").at(-1)?.slice(0, 7) ?? "commit")}](${ctx.blobBase}).`, "");
+  if (shown.length || result.notices.length || result.stats.modelIds.length) {
+    lines.push("<details>", "<summary>Review details</summary>", "", "These are configured concerns selected by the model. Links identify changed sections, not exact offending lines.", "");
+    if (shown.length) {
+      lines.push("| Issue | Rule | Source | Model result |", "| --- | --- | --- | --- |");
+      issue = 0;
+      for (const group of sections.values()) for (const f of group) {
+        lines.push(`| ${++issue} | ${escapeCell(f.rule)} | ${escapeCell(f.source)} | ${escapeCell(f.evidence)} |`);
+      }
+      lines.push("");
+    }
+    if (complete && result.notices.length) {
+      lines.push("Guidance requiring human review:", "");
+      for (const notice of result.notices) lines.push(`- ${escapeCell(notice)}`);
+      lines.push("");
+    }
+    if (result.stats.modelIds.length) lines.push(`Model: ${result.stats.modelIds.map(id => escapeCell(id.slice(0, 200))).join(", ")}. Scores are estimates, not measured accuracy.`, "");
+    lines.push("</details>");
+  }
   return lines.join("\n");
 }
 

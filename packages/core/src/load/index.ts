@@ -72,7 +72,7 @@ export function applyPresets(config: Config): Config {
   for (const name of config.extends) {
     const preset = presets[name];
     if (!preset) throw new ConfigError(`unknown preset "${name}" (available: ${Object.keys(presets).join(", ")})`);
-    rules = mergeRules(rules, preset);
+    rules = mergeRules(rules, Object.fromEntries(Object.entries(preset).map(([id, rule]) => [id, { ...rule, source: name }])));
   }
   return { ...config, rules: mergeRules(rules, config.rules) };
 }
@@ -81,7 +81,8 @@ export function applyPresets(config: Config): Config {
 export function mergeRules(base: Config["rules"], over: Config["rules"]): Config["rules"] {
   const out = { ...base };
   for (const [id, entry] of Object.entries(over)) {
-    out[id] = { level: entry.level, question: entry.question ?? base[id]?.question };
+    out[id] = { level: entry.level, question: entry.question ?? base[id]?.question,
+      source: entry.question ? entry.source ?? "config" : base[id]?.source ?? "config" };
   }
   return out;
 }

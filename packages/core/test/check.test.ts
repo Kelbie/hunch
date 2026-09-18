@@ -27,6 +27,15 @@ describe("diff", () => {
 });
 
 describe("check", () => {
+  test("preset provenance survives severity changes but replacement questions belong to config", async () => {
+    const cfg = config({ extends: ["hunch:recommended"],
+      rules: { "failures/misleading-success": "error" },
+      overrides: [{ files: ["src/pay.ts"], rules: { "docs/contradictory-comment": ["warn", "Follow the project's documentation contract."] } }],
+    });
+    const result = await check({ config: cfg, hunks: parseHunks(DIFF).slice(0, 1), client: fakeJev(() => ({ type: "noul", p: 0.99 })).client });
+    expect(result.findings.find(f => f.rule === "failures/misleading-success")?.source).toBe("hunch:recommended");
+    expect(result.findings.find(f => f.rule === "docs/contradictory-comment")?.source).toBe("config");
+  });
   test("semantic rules share one batched request per hunk", async () => {
     const { client, calls } = fakeJev((q): Answer =>
       q.type === "noul" ? { type: "noul", p: q.instructions.includes("comment") ? 0.95 : 0.05 } : q.type === "choice"

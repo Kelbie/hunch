@@ -167,7 +167,8 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null) {
   for (const o of config.overrides) {
     if (!picomatch(o.files, { dot: true })(file)) continue;
     for (const [id, e] of Object.entries(o.rules)) {
-      entries.set(id, { level: e.level, question: e.question ?? entries.get(id)?.question });
+      entries.set(id, { level: e.level, question: e.question ?? entries.get(id)?.question,
+        source: e.question ? "config" : entries.get(id)?.source });
     }
   }
 
@@ -175,7 +176,7 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null) {
   for (const [id, e] of entries) {
     if (e.level === "off") continue;
     if (e.question?.files && !picomatch(e.question.files, { dot: true })(file)) continue;
-    if (e.question) jev.push({ id, level: e.level, question: e.question, source: "config" });
+    if (e.question) jev.push({ id, level: e.level, question: e.question, source: e.source ?? "config" });
     else if (!id.includes("*") && !/^(skill|agents-md|doc)\//.test(id)) throw new Error(`rule "${id}" has no question`);
   }
 
