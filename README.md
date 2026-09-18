@@ -35,12 +35,41 @@ Commit the config and workflow. PRs then get a review under **Checks → Hunch**
 | `check --base main --head feature/x` | Reviews the difference between two branches, without checking out. |
 | `check --all [path]` | Reviews whole files, not just changes. Use a folder to keep it small. |
 | `check --all --dry-run` | Counts files and questions without sending anything. |
+| `check --config <json\|file\|->` | Uses rules from JSON instead of the repo's config. [Details](#rules-without-a-config-file) |
+| `check --rule id="…"` | Adds a plain-English rule for this run. Repeatable. |
 | `compile` | Turns your skills and `AGENTS.md` into review questions, saved in `hunch.lock`. [Why?](#skills-and-agentsmd) |
 | `init [--ts\|--rust\|--general] [--github]` | Writes a starter config, and optionally a PR workflow. |
 | `eval <dir>` | Measures each rule's precision and recall on labelled `.diff` examples. |
 | `app --help` | Sets up a self-hosted GitHub App. |
 
 Run each as `npx @kelbie/hunch <command>`. Every `check` also takes paths to narrow the review, and `--reporter text|markdown|json|sarif|github`.
+
+## Rules without a config file
+
+Review a repository that doesn't use Hunch by passing the rules on the command line. `--config` takes the same options as `hunch.config.ts`, written as JSON:
+
+```sh
+cd ../some-repo
+npx @kelbie/hunch check --config - <<'EOF'
+{
+  "include": ["**/*.md"],
+  "rules": {
+    "spec/names": { "level": "error", "noul": "Does `hunk` name a field or endpoint differently from how it's defined in `hunk`?", "threshold": 0.85 },
+    "spec/breaking": { "level": "error", "choice": "How does this change affect existing implementations?",
+      "criteria": { "editorial": "Wording only.", "additive": "Adds something optional.", "breaking": "Changes the wire format." },
+      "report": ["breaking"] },
+    "spec/examples": ["warn", "Normative text must agree with the examples next to it."]
+  }
+}
+EOF
+```
+
+- **`--config`** takes inline JSON, a file path, or `-` for stdin. Repeat it to layer overrides, e.g. `--config rules.json --config '{"zeroDataRetention":false}'`. Later values win, and `rules` and `budget` merge key by key.
+- **`--rule id="…"`** adds a plain-English `warn` rule. Use it alone or on top of any config.
+- Rules can be `"off"`, `["warn", "plain English"]`, or a table like `{ "level": "error", "noul": "…" }` (also `choice` and `score`, with the same options as in `hunch.config.ts`).
+- Skills and `AGENTS.md` are off for inline configs, because the repo has no `hunch.lock`. Turn them on with `"agentsMd": true` if you've compiled one.
+
+[`examples/inline/cashu-nuts.json`](examples/inline/cashu-nuts.json) is a full rule set for the [Cashu NUTs](https://github.com/cashubtc/nuts) specs: `npx @kelbie/hunch check --config cashu-nuts.json`.
 
 ## On pull requests
 
