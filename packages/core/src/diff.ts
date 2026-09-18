@@ -84,3 +84,18 @@ export function windowHunk(h: Hunk, maxTokens = 6000): Hunk[] {
   flush();
   return out;
 }
+
+/**
+ * Files whose change has no reviewable text: binary content, a rename without
+ * edits, or a mode change. Hunch can't judge these, so callers report the ones
+ * in review scope as needing a human.
+ */
+export function unreviewableFiles(diff: string): string[] {
+  const files: string[] = [];
+  for (const block of diff.split(/^(?=diff --git )/m)) {
+    if (!/^(?:Binary files |GIT binary patch|rename from |old mode )/m.test(block)) continue;
+    const path = /^\+\+\+ b\/(.+)$/m.exec(block)?.[1] ?? /^rename to (.+)$/m.exec(block)?.[1] ?? /^diff --git a\/.+ b\/(.+)$/m.exec(block)?.[1];
+    if (path) files.push(path);
+  }
+  return files;
+}

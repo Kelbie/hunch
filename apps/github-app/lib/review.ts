@@ -1,4 +1,4 @@
-import { check, clientFromEnv, ConfigError, findingKey, findingKeysIn, githubApi, githubRepoReader, LOCK_FILE, loadConfig, parseHunks, parseLock, planThreads, staleSources, summaryMarkdown, type Config, type JevClient } from "../../../packages/core/src/index.js";
+import { check, clientFromEnv, ConfigError, inScope, unreviewableFiles, findingKey, findingKeysIn, githubApi, githubRepoReader, LOCK_FILE, loadConfig, parseHunks, parseLock, planThreads, staleSources, summaryMarkdown, type Config, type JevClient } from "../../../packages/core/src/index.js";
 import { z } from "zod";
 import type { ReviewJob } from "./events.js";
 
@@ -66,7 +66,8 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     const budget = { ...config.budget, maxHunks: Math.min(config.budget.maxHunks, 200), maxRequests: Math.min(config.budget.maxRequests, 100), timeoutSeconds: Math.min(config.budget.timeoutSeconds, 180) };
     const result = await check({ config: { ...config, budget }, hunks: parseHunks(diff), task: `${pull.title}\n\n${pull.body ?? ""}`, lock, client: (deps.jev ?? clientFromEnv)(config), readFile: (p) => base.read(p) });
     if (stale.length) { result.complete = false; result.notices.push(`Guidance is uncompiled or stale: ${stale.join(", ")}. Run hunch compile and review hunch.lock.`); }
-    if (/^(?:Binary files |GIT binary patch|rename from |old mode )/m.test(diff)) { result.complete = false; result.notices.push("Binary, rename metadata or mode changes require human review."); }
+    const unreviewable = unreviewableFiles(diff).filter(inScope(config));
+      if (unreviewable.length) { result.complete = false; result.notices.push(`Binary, rename-only or mode changes need human review: ${unreviewable.join(", ")}.`); }
     const latest = await readPull();
     if (latest.state !== "open" || latest.draft || latest.head.sha !== headSha || latest.base.sha !== baseSha) {
       await api.supersedeCheck(job.repo, id);

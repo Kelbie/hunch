@@ -31,7 +31,7 @@ test("one rule raised at two places in a file links each place to its own thread
   const a = { ...f, line: 10, endLine: 10 }, b = { ...f, line: 40, endLine: 41 };
   const plan = planThreads([a, b], [t({ id: "A", line: 10, url: "urlA" }), t({ id: "B", line: 41, url: "urlB" })], opts);
   expect(plan.post).toEqual([]);
-  const md = summaryMarkdown({ complete: true, findings: [a, b], notices: [], stats: { hunks: 2, skippedHunks: 0, requests: 2, questions: 2, inputTokens: 0, modelIds: [] } }, { threads: plan.links });
+  const md = summaryMarkdown({ complete: true, findings: [a, b], notices: [], info: [], stats: { hunks: 2, skippedHunks: 0, requests: 2, questions: 2, inputTokens: 0, modelIds: [] } }, { threads: plan.links });
   expect(md).toContain("[`pay.ts:10`](urlA)");
   expect(md).toContain("[`pay.ts:40-41`](urlB)");
 });

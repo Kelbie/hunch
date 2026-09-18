@@ -35,6 +35,7 @@ Commit the config and workflow, and merge them. Hunch reviews against the base b
 | `check --base main --head feature/x` | Reviews the difference between two branches, without checking out. |
 | `check --all [path]` | Reviews whole files, not just changes. Use a folder to keep it small. |
 | `check --all --dry-run` | Counts files and questions without sending anything. |
+| `check --show-diff` | Prints the changed lines under each finding. Handy for agents fixing findings. Works with `--reporter json` too. |
 | `check --config <json\|file\|->` | Uses rules from JSON instead of the repo's config. [Details](#rules-without-a-config-file) |
 | `check --rule id="…"` | Adds a plain-English rule for this run. Repeatable. |
 | `compile` | Turns your skills and `AGENTS.md` into review questions, saved in `hunch.lock`. [Why?](#skills-and-agentsmd) |
