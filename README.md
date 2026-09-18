@@ -113,7 +113,7 @@ Running your own deployment of the App instead of the hosted one: [operator setu
 | `check --show-diff` | Prints the changed lines under each finding. Handy for agents fixing findings. Works with `--reporter json` too. |
 | `check --config <json\|file\|->` | Uses rules from JSON instead of the repo's config. [Details](#rules-without-a-config-file) |
 | `check --rule id="…"` | Adds a plain-English rule for this run. Repeatable. |
-| `find "<task>"` | Ranks every chunk of the repository by how it relates to a change you are about to make. [Details](#finding-the-code-for-a-change) |
+| `find "<task>"` | Finds the code a change would touch, anywhere in the repo, and prints it. [Details](#finding-the-code-for-a-change) |
 | `compile` | Turns your skills and `AGENTS.md` into review questions, saved in `hunch.lock`. [Why?](#skills-and-agentsmd) |
 | `init [--ts\|--rust\|--general] [--github]` | Writes a starter config, and optionally a PR workflow. Asks where reviews should run when it has a terminal; any flag skips the questions. |
 | `doctor` | Says why this repository is not being reviewed, and what to do about it. |
@@ -124,44 +124,98 @@ Run each as `npx @kelbie/hunch <command>`. Every `check` also takes paths to nar
 
 ## Finding the code for a change
 
-`check` asks whether code is wrong. `find` asks where code *is* — it scores every chunk of the
-repository against a task you describe, and returns the ones worth reading before you start.
+`check` asks whether code is wrong. `find` asks **where the code is**: it scores every chunk of the
+repository against a change you are about to make, and prints the matching source.
 
 ```sh
 npx @kelbie/hunch find "warn on the amountless onchain receive QR with the mint's minimum and maximum"
 ```
 
-Each chunk is asked five questions at once, because "show me the tests" and "show me where to type"
-are different requests that one relevance score would blur together:
+Use it when you know what you want to build and not yet where it lives — before planning a change in
+an unfamiliar area, or to hand a coding agent its opening context. It searches the whole repository,
+so it finds the code you would not have thought to grep for: on a React Native wallet, the query
+above ranked `wallet/src/mint-capabilities.ts` top, a file three directories away from the screen
+being changed and containing no word from the query except "amount".
 
-| Facet | The question |
+### The output
+
+Markdown on stdout, so redirect it into a file and give that file to your agent:
+
+```sh
+hunch find "add a rate limit to the upload endpoint" > context.md
+```
+
+It opens with a map of every match, then prints each one under a heading that gives its exact file
+and line range:
+
+````md
+## What was found
+
+- **edit here** — Code that carrying out the task would require editing.
+  - `src/api/upload.ts`:1-150 (0.81)
+- **contract to respect** — Definitions the task hinges on.
+  - `src/config/limits.ts`:1-64 (0.74)
+
+## edit here
+
+### `src/api/upload.ts`:1-150
+
+edit here 0.81 · also affected caller 0.69
+
+```ts
+export async function upload(req: Request) {
+…
+````
+
+The code under a heading is exactly the lines that heading names, so a line number you cite from it
+is correct. Chunks of one file that touch are printed as a single passage rather than split at the
+150-line boundary they were chunked on.
+
+### The five facets
+
+Each chunk is asked five questions at once, because "show me the tests" and "show me where to type"
+are different requests that a single relevance score blurs together:
+
+| Facet | Question asked of every chunk |
 | --- | --- |
-| `edit` | Would doing this require editing these lines? |
-| `contract` | Does this define the value, limit or type the task hinges on? |
-| `caller` | Does this consume the behaviour that would change? |
+| `edit` | Would carrying out the task require editing these lines? |
+| `contract` | Does this define the value, limit, type or interface the task hinges on? |
+| `caller` | Does this consume the behaviour that would change, so it would see the difference? |
 | `test` | Does this test the area, so it would need updating or would catch a mistake? |
 | `precedent` | Does this already solve the same kind of problem somewhere else? |
 
-The answer is a probability per facet, so the output is grouped by what each chunk *is* rather than
-flattened into one list. `--top` is per facet for the same reason: the single test worth updating is
-not crowded out by thirty definitions.
+Matches are grouped by their strongest facet. `--top` (default 12) applies **per facet**, because
+the facets do not share a scale — one global cut lets a generous facet crowd the others out, and the
+single test worth updating never appears.
 
-```sh
-hunch find "…" --dry-run                  # count chunks and requests before spending anything
-hunch find "…" app/features wallet        # narrow by path
-hunch find "…" --facet test,precedent     # ask only what you want back
-hunch find "…" --min 0.7 --top 5          # fewer, surer
-hunch find "…" --format code > context.md # one Markdown document, to paste into a larger model
-```
+### Options
 
-`--format code` is the point of the command: it emits the matched source, fenced and grouped, as a
-starting context for a model that reasons better than Jev but cannot afford to read your whole
-repository. `--format json` gives every facet probability for each match.
+| Command | What it does |
+| --- | --- |
+| `find "…"` | Searches everything, prints Markdown with the code. |
+| `find "…" src/api test` | Narrows to those paths. Much cheaper when you already know the area. |
+| `find "…" --dry-run` | Counts chunks and requests. Nothing is sent, nothing is charged. |
+| `find "…" --reporter text` | Locations and scores only, no code. For reading in a terminal. |
+| `find "…" --reporter json` | Every facet probability per match, plus the code. |
+| `find "…" --facet test,precedent` | Asks only those, so only those come back. |
+| `find "…" --min 0.7 --top 5` | Fewer, surer matches. `--min` defaults to 0.5. |
+| `find "…" --concurrency 16` | More requests in flight. Default 8, maximum 32. |
+| `find "…" --head v1.2.0` | Searches a branch or tag instead of the working tree. |
 
-A sweep is one request per chunk, run concurrently (`--concurrency`, default 8). It is deliberately
-not narrowed by keyword first: the code you most need is often the code you would not have grepped
-for. If the sweep is cut short by its budget it says so and exits `2`, because a partial answer that
-looks whole is worse than no answer.
+### What to trust
+
+- **Scores are probabilities from a classifier that saw one chunk in isolation**, with no view of
+  callers or of the rest of the file. Treat the grouping as the signal and verify before relying on
+  it. A high score means "worth reading", never "correct" or "sufficient".
+- **Relevant code can be missing.** Nothing here proves the list is complete.
+- **A cut-short sweep says so** in the output and exits `2`. Exit `0` means every in-scope chunk was
+  scored. A partial answer that looks whole is worse than no answer, so check the exit code if you
+  are consuming this programmatically.
+- **It costs one request per chunk.** A 2,000-file repository is roughly 4,000 requests and a couple
+  of minutes. Run `--dry-run` first if that matters; pass paths to cut it down.
+- Scope comes from your config's `include` and `ignore`, the same as `check --all`. `find` ignores
+  your rules entirely — the questions are fixed — so it needs a config file for scope but no rules
+  in it.
 
 ## Rules without a config file
 

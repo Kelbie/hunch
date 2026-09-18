@@ -48,10 +48,10 @@ Question IDs are not semantic instructions. Each question must stand alone. Hunc
 
 ## Finding code for a change
 
-`hunch find "<task>"` scores every in-scope chunk against a task and returns the ones worth reading
+`hunch find "<task>"` scores every in-scope chunk against a task and prints the ones worth reading
 first. It uses the same `include`/`ignore` scope and the same chunking as `check --all`, and the same
 `model`/`provider` settings, but none of the repository's rules: the questions are fixed and the task
-is sent as state, so nothing needs compiling and there is no config to write.
+is sent as state, so nothing needs compiling and a config with no rules in it still works.
 
 Five `noul` questions are asked per chunk in one request — `edit`, `contract`, `caller`, `test`,
 `precedent` — and every probability is kept. Matches are grouped by their strongest facet, and
@@ -59,11 +59,18 @@ Five `noul` questions are asked per chunk in one request — `edit`, `contract`,
 result. Ranking compares raw probabilities across facets, which are not calibrated against each
 other; treat the grouping as the signal and the number as a within-facet ordering.
 
+The Markdown reporter (the default) prints the source of each match beneath a heading naming its
+exact file and line range, and merges chunks of one file whose ranges touch so a file split for
+budgeting reads as one passage. Only added lines are quoted, so the code shown always matches the
+range printed above it; `--reporter json` keeps every match separate and unmerged, with each facet's
+probability.
+
 `find` does not use `budget`: those limits are sized to keep a pull-request review inside a worker
 timeout, and applying them here would end a repository sweep partway through. It runs one request per
-chunk at `--concurrency` (default 8, maximum 32) with a one-hour ceiling, and reports an unfinished
-sweep as a notice plus exit code 2. Use `--dry-run` to count chunks and requests before spending
-anything.
+chunk at `--concurrency` (default 8, maximum 32) with a one-hour ceiling. A chunk whose request fails
+costs that chunk, not the sweep: it is named in a notice. Any unsearched chunk makes the run
+incomplete, which is reported in the output and as exit code 2. Use `--dry-run` to count chunks and
+requests before spending anything.
 
 ## Guidance
 

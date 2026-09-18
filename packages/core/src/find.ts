@@ -22,6 +22,15 @@ export type Facet = (typeof FACETS)[number];
 /** Ties break towards the facet that gets someone started fastest. */
 const PRIORITY: Facet[] = ["edit", "contract", "caller", "test", "precedent"];
 
+/** Each facet in one line, so a document can explain its own headings to whoever reads it. */
+export const FACET_QUESTION: Record<Facet, string> = {
+  edit: "Code that carrying out the task would require editing.",
+  contract: "Definitions the task hinges on — the value, limit, type or interface the new code must read or satisfy.",
+  caller: "Code that consumes the behaviour the task changes, and would see the difference.",
+  test: "Tests of the area, which would need updating or would catch a mistake made while doing the task.",
+  precedent: "Existing solutions to the same kind of problem, as a pattern to follow.",
+};
+
 export const FACET_LABEL: Record<Facet, string> = {
   edit: "edit here",
   contract: "contract to respect",
@@ -220,31 +229,85 @@ export function findContext(hunk: Hunk): string {
   ].join("\n");
 }
 
-/** The chunk's real source, with the unified-diff markers taken back off. */
+/**
+ * Exactly the source between the chunk's stated line numbers, markers removed.
+ *
+ * Only the `+` lines: a whole-file chunk after the first repeats the file's import block as
+ * unchanged context, which helps a reviewer read it but would make the quoted code disagree with
+ * the range printed above it. A reader who trusts that range — a person or a model citing a line —
+ * has to get back what it says.
+ */
 export function bodyOf(hunk: Hunk): string {
   return hunk.text
     .split("\n")
     .slice(1)
-    .filter((l) => !l.startsWith("-"))
-    .map((l) => (l.startsWith("+") || l.startsWith(" ") ? l.slice(1) : l))
+    .filter((l) => l.startsWith("+"))
+    .map((l) => l.slice(1))
     .join("\n");
+}
+
+/**
+ * Chunks of the same file that touch are one passage, so they are printed as one. A file split at
+ * line 150 for budgeting reasons is not three findings, and three fenced blocks with a heading
+ * between them read as three unrelated excerpts to anyone — or anything — downstream.
+ */
+export function mergeAdjacent(matches: FindMatch[]): FindMatch[] {
+  const merged: FindMatch[] = [];
+  for (const m of [...matches].sort((a, b) => a.file.localeCompare(b.file) || a.startLine - b.startLine)) {
+    const last = merged.at(-1);
+    if (last && last.file === m.file && m.startLine <= last.endLine + 1) {
+      last.endLine = Math.max(last.endLine, m.endLine);
+      last.code = `${last.code}\n${m.code}`;
+      last.score = Math.max(last.score, m.score);
+      for (const f of FACETS) last.facets[f] = Math.max(last.facets[f], m.facets[f]);
+      continue;
+    }
+    merged.push({ ...m, facets: { ...m.facets } });
+  }
+  return merged.sort(byScore);
 }
 
 /** Matches as one Markdown document, which is the point: paste it into a larger model. */
 export function findMarkdown(task: string, result: FindResult): string {
-  const out = [`# Code relevant to: ${task}`, ""];
-  if (!result.matches.length) out.push("No chunk scored above the threshold.", "");
-  for (const facet of FACETS) {
-    const group = result.matches.filter((m) => m.facet === facet);
-    if (!group.length) continue;
-    out.push(`## ${FACET_LABEL[facet]}`, "");
-    for (const m of group) {
-      out.push(`### \`${m.file}\`:${m.startLine}-${m.endLine} — ${m.score.toFixed(2)}`, "");
+  const out = [
+    `# Code relevant to: ${task}`,
+    "",
+    "Chunks of this repository, ranked by how they relate to that task by a classifier that read",
+    "each one in isolation. Headings give the exact file and line range of the code beneath them.",
+    "Scores are the classifier's probability, not a guarantee: treat the grouping as the signal and",
+    "verify anything you rely on. This is a starting point — relevant code may be missing, and",
+    "nothing here has been checked for correctness.",
+    "",
+  ];
+  const groups = FACETS.map((facet) => ({ facet, matches: mergeAdjacent(result.matches.filter((m) => m.facet === facet)) })).filter((g) => g.matches.length);
+  if (!groups.length) out.push("No chunk scored above the threshold.", "");
+
+  if (groups.length) {
+    out.push("## What was found", "");
+    for (const { facet, matches } of groups) {
+      out.push(`- **${FACET_LABEL[facet]}** — ${FACET_QUESTION[facet]}`);
+      for (const m of matches) out.push(`  - \`${m.file}\`:${m.startLine}-${m.endLine} (${m.score.toFixed(2)})`);
+    }
+    out.push("");
+  }
+  for (const notice of result.notices) out.push(`> **Incomplete:** ${notice}`, "");
+  if (!result.complete && !result.notices.length) out.push("> **Incomplete:** some of the repository was not searched.", "");
+
+  for (const { facet, matches } of groups) {
+    out.push(`## ${FACET_LABEL[facet]}`, "", `${FACET_QUESTION[facet]}`, "");
+    for (const m of matches) {
+      out.push(`### \`${m.file}\`:${m.startLine}-${m.endLine}`, "");
+      out.push(`${FACET_LABEL[facet]} ${m.score.toFixed(2)}${otherFacets(m, facet)}${m.role ? ` · ${m.role} file` : ""}`, "");
       out.push("```" + (fence(m.language) ?? ""), m.code, "```", "");
     }
   }
-  for (const notice of result.notices) out.push(`> ${notice}`, "");
   return out.join("\n").trimEnd();
+}
+
+/** The runners-up, so a reader can see a chunk that is nearly as much one thing as another. */
+function otherFacets(m: FindMatch, chosen: Facet): string {
+  const rest = FACETS.filter((f) => f !== chosen && m.facets[f] >= 0.4).map((f) => `${FACET_LABEL[f]} ${m.facets[f].toFixed(2)}`);
+  return rest.length ? ` · also ${rest.join(", ")}` : "";
 }
 
 const FENCE: Record<string, string> = {

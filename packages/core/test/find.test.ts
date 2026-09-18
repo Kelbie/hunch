@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { bodyOf, FACETS, fileHunks, find, findContext, findMarkdown, findText, type Facet, type FindInput } from "../src/index.js";
+import { bodyOf, FACETS, fileHunks, find, findContext, findMarkdown, findText, mergeAdjacent, type Facet, type FindInput } from "../src/index.js";
 
 /** A Jev that answers each facet from a table keyed by file, so ranking is exercised, not guessed. */
 function scripted(byFile: Record<string, Partial<Record<Facet, number>>>, spy?: (state: Record<string, unknown>) => void): FindInput["client"] {
@@ -98,12 +98,16 @@ test("markdown output groups by facet and fences the code by language, ready to 
   });
   const md = findMarkdown("warn about onchain minimums", res);
   expect(md).toContain("# Code relevant to: warn about onchain minimums");
+  expect(md).toContain("## What was found");
   expect(md).toContain("## edit here");
   expect(md).toContain("## contract to respect");
-  expect(md).toContain("### `app/send.tsx`:1-2 — 0.90");
+  expect(md).toContain("### `app/send.tsx`:1-2");
   expect(md).toContain("```tsx");
   expect(md).toContain("```ts\n");
   expect(md).toContain("export const a = 1;");
+  // The document explains its own headings and its own limits to whoever reads it.
+  expect(md).toContain("Code that carrying out the task would require editing.");
+  expect(md).toContain("not a guarantee");
   expect(findText(res)).toContain("2 of 2 chunks: 1 edit here, 1 contract to respect.");
 });
 
@@ -152,4 +156,34 @@ test("one failed chunk costs that chunk, not the sweep", async () => {
   // The two that worked are real answers; the one that did not is named, and the sweep is not whole.
   expect(res.notices.join(" ")).toContain("rate limited");
   expect(res.complete).toBe(false);
+});
+
+test("the code shown is exactly the lines the heading claims, imports included only where they are", () => {
+  const body = ["import a from \"a\";", ...Array.from({ length: 400 }, (_, i) => `const line${i + 1} = ${i + 1};`)].join("\n");
+  const [first, second] = fileHunks("a.ts", body);
+  expect(bodyOf(first!).split("\n")[0]).toBe('import a from "a";');
+  // The second chunk repeats the imports as reviewer context; quoting them would contradict its range.
+  expect(second!.text).toContain(' import a from "a";');
+  expect(bodyOf(second!).split("\n")[0]).toBe(`const line${second!.newStart - 1} = ${second!.newStart - 1};`);
+  expect(bodyOf(second!).split("\n")).toHaveLength(second!.newLines);
+});
+
+test("a file split for budgeting is printed as one passage, not three unrelated excerpts", async () => {
+  const long = Array.from({ length: 400 }, (_, i) => `const line${i + 1} = ${i + 1};`).join("\n");
+  const res = await find({ ...base, hunks: fileHunks("app/big.ts", long), client: scripted({ "app/big.ts": { edit: 0.8 } }) });
+  expect(res.matches.length).toBeGreaterThan(1);
+  const merged = mergeAdjacent(res.matches);
+  expect(merged).toHaveLength(1);
+  expect(merged[0]!.startLine).toBe(1);
+  expect(merged[0]!.endLine).toBe(400);
+  expect(merged[0]!.code.split("\n")).toHaveLength(400);
+  // Merging is presentation: `matches` stays faithful to what was actually scored.
+  expect(res.matches.every((m) => m.endLine - m.startLine < 399)).toBe(true);
+});
+
+test("chunks that do not touch stay apart", () => {
+  const near = { file: "a.ts", startLine: 1, endLine: 10, code: "a", language: null, role: null, facet: "edit" as const, score: 0.9, facets: { edit: 0.9, contract: 0, caller: 0, test: 0, precedent: 0 } };
+  const far = { ...near, startLine: 50, endLine: 60, code: "b", score: 0.8 };
+  expect(mergeAdjacent([near, far])).toHaveLength(2);
+  expect(mergeAdjacent([near, { ...far, startLine: 11, endLine: 20 }])).toHaveLength(1);
 });

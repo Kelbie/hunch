@@ -60,13 +60,15 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
         asks which installed agent to use; --with skips the question
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
         asks where reviews should run when it has a terminal; any flag skips the questions
-  hunch find "<task>" [paths…]     rank every chunk of the repo by relevance to a task
+  hunch find "<task>" [paths…]     find the code a change would touch, and print it
         [--facet edit,contract,caller,test,precedent]   ask only these, report only these
-        [--min 0.5] [--top 12] [--concurrency 8] [--head ref] [--format code|text|json]
+        [--min 0.5] [--top 12] [--concurrency 8] [--head ref] [--dry-run]
+        [--reporter markdown|text|json]
+        Prints the matching source, grouped by what each chunk is to the task, as one
+        Markdown document to hand to a coding agent. --reporter text lists the
+        locations only; --dry-run counts chunks and requests without sending anything.
         --top is per facet, so the one test worth updating is not crowded out by
         thirty definitions.
-        --format code prints the matches as one Markdown document, to paste into a
-        larger model as its starting context. --dry-run counts chunks first.
   hunch doctor [--app slug]        say why this repository is not being reviewed
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
   hunch app --help                 register and connect a self-hosted GitHub App
@@ -129,7 +131,6 @@ async function main() {
       concurrency: { type: "string" },
       min: { type: "string" },
       top: { type: "string" },
-      format: { type: "string", default: "text" },
       cwd: { type: "string", default: process.cwd() },
     },
   });
@@ -233,7 +234,11 @@ async function main() {
       const loaded = await loadConfig(repo);
       if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
       const { config } = loaded;
-      if (!["text", "code", "json"].includes(values.format!)) return fail("Unknown --format; use text, code or json");
+      // Default markdown, not the shared `reporter` default: find exists to hand code to something
+      // else, so the code has to be in the output unless the person asks for the short list.
+      const chose = rest.some((a) => a === "--reporter" || a.startsWith("--reporter="));
+      const reporter = chose ? values.reporter! : "markdown";
+      if (!["text", "markdown", "json"].includes(reporter)) return fail("Unknown --reporter for find; use markdown, text or json");
       const facets = (values.facet ?? []).flatMap((f) => f.split(",")).map((f) => f.trim()).filter(Boolean) as Facet[];
       const unknown = facets.filter((f) => !FACETS.includes(f));
       if (unknown.length) return fail(`Unknown --facet ${unknown.join(", ")}; choose from ${FACETS.join(", ")}`);
@@ -271,9 +276,9 @@ async function main() {
         onProgress: (d, t) => process.stderr.write(`\r  searched ${d}/${t} chunks`),
       });
       process.stderr.write("\n");
-      if (values.format === "json") console.log(JSON.stringify(result, null, 2));
-      else if (values.format === "code") console.log(findMarkdown(task, result));
-      else console.log(findText(result));
+      if (reporter === "json") console.log(JSON.stringify(result, null, 2));
+      else if (reporter === "text") console.log(findText(result));
+      else console.log(findMarkdown(task, result));
       // An unfinished sweep means the answer is "here is some of it", which callers must be able to see.
       process.exitCode = result.complete ? 0 : 2;
       return;
