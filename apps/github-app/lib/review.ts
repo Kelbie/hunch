@@ -10,6 +10,8 @@ export interface ReviewDeps {
   token: string; appId: number; apiBase?: string;
   jev?: (config: Config) => JevClient;
   log?: (msg: string) => void;
+  /** Charges this installation for the review, already bound to it. Absent means unlimited. */
+  quota?: (unit: string) => Promise<{ allowed: boolean; limit: number }>;
   /** This delivery's number (from 1) and how many the queue gets before Hunch gives up. */
   attempt?: number;
   maxAttempts?: number;
@@ -62,6 +64,11 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     const stale = await staleSources(lock, config, base);
     const diff = await api.compareDiff(job.repo, baseSha, headSha);
     if (diff == null) throw new Error("Immutable comparison unavailable");
+    // Charged per head commit, so retries and redeliveries of this review are free.
+    if (deps.quota) {
+      const { allowed, limit } = await deps.quota(`${job.repo}:${job.pr}:${headSha}`);
+      if (!allowed) throw new PermanentError(`This installation has used its ${limit} Hunch reviews for today. Reviews resume after 00:00 UTC. For unlimited reviews, run Hunch in your own CI or deployment: https://github.com/Kelbie/hunch#install`);
+    }
     // The hosted worker has a 300-second limit; repository budgets can't raise these.
     const budget = { ...config.budget, maxHunks: Math.min(config.budget.maxHunks, 200), maxRequests: Math.min(config.budget.maxRequests, 100), timeoutSeconds: Math.min(config.budget.timeoutSeconds, 180) };
     const result = await check({ config: { ...config, budget }, hunks: parseHunks(diff), task: `${pull.title}\n\n${pull.body ?? ""}`, lock, client: (deps.jev ?? clientFromEnv)(config), readFile: (p) => base.read(p) });

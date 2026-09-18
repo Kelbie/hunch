@@ -35,8 +35,16 @@ Generate an App private key and add these production Vercel variables using the 
 | `GITHUB_WEBHOOK_SECRET` | The same secret configured on GitHub |
 | `UPSTASH_REDIS_REST_URL` | Redis integration URL |
 | `UPSTASH_REDIS_REST_TOKEN` | Redis integration token |
+| `HUNCH_DAILY_REVIEWS_PER_INSTALL` | Optional. Reviews one installation may start per UTC day |
 
 Redeploy after setting variables. Do not paste credentials into a PR or issue. The App's installation token is scoped to the specific repository for each job.
+
+**Set `HUNCH_DAILY_REVIEWS_PER_INSTALL` before making an App public.** A public App can be installed by
+accounts you do not control, and every review it runs is billed to your Gateway balance. The limit is
+charged per head commit, so queue retries and `/hunch recheck` on an unchanged commit are free, and an
+installation over its budget gets a failed check that says so rather than silence. Leave it unset when
+the App is private and serves only your own account. Repository budgets are already clamped to the
+worker's ceilings (`apps/github-app/lib/review.ts`); a repository can lower them but never raise them.
 
 ## 3. Configure a repository
 

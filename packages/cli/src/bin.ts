@@ -29,6 +29,7 @@ import {
   type JevClient,
   type Lock,
 } from "../../core/src/index.js";
+import { spawnSync } from "node:child_process";
 import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
@@ -36,6 +37,8 @@ import { resolveConfig } from "./inline.js";
 import { VERSION } from "./version.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
+import { diagnose, report } from "./doctor.js";
+import { askWizard, clackIo, detectPreset, existingKey, ghReady, hasGuidance, interactive, nextSteps, setRepoSecret, writeKey, type WizardAnswers } from "./setup/wizard.js";
 
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
@@ -51,6 +54,8 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
         [--with claude|codex|gateway] [--effort level] [--model name]
         asks which installed agent to use; --with skips the question
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
+        asks where reviews should run when it has a terminal; any flag skips the questions
+  hunch doctor [--app slug]        say why this repository is not being reviewed
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
   hunch app --help                 register and connect a self-hosted GitHub App
 
@@ -107,6 +112,7 @@ async function main() {
       github: { type: "boolean", default: false },
       rust: { type: "boolean", default: false },
       ts: { type: "boolean", default: false },
+      app: { type: "string" },
       cwd: { type: "string", default: process.cwd() },
     },
   });
@@ -232,24 +238,57 @@ async function main() {
 
     case "init": {
       if ([values.rust, values.ts, values.general].filter(Boolean).length > 1) return fail("Choose only one of --rust, --ts or --general");
-      const rust = values.rust || (!values.ts && !values.general && existsSync(join(root, "Cargo.toml")));
-      const ts = values.ts || (!rust && !values.general && existsSync(join(root, "package.json")));
-      const file = ts ? "hunch.config.ts" : "hunch.toml";
       const existing = ["hunch.toml", "hunch.config.ts"].filter(name => existsSync(join(root, name)));
       const workflow = join(root, ".github/workflows/hunch.yml");
       if (existing.length > 1) return fail("Keep exactly one of hunch.config.ts and hunch.toml.");
-      if (existing.length && !values.github) return fail("a hunch config already exists. Use `npx @kelbie/hunch init --github` to add only the workflow.");
-      if (values.github && existsSync(workflow)) return fail(".github/workflows/hunch.yml already exists; it was not overwritten.");
+      // Any explicit flag, a pipe or CI keeps the exact non-interactive behaviour scripts rely on.
+      const chosen = [values.rust, values.ts, values.general, values.github].some(Boolean);
+      const answers = chosen || !interactive() ? null : await askWizard(clackIo(), {
+        root, detected: detectPreset(root), configExists: existing.length > 0,
+        guidance: hasGuidance(root), keyPresent: existingKey(root) !== null,
+      });
+      if (!chosen && interactive() && !answers) return fail("setup cancelled; nothing was written.");
+      const preset = answers?.preset;
+      const rust = preset ? preset === "rust" : values.rust || (!values.ts && !values.general && existsSync(join(root, "Cargo.toml")));
+      const ts = preset ? preset === "ts" : values.ts || (!rust && !values.general && existsSync(join(root, "package.json")));
+      const file = ts ? "hunch.config.ts" : "hunch.toml";
+      const wantsWorkflow = values.github || answers?.target === "actions";
+      if (existing.length && !wantsWorkflow) return fail("a hunch config already exists. Use `npx @kelbie/hunch init --github` to add only the workflow.");
+      if (wantsWorkflow && existsSync(workflow)) return fail(".github/workflows/hunch.yml already exists; it was not overwritten.");
       if (!existing.length) {
         writeFileSync(join(root, file), ts ? TS_TEMPLATE : rust ? TOML_TEMPLATE : GENERAL_TEMPLATE, { flag: "wx" });
         console.error(`hunch: wrote ${file}.`);
       }
-      if (values.github) {
+      if (wantsWorkflow) {
         mkdirSync(join(root, ".github/workflows"), { recursive: true });
         writeFileSync(workflow, GITHUB_WORKFLOW, { flag: "wx" });
-        console.error("hunch: wrote .github/workflows/hunch.yml. Add AI_GATEWAY_API_KEY under repository Settings > Secrets and variables > Actions, then commit the config and workflow to your base branch.");
+        if (!answers) console.error("hunch: wrote .github/workflows/hunch.yml. Add AI_GATEWAY_API_KEY under repository Settings > Secrets and variables > Actions, then commit the config and workflow to your base branch.");
+        else console.error("hunch: wrote .github/workflows/hunch.yml.");
       }
-      console.error("hunch: if this repository has skills or AGENTS.md, run `npx @kelbie/hunch compile` and commit hunch.lock too.");
+      if (!answers) {
+        console.error("hunch: if this repository has skills or AGENTS.md, run `npx @kelbie/hunch compile` and commit hunch.lock too.");
+        return;
+      }
+      return finishWizard(root, answers, { file });
+    }
+
+    case "doctor": {
+      const checks = await diagnose({
+        gh: async (args) => {
+          const r = spawnSync("gh", args, { encoding: "utf8", timeout: 30_000, stdio: ["ignore", "pipe", "ignore"] });
+          return { ok: !r.error && r.status === 0, body: r.stdout ?? "" };
+        },
+        local: (p) => { try { return readFileSync(join(root, p), "utf8"); } catch { return null; } },
+        // Not every project is a git repository; that is an answer, not an error to print.
+        remoteUrl: () => {
+          const r = spawnSync("git", ["remote", "get-url", "origin"], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] });
+          return !r.error && r.status === 0 ? r.stdout.trim() : null;
+        },
+        env: process.env,
+      }, { slug: values.app ?? "hunch-review" });
+      const { text, failed } = report(checks);
+      console.log(text);
+      process.exitCode = failed ? 1 : 0;
       return;
     }
 
@@ -268,6 +307,38 @@ async function main() {
     default:
       fail(`Unknown command: ${cmd}`);
   }
+}
+
+/**
+ * Side effects the wizard promised: the key, the optional compile, and the ordered next steps.
+ * A failure here leaves the config in place and says what to finish by hand, so setup is resumable.
+ */
+async function finishWizard(root: string, answers: WizardAnswers, opts: { file: string }) {
+  const io = clackIo();
+  const key = answers.key;
+  let keyDeferred = key.kind === "later";
+  if (key.kind !== "later") {
+    const name = key.kind === "gateway" ? "AI_GATEWAY_API_KEY" : "TYPESAFE_API_KEY";
+    try {
+      const path = writeKey(root, name, key.value);
+      console.error(`hunch: wrote ${name} to ${path.replace(`${root}/`, "")} (git-ignored).`);
+    } catch (e) {
+      keyDeferred = true;
+      console.error(`hunch: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+  let secretSet = false;
+  if (answers.target === "actions" && key.kind === "gateway" && ghReady()) {
+    try { setRepoSecret("AI_GATEWAY_API_KEY", key.value); secretSet = true; }
+    catch (e) { console.error(`hunch: ${e instanceof Error ? e.message : String(e)}`); }
+  }
+  let compiled = false;
+  if (answers.compile) {
+    console.error("hunch: run `npx @kelbie/hunch compile` to turn AGENTS.md and skills into review questions, then commit hunch.lock.");
+    compiled = existsSync(join(root, LOCK_FILE));
+  }
+  io.note(nextSteps(answers.target, { configFile: opts.file, compiled, secretSet, keyDeferred }), "Next");
+  io.outro("Hunch is configured.");
 }
 
 /** A finding's diff excerpt as plain unified-diff lines, for `--reporter json --show-diff`. */

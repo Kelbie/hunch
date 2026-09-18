@@ -4,27 +4,102 @@ Code review for the mistakes type checkers and linters miss. You write rules in 
 
 ![Hunch reviewing a branch with check --all](docs/images/check-all.png)
 
-## Getting started
+## Install
 
-You need Node 22+ and a [Vercel AI Gateway](https://vercel.com/ai-gateway) API key (**API Keys → Create key**). You don't deploy anything to Vercel. Hunch reads `AI_GATEWAY_API_KEY` from your environment, `.env.local` or `.env`.
+**You need Node 22+.** The GitHub App path needs nothing else. Two extras, only where a step says so:
 
-```sh
-npx @kelbie/hunch init            # 1. write hunch.config.ts (or hunch.toml for Rust and other languages)
-npx @kelbie/hunch check           # 2. review this branch against origin/main
-```
+- a **model key** — [Vercel AI Gateway](https://vercel.com/ai-gateway) → **API Keys → Create key** — to
+  review on your own machine or in your own CI. The hosted App brings its own.
+- **[Claude Code](https://claude.com/claude-code) or [Codex](https://developers.openai.com/codex/cli/)
+  on your PATH**, only to compile Agent Skills and `AGENTS.md` into rules. A model key works instead.
 
-That's it. The config starts with ready-made checks (presets). Add your own rules when you're ready.
+Pick one path — most people want the first. `npx @kelbie/hunch init` asks these same questions
+interactively; the steps below are what it does.
 
-**Review every PR on GitHub:**
+### 1. Review every PR — GitHub App (recommended)
 
-```sh
-gh secret set AI_GATEWAY_API_KEY
-npx @kelbie/hunch init --github   # adds .github/workflows/hunch.yml
-```
+No API key, no workflow file, no server.
 
-Commit the config and workflow, and merge them. Hunch reviews against the base branch's config, so the PR that adds Hunch is skipped with a notice. After that, PRs get a review under **Checks → Hunch**, with each concern marked on the changed lines. For review comments and fork PRs, use the [GitHub App](docs/cli-setup.md) instead.
+1. **Install the App.** Open <https://github.com/apps/hunch-review/installations/new>, choose the
+   account or organisation that **owns** the repository, then either **All repositories** or **Only
+   select repositories** and pick it.
+   An organisation is a separate installation from your personal account: installing on your own
+   account does not cover `your-org/your-repo`. If you are not an owner of that organisation, GitHub
+   turns your choice into a request for an owner to approve, and nothing is reviewed until they do.
+2. **Write a config**, from inside the repository:
+   ```sh
+   npx @kelbie/hunch init
+   ```
+   Writes `hunch.config.ts`, or `hunch.toml` for Rust and other languages. It starts with ready-made
+   checks (presets); add your own rules when you're ready.
+3. **Only if this repo has Agent Skills or `AGENTS.md`** — turn them into review questions:
+   ```sh
+   npx @kelbie/hunch compile
+   ```
+   It asks which model should do it — any coding agent you have installed, or the Gateway with your
+   model key — and `--with claude|codex|gateway` skips the question. Writes `hunch.lock`; read it
+   before committing, because it is the guidance Hunch will actually check. Skipping this step does
+   not turn your guidance off: reviews still run, and each one reports that your guidance is
+   uncompiled rather than quietly ignoring it.
+4. **Commit to your default branch:**
+   ```sh
+   git add hunch.config.ts        # and hunch.lock, if you ran compile
+   git commit -m "Review PRs with Hunch"
+   git push
+   ```
+   Hunch reads its rules from the **base** branch, so nothing is reviewed until this is merged. The PR
+   that adds Hunch is skipped with a notice — that is expected, not a failure.
+5. **Open a PR.** Hunch adds a `hunch` check and review comments on the changed lines. Ask for a fresh
+   look any time by commenting `/hunch recheck`.
+
+No review appeared? Run `npx @kelbie/hunch doctor` — it names the one thing that is missing.
+
+### 2. Review on your machine
+
+1. ```sh
+   npx @kelbie/hunch init
+   ```
+   Answer **This machine only** when it asks where reviews should run, and paste your model key when
+   it asks. It stores the key in `.env.local`, adds that file to `.gitignore`, and never writes it
+   into `hunch.config.ts`.
+2. Only if you skipped the key, or ran with a flag: put it in your shell or `.env.local` yourself.
+   Hunch reads `AI_GATEWAY_API_KEY` from the environment, `.env.local` or `.env`:
+   ```sh
+   export AI_GATEWAY_API_KEY=…
+   ```
+3. ```sh
+   npx @kelbie/hunch check
+   ```
+   Reviews this branch against `origin/main`. Add `--base <branch>` if your default branch is not
+   `main`, and commit or stage your work first — `check` reviews the diff, so an unchanged branch has
+   nothing to review.
+
+### 3. Review every PR — GitHub Actions (no App)
+
+Use this to run reviews in your own CI, under your own key.
+
+1. ```sh
+   npx @kelbie/hunch init --github
+   ```
+   Writes the config as above, plus `.github/workflows/hunch.yml`.
+2. **Give Actions your model key**, as a repository secret named `AI_GATEWAY_API_KEY`. Either:
+   ```sh
+   gh auth login                      # once, if the GitHub CLI isn't signed in
+   gh secret set AI_GATEWAY_API_KEY
+   ```
+   or paste it under **Settings → Secrets and variables → Actions → New repository secret**. Without
+   it the workflow stops on its first step and says so.
+3. Commit and merge **both** `hunch.config.ts` and `.github/workflows/hunch.yml` to your default
+   branch — plus `hunch.lock` if you compiled guidance. As above, the PR that adds them is skipped
+   with a notice.
+4. **Open a PR.** The review appears under **Checks → Hunch**, with each concern marked on the changed
+   lines.
+
+Fork PRs are not reviewed on this path — Actions withholds secrets from forks. Use the App for those.
 
 > On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = false`) to your config. The default needs Pro or Enterprise.
+
+Running your own deployment of the App instead of the hosted one: [operator setup](docs/cli-setup.md).
 
 ## Commands
 
@@ -39,7 +114,8 @@ Commit the config and workflow, and merge them. Hunch reviews against the base b
 | `check --config <json\|file\|->` | Uses rules from JSON instead of the repo's config. [Details](#rules-without-a-config-file) |
 | `check --rule id="…"` | Adds a plain-English rule for this run. Repeatable. |
 | `compile` | Turns your skills and `AGENTS.md` into review questions, saved in `hunch.lock`. [Why?](#skills-and-agentsmd) |
-| `init [--ts\|--rust\|--general] [--github]` | Writes a starter config, and optionally a PR workflow. |
+| `init [--ts\|--rust\|--general] [--github]` | Writes a starter config, and optionally a PR workflow. Asks where reviews should run when it has a terminal; any flag skips the questions. |
+| `doctor` | Says why this repository is not being reviewed, and what to do about it. |
 | `eval <dir>` | Measures each rule's precision and recall on labelled `.diff` examples. |
 | `app --help` | Sets up a self-hosted GitHub App. |
 

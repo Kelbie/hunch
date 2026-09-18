@@ -70,6 +70,9 @@ test("registration uses a loopback manifest flow and rejects forged callbacks be
   const html = await page.text();
   expect(html).toContain("https://github.com/settings/apps/new?state=");
   expect(html).toContain("issue_comment");
+  // Private unless asked for: a public App can be installed, and billed, by accounts you don't control.
+  expect(html).toContain("&quot;public&quot;:false");
+  expect(html).toContain("private");
   const forged = await fetch(`${start.origin}/callback?state=forged&code=test-manifest-code`);
   expect(forged.status).toBe(403);
   expect(exchanges).toBe(0);
@@ -81,4 +84,22 @@ test("registration uses a loopback manifest flow and rejects forged callbacks be
   expect(saved?.privateKey).toBe(privateKey);
   expect(JSON.stringify(saved)).not.toContain("discard-this");
   expect(exchanges).toBe(1);
+});
+
+test("registering a public App says so before GitHub is asked, and stays private by default", async () => {
+  const page = async (opts: { public?: boolean }) => {
+    let ready!: (url: string) => void;
+    const started = new Promise<string>((resolve) => { ready = resolve; });
+    const controller = new AbortController();
+    const done = registerApp({ name: "Hunch test", webhook, onReady: ready, signal: controller.signal, save: () => "private-store", ...opts });
+    const html = await (await fetch(new URL(await started))).text();
+    controller.abort();
+    await done.catch(() => {});
+    return html;
+  };
+  const open = await page({ public: true });
+  expect(open).toContain("&quot;public&quot;:true");
+  expect(open).toContain("other accounts can install it");
+  expect(open).toContain("billed to your provider account");
+  expect(await page({})).toContain("&quot;public&quot;:false");
 });

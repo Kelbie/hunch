@@ -9,6 +9,12 @@ const registrationSchema = z.object({ id: z.number().int().positive(), slug: z.s
 /** GitHub confirmation stays in the user's browser; secrets return only to loopback. */
 export async function registerApp(options: {
   name: string; webhook: string; organization?: string;
+  /**
+   * A private App can only be installed on the account that registers it, so an App registered
+   * personally can never review an organisation's repositories. Public makes it installable
+   * elsewhere; it does not list it on the Marketplace. Default private: the narrower choice.
+   */
+  public?: boolean;
   onReady: (url: string) => void;
   request?: Request;
   save?: typeof saveCredentials;
@@ -38,11 +44,14 @@ export async function registerApp(options: {
       if (url.origin !== origin) throw new Error("Invalid origin");
     } catch { res.writeHead(400).end("Invalid request target"); return; }
     if (url.pathname === `/start/${nonce}`) {
-      const manifest = { name: options.name, description: "Semantic PR review with Jev and Agent Skills.", url: "https://github.com/Kelbie/hunch", public: false,
+      const manifest = { name: options.name, description: "Semantic PR review with Jev and Agent Skills.", url: "https://github.com/Kelbie/hunch", public: options.public === true,
         hook_attributes: { url: webhook, active: true }, redirect_url: `${origin}/callback`,
         default_permissions: APP_PERMISSIONS, default_events: APP_EVENTS, request_oauth_on_install: false };
       res.setHeader("Content-Type", "text/html; charset=utf-8");
-      res.end(`<h1>Register Hunch</h1><p>GitHub will ask you to confirm the App name and access. This creates a private App owned by you.</p><form method="post" action="${action}?state=${nonce}"><input type="hidden" name="manifest" value="${escape(JSON.stringify(manifest))}"><button>Continue to GitHub</button></form>`);
+      const visibility = manifest.public
+        ? "This creates a <strong>public</strong> App owned by you: other accounts can install it, and every review it runs is billed to your provider account."
+        : "This creates a <strong>private</strong> App owned by you, installable only on that same account.";
+      res.end(`<h1>Register Hunch</h1><p>GitHub will ask you to confirm the App name and access. ${visibility}</p><form method="post" action="${action}?state=${nonce}"><input type="hidden" name="manifest" value="${escape(JSON.stringify(manifest))}"><button>Continue to GitHub</button></form>`);
       return;
     }
     if (url.pathname !== "/callback" || url.searchParams.get("state") !== nonce || !/^[a-zA-Z0-9_-]{10,200}$/.test(url.searchParams.get("code") ?? "")) { res.writeHead(403).end("Invalid callback"); return; }
