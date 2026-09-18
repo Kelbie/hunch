@@ -15,7 +15,7 @@ jobs:
       - name: Explain missing access
         if: env.AI_GATEWAY_API_KEY == ''
         run: echo '::notice::Hunch model review not run. Configure AI_GATEWAY_API_KEY or install the Hunch GitHub App.'
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: env.AI_GATEWAY_API_KEY != ''
         with:
           ref: ${{ github.event.pull_request.base.sha }}
