@@ -97,7 +97,7 @@ npx @kelbie/hunch init
 # If using skills or AGENTS.md: npx @kelbie/hunch compile (uses your local Claude Code or Codex)
 ```
 
-Use `--rust`, `--ts`, or `--general` to choose the preset explicitly. Commit the config and any reviewed `hunch.lock` to the PR base branch. You don't need `--github` or an Actions model secret when using the App.
+Use `--preset rust`, `--preset ts` or `--preset general` to choose explicitly. Commit the config and any reviewed `hunch.lock` to the PR base branch. You don't need `--github` or an Actions model secret when using the App.
 
 **Choose your data policy before the first review.** Enforced zero data retention is on by default and requires an eligible Vercel plan. For Hobby, explicitly set `zeroDataRetention: false` in TypeScript or `zero-data-retention = false` in TOML only if that matches your policy. Hunch never silently opts out.
 
