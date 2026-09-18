@@ -7,7 +7,6 @@ import {
   clientFromEnv,
   collectSources,
   compileSources,
-  gatewayExtractor,
   LOCK_FILE,
   loadConfig,
   parseHunks,
@@ -31,8 +30,10 @@ import {
 import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
+import { chooseCompiler } from "./pick.js";
+import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 
-const VERSION = "0.4.1";
+const VERSION = "0.5.0";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
@@ -42,12 +43,14 @@ Usage
         [--dry-run]   count files, hunks and questions without calling Jev
         [--task "…"] [--reporter text|markdown|json|sarif|github]
   hunch compile [--force]          turn skills + AGENTS.md into hunch.lock (uses an LLM once)
+        [--with claude|codex|gateway] [--effort level] [--model name]
+        asks which installed agent to use; --with skips the question
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
   hunch app --help                 register and connect a self-hosted GitHub App
 
 Environment
-  AI_GATEWAY_API_KEY   Vercel AI Gateway (default provider)
+  AI_GATEWAY_API_KEY   Vercel AI Gateway (default Jev provider; compile only with --with gateway)
   TYPESAFE_API_KEY     TypeSafe direct (provider = "typesafe")
   No key is written to your config. Export the key in your shell or secret manager.`;
 
@@ -81,6 +84,9 @@ async function main() {
       task: { type: "string" },
       reporter: { type: "string", default: process.env.GITHUB_ACTIONS ? "github" : "text" },
       force: { type: "boolean", default: false },
+      with: { type: "string" },
+      effort: { type: "string" },
+      model: { type: "string" },
       general: { type: "boolean", default: false },
       github: { type: "boolean", default: false },
       rust: { type: "boolean", default: false },
@@ -179,11 +185,15 @@ async function main() {
       const { config } = loaded;
       const docs = await collectSources(config, repo);
       if (!docs.length) return fail("no skills, AGENTS.md or docs found to compile.");
-      console.error(`hunch: compiling ${docs.length} source(s) with ${config.compileModel}`);
+      const previous = readLock(root);
+      const choice = await chooseCompiler({ with: values.with, effort: values.effort, model: values.model, previous: previous?.compiler.model });
+      if (!choice) return fail("compile cancelled.");
+      const model = compilerId(choice, config.compileModel);
+      console.error(`hunch: compiling ${docs.length} source(s) with ${describeChoice(choice, config.compileModel)}`);
       const lock = await compileSources(docs, {
-        extractor: gatewayExtractor(config.compileModel, config.zeroDataRetention),
-        model: config.compileModel,
-        previous: readLock(root),
+        extractor: extractorFor(choice, config),
+        model,
+        previous,
         force: values.force,
         onSource: (id, reused) => console.error(`  ${reused ? "unchanged" : "compiled "}  ${id}`),
       });

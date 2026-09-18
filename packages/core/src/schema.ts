@@ -155,7 +155,7 @@ export const configSchema = z.strictObject({
   agentsMd: z.boolean().default(true),
   /** Extra repo docs to compile into rules (e.g. a style guide AGENTS.md links to). */
   docs: z.array(z.string()).default([]),
-  /** LLM used only by `hunch compile` (via AI Gateway). PR runs use Jev alone. */
+  /** LLM used only by `hunch compile --with gateway`. PR runs use Jev alone. */
   compileModel: z.string().default("anthropic/claude-sonnet-5"),
   /** Fail the check run when an `error` finding is reported. */
   failOnError: z.boolean().default(false),

@@ -62,7 +62,7 @@ describe("skill sources", () => {
         return {
           rules: [
             { slug: "Rule One!", section: "S", message: "m", instructions: "Does `hunk` …?", criteriaTrue: "t", criteriaFalse: "f", appliesTo: [], when: "([" },
-            { slug: "rule-one", section: "S", message: "m2", instructions: "?", criteriaTrue: "t", criteriaFalse: "f", appliesTo: ["**/*.md"] },
+            { slug: "rule-one", section: "S", message: "m2", instructions: "?", criteriaTrue: "t", criteriaFalse: "f", appliesTo: ["**/*.md"], when: null },
           ],
           notChecked: [{ section: sourceId, reason: "process" }],
         };

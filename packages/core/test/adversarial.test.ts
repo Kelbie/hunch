@@ -39,7 +39,7 @@ describe("adversarial review contracts", () => {
     const docs = await collectSources(config, memoryRepo({ "AGENTS.md": "Use the generic rule", "src/AGENTS.md": "Override generic rule in this package" }));
     expect(docs[1]!.text).toContain("Use the generic rule");
     expect(docs[1]!.text).toContain("Override generic rule");
-    const lock = await compileSources(docs, { model: "fixture", extractor: { extract: async ({ sourceId }) => ({ rules: [{ slug: "policy", section: "test", message: sourceId, instructions: "Violation?", criteriaTrue: "yes", criteriaFalse: "no", appliesTo: [] }], notChecked: [] }) } });
+    const lock = await compileSources(docs, { model: "fixture", extractor: { extract: async ({ sourceId }) => ({ rules: [{ slug: "policy", section: "test", message: sourceId, instructions: "Violation?", criteriaTrue: "yes", criteriaFalse: "no", appliesTo: [], when: null }], notChecked: [] }) } });
     expect(rulesFor("src/foo.ts", config, lock).jev.map((r) => r.id)).toEqual(["agents-md/src/policy"]);
     expect(rulesFor("other/foo.ts", config, lock).jev.map((r) => r.id)).toEqual(["agents-md/root/policy"]);
   });
