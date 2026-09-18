@@ -5,6 +5,7 @@
     "": {
       "name": "hunch-monorepo",
       "devDependencies": {
+        "@kelbie/hunch": "workspace:*",
         "@types/bun": "latest",
         "@types/node": "22",
         "esbuild": "0.25.12",
@@ -27,7 +28,7 @@
       "name": "@kelbie/hunch",
       "version": "0.3.1",
       "bin": {
-        "hunch": "./dist/bin.js",
+        "hunch": "dist/bin.js",
       },
       "dependencies": {
         "@ai-sdk/gateway": "4.0.85",
