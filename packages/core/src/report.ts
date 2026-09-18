@@ -29,10 +29,13 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
   const isError = (issue: Finding[]) => issue.some(f => f.level === "error");
   issues.sort((a, b) => Number(isError(b)) - Number(isError(a)) || a[0]!.file.localeCompare(b[0]!.file) || a[0]!.line - b[0]!.line);
   const shown = issues.slice(0, 50);
-  const errors = issues.filter(isError).length;
+  // Overlapping rules often flag one problem several times, so count places in the code.
+  const places = [...Map.groupBy(issues, i => JSON.stringify([i[0]!.file, i[0]!.line, i[0]!.endLine])).values()];
+  const withErrors = places.filter(p => p.some(isError)).length;
   const files = new Set(issues.map(i => i[0]!.file)).size;
-  const counts = [errors && plural(errors, "error"), issues.length - errors && plural(issues.length - errors, "warning")].filter(Boolean).join(", ");
-  const headline = issues.length ? `${plural(issues.length, "possible issue")} in ${plural(files, "file")} (${counts})` : "no concerns found";
+  const headline = issues.length
+    ? `${plural(places.length, "place")} to review${files < places.length ? ` in ${plural(files, "file")}` : ""}${withErrors ? ` (${withErrors} with errors)` : ""}`
+    : "no concerns found";
   const lines = [STICKY_MARKER, `### 🔮 Hunch · ${headline} · ${complete ? "review complete" : "partial review"}`, ""];
   if (!complete) {
     lines.push("> [!CAUTION]", "> **Review is incomplete.** Some changes or guidance could not be checked.");
@@ -41,12 +44,13 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
     lines.push("");
   }
   if (shown.length) {
+    const short = shortPaths(shown.map(i => i[0]!.file));
     lines.push("| | Concern | Where |", "| :-: | --- | --- |");
     // One row per place in the code, like the terminal groups rows by file.
     for (const place of Map.groupBy(shown, i => JSON.stringify([i[0]!.file, i[0]!.line, i[0]!.endLine])).values()) {
       const f = place[0]![0]!;
       const range = f.endLine > f.line ? `${f.line}-${f.endLine}` : String(f.line);
-      const label = code(`${f.file.split("/").at(-1)!}:${range}`);
+      const label = code(`${short.get(f.file)}:${range}`);
       const thread = place.flat().map(x => ctx.threads?.get(findingKey(x))).find(Boolean);
       const anchor = `#L${f.line}${f.endLine > f.line ? `-L${f.endLine}` : ""}`;
       const href = thread ?? (ctx.blobBase ? `${ctx.blobBase}/${f.file.split("/").map(encodeURIComponent).join("/")}${anchor}` : undefined);
@@ -70,7 +74,7 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
       lines.push("");
     }
     if (guidance.length) {
-      lines.push("Guidance requiring human review:", "");
+      lines.push("Guidance Hunch doesn't check:", "");
       for (const notice of guidance) lines.push(`- ${escapeCell(notice)}`);
       lines.push("");
     }
@@ -84,9 +88,14 @@ export const findingKey = (f: Pick<Finding, "rule" | "file">) => `${encodeURICom
 const FINDING_MARKER = /<!-- hunch:finding (\S+ \S+) -->/g;
 export const findingKeysIn = (body: string) => [...body.matchAll(FINDING_MARKER)].map(m => m[1]!);
 
+/** Longer ranges (a whole new file) anchor on their first line, so the comment sits where reading starts. */
+const MAX_COMMENT_RANGE = 10;
+
 /** One inline review comment for the concerns raised at one place in the diff. */
 export function reviewComment(findings: Finding[]) {
   const f = findings[0]!;
+  const span = f.endLine - f.line + 1;
+  const long = span > MAX_COMMENT_RANGE;
   const body = [
     ...findings.map(x => `<!-- hunch:finding ${findingKey(x)} -->`),
     ...findings.flatMap(x => [
@@ -95,9 +104,10 @@ export function reviewComment(findings: Finding[]) {
       `<sub>${code(x.rule)} · ${escapeCell(x.evidence)} · from ${escapeCell(x.source)}</sub>`,
       "",
     ]),
-    "<sub>🔮 Hunch · Not relevant? Resolve this conversation and Hunch won't raise it again on this PR.</sub>",
+    `<sub>🔮 Hunch${long ? ` · About lines ${f.line}-${f.endLine}` : ""} · Not relevant? Resolve this conversation and Hunch won't raise it again on this PR.</sub>`,
   ].join("\n");
-  return { path: f.file, side: "RIGHT" as const, line: Math.max(f.line, f.endLine), ...(f.endLine > f.line ? { start_line: f.line, start_side: "RIGHT" as const } : {}), body };
+  if (long || span === 1) return { path: f.file, side: "RIGHT" as const, line: f.line, body };
+  return { path: f.file, side: "RIGHT" as const, start_line: f.line, start_side: "RIGHT" as const, line: f.endLine, body };
 }
 
 /** GitHub Checks API annotations (max 50 per request; the caller batches). */
@@ -212,3 +222,16 @@ const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const escapeCell = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/[\[\]`*|\\]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/[\r\n]/g, " ");
 /** Code span safe inside a table cell; entities would show literally in code. */
 const code = (s: string) => `\`${s.replace(/`/g, "'").replace(/\|/g, "\\|").replace(/[\r\n]/g, " ")}\``;
+
+/** Shortest trailing path that tells the files apart: `lib/review.ts` vs `typescript/review.ts`. */
+export function shortPaths(files: string[]): Map<string, string> {
+  const unique = [...new Set(files)];
+  return new Map(unique.map(file => {
+    const parts = file.split("/");
+    for (let n = 1; n < parts.length; n++) {
+      const tail = parts.slice(-n).join("/");
+      if (!unique.some(other => other !== file && (other === tail || other.endsWith(`/${tail}`)))) return [file, tail];
+    }
+    return [file, file];
+  }));
+}
