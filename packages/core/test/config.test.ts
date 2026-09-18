@@ -99,7 +99,7 @@ files = ["tests/**"]
     const cfg = applyPresets(parseConfig(tomlToConfig(TOML), "hunch.toml"));
     expect(cfg.agentsMd).toBe(true);
     expect(cfg.failOnError).toBe(true);
-    expect(cfg.skills[1]).toEqual({ repo: "vercel-labs/agent-skills", skill: "web-design-guidelines" });
+    expect(cfg.skills?.[1]).toEqual({ repo: "vercel-labs/agent-skills", skill: "web-design-guidelines" });
     const unsafe = cfg.rules["team/unsafe-justified"]!;
     expect(unsafe.level).toBe("error");
     expect(unsafe.question).toMatchObject({ kind: "noul", threshold: 0.8, when: { source: "unsafe" } });

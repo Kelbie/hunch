@@ -82,14 +82,14 @@ export async function collectSources(config: Config, repo: RepoReader, remote: R
   const seenSkills = new Set<string>();
   const addSkill = (doc: SourceDoc) => {
     if (seenSkills.has(doc.id)) {
-      if (config.skills.length) throw new Error(`Duplicate skill name: ${doc.id}. Select unique skill names.`);
+      if (config.skills?.length) throw new Error(`Duplicate skill name: ${doc.id}. Select unique skill names.`);
       return;
     }
     seenSkills.add(doc.id);
     docs.push(doc);
   };
 
-  const sources: SkillSource[] = config.skills.length ? config.skills : INSTALLED_SKILL_DIRS.map((d) => `./${d}/*`);
+  const sources: SkillSource[] = config.skills ?? INSTALLED_SKILL_DIRS.map((d) => `./${d}/*`);
   const allFiles = await repo.files();
 
   for (const src of sources) {
@@ -188,13 +188,12 @@ export const hashDoc = (d: SourceDoc) => sha256(`${d.kind}\n${d.origin}\n${d.com
  * are new, changed or gone.
  */
 export async function staleSources(lock: Lock | null, config: Config, repo: RepoReader): Promise<string[]> {
-  const localOnly = { ...config, skills: config.skills.filter((s) => parseSkillSource(s).type === "local") };
-  if (config.skills.length && !localOnly.skills.length) localOnly.skills = ["./.hunch-no-local-skills/*"];
+  const localOnly = { ...config, skills: config.skills?.filter((s) => parseSkillSource(s).type === "local") };
   const docs = await collectSources(localOnly, repo, noRemote);
   const byId = new Map((lock?.sources ?? []).map((s) => [s.id, s]));
   const stale: string[] = [];
-  if (lock && (!lock.selectionHash && config.skills.some((s) => parseSkillSource(s).type === "remote") || lock.selectionHash && lock.selectionHash !== await selectionHash(config))) stale.push("guidance selection");
-  const remoteSources = config.skills.map(parseSkillSource).filter((s) => s.type === "remote");
+  if (lock && (!lock.selectionHash && (config.skills ?? []).some((s) => parseSkillSource(s).type === "remote") || lock.selectionHash && lock.selectionHash !== await selectionHash(config))) stale.push("guidance selection");
+  const remoteSources = (config.skills ?? []).map(parseSkillSource).filter((s) => s.type === "remote");
   for (const source of remoteSources) {
     if (!lock?.sources.some((s) => s.commit && s.origin === source.repo && (!source.skill || s.id === `skill/${source.skill}`) && (!source.path || s.path.startsWith(`${source.path}/`)) && (!source.ref || !/^[a-f0-9]{40}$/.test(source.ref) || s.commit === source.ref))) stale.push(`remote/${source.repo}`);
   }
@@ -215,4 +214,6 @@ const noRemote: RemoteFetcher = {
   read: () => Promise.reject(new Error("remote fetch disabled")),
 };
 
-export const selectionHash = (config: Config) => sha256(JSON.stringify({ skills: config.skills, agentsMd: config.agentsMd, docs: config.docs }));
+// Omitted skills hash as `[]` (the pre-0.3.3 default) so existing locks stay current; an explicit `[]` hashes distinctly.
+export const selectionHash = (config: Config) =>
+  sha256(JSON.stringify({ skills: config.skills === undefined ? [] : config.skills.length ? config.skills : "none", agentsMd: config.agentsMd, docs: config.docs }));
