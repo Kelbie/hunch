@@ -6,22 +6,30 @@ Semantic code review for the mistakes that type checkers and linters miss: failu
 
 **1. Create an API key.** In [Vercel AI Gateway](https://vercel.com/ai-gateway), choose your team → **API Keys → Create key**. Copy the key. You don't need to deploy anything to Vercel. [Key setup](https://vercel.com/docs/ai-gateway/authentication-and-byok/api-keys).
 
-**2. Add it to the GitHub repository you want reviewed.** Open that repository's **Settings → Secrets and variables → Actions → New repository secret**. Name it **`AI_GATEWAY_API_KEY`** and paste the key as its value. With GitHub CLI, `gh secret set AI_GATEWAY_API_KEY` prompts for it from inside the target repository.
+**2. Save it on the repository.** From the target repository, run the command below and paste the key at the hidden prompt. Requires [GitHub CLI](https://cli.github.com) with `gh auth login` completed.
+
+```sh
+gh secret set AI_GATEWAY_API_KEY
+```
 
 **3. Install and generate the config and workflow.** From that repository, using Node 22+. For languages other than TS/JS or Rust, add `--general` to `init`:
 
 ```sh
-npm install -D https://github.com/Kelbie/hunch/releases/download/v0.2.0/hunch-cli-0.2.0.tgz
+npm install -D https://github.com/Kelbie/hunch/releases/download/v0.3.0/hunch-cli-0.3.0.tgz
 npx hunch init --github
 ```
 
 The package is **`@hunch/cli`**; use the release URL until npm publication. `init` selects Rust when `Cargo.toml` exists, TypeScript when `package.json` exists, and general TOML otherwise. **For Python, Go or other languages, run `npx hunch init --general --github`** (npm may have created `package.json`). Use `--ts` or `--rust` to choose explicitly. Existing configs are preserved when adding a workflow.
 
-Commit the generated config, `.github/workflows/hunch.yml`, and dependency changes to the branch PRs target. Subsequent same-repository, non-draft PRs receive a report under **Checks → Hunch** in the Actions run summary, plus annotations. Reviews use the base branch's policy. Fork and Dependabot PRs are skipped; for those and conversation comments, [install a self-hosted GitHub App](docs/deploy.md).
+Commit the generated config, `.github/workflows/hunch.yml`, and dependency changes to the branch PRs target. Subsequent same-repository, non-draft PRs receive a report under **Checks → Hunch** in the Actions run summary, plus annotations. Reviews use the base branch's policy. Fork and Dependabot PRs are skipped; for those and conversation comments, [set up a GitHub App from the CLI](docs/cli-setup.md).
 
 **Privacy setting:** Hunch defaults to enforced zero data retention, which requires Vercel Pro/Enterprise. On Hobby, explicitly add `zeroDataRetention: false` to the TS config or `zero-data-retention = false` to TOML if that matches your data policy.
 
 **Already have skills or `AGENTS.md`?** Set the key locally as below, run `npx hunch compile`, then review and commit `hunch.lock` too. Otherwise no compilation is needed.
+
+## Bot comments and fork PRs
+
+[CLI App setup](docs/cli-setup.md) provisions Vercel and Redis, registers an App with the right permissions, and uploads its credentials without copying secrets. GitHub confirmation, repository installation, and Marketplace terms still require your browser. Once installed, each repository needs only its config and any compiled guidance. The hosted App uses Vercel OIDC, so no model API key is needed in those repositories.
 
 ## Presets
 

@@ -3,20 +3,19 @@
 - Public repository: https://github.com/Kelbie/hunch
 - Backend: https://hunch-ten-alpha.vercel.app/api/health
 - Vercel project: `kelbies-projects/hunch`, Node 22.
-- Deployed engine loads successfully. Health returns HTTP 200 with `setup_required`, `githubApp: false`, `leaseStore: false`. POST to the private queue worker returns 404 publicly.
-- Local checks: 51 passing tests, one credential-gated live test skipped; strict TypeScript checks and builds passed. The independent live smoke script verified all three Jev primitives on synthetic public inputs through Gateway OIDC.
+- Production is configured: `/api/health` returns HTTP 200 with `githubApp: true` and `leaseStore: true`. App `hunch-review` (4985597) is installed; Marketplace Redis is connected on its free plan. Credentials were uploaded through `hunch app connect` without printing values.
+- **Live proof:** [demo PR #7](https://github.com/Kelbie/hunch/pull/7), [bot report](https://github.com/Kelbie/hunch/pull/7#issuecomment-5724831365), check run `105473140108`. A real push webhook reached Vercel Queues, acquired the Redis lease, authenticated as the installation, called Jev and published a commit-labelled comment/check. Head `f78e1ead88d2085d8688b4015b1e5b2bb019e2f9`: 1 hunk, 14 questions, 2,022 input tokens, three advisory findings for the intentional failure-as-success bug. Check conclusion: neutral.
+- Local checks: 55 passing tests, one credential-gated live test skipped; strict TypeScript checks, builds and packed Node consumer passed. Registration callback tests simulate GitHub's exchange; the existing-App connection and deployment were exercised live. A second live App registration has not been attempted.
 - Clean npm consumer validation passed for Node CLI execution, declarations, TS/Rust/general config initialization, GitHub workflow generation without overwriting policy, and an offline report. The GitHub preview tarball is usable without npm registry publication.
 - Two independent adversarial reviewers rechecked their reported fixes and found no remaining blocker within that bounded scope. See adversarial-review.md.
 
-## Activation still required
+## Remaining operational work
 
-1. Register/install the GitHub App and configure its ID, private key and webhook secret.
-2. Connect the Upstash Redis lease store and its REST credentials.
-3. Decide the Gateway privacy setting. This team's Hobby plan rejected enforced ZDR (HTTP 403). Hunch's default remains enabled; use an eligible plan or deliberately opt out in project config. Only synthetic test data was sent with ZDR off.
-4. Install/authorize Vercel's GitHub integration for this repository if automatic deployments are desired. CLI deployment works; automatic Git linkage was rejected because that integration is unavailable.
-5. Confirm publishing access to the `@hunch` scope and authenticate npm before publishing `@hunch/cli` to the registry. GitHub's preview archive provides installation meanwhile.
+1. Install/authorize Vercel's GitHub integration if automatic deployments are desired. CLI deployment works; automatic Git linkage was rejected because that integration is unavailable.
+2. Confirm publishing access to the `@hunch` scope and authenticate npm before publishing `@hunch/cli` to the registry. GitHub's preview archive provides installation meanwhile.
+3. Validate fork isolation and overlapping/head-change behavior in deployment acceptance tests before treating the check as a merge requirement. These paths have local integration coverage, but the live demo alone does not prove them.
 
-The GitHub App has not yet reviewed a real PR. Queue delivery, hosted Redis and installed-App permissions need the deployment acceptance checks in deploy.md. No claim is made about real-project precision/recall, compiler semantic fidelity, or a completed audit of Hunch itself. The committed self-policy is manually curated from installed guidance; it is not falsely attributed to a live compiler run.
+The owner explicitly approved `zeroDataRetention: false` for this public repository on Vercel Hobby; that setting is committed in the trusted base policy. The default for consumers remains enforced ZDR. The first recheck used the demo's old base policy and failed; updating the demo branch from main activated the approved policy, and the push review succeeded. No claim is made about broad precision/recall, compiler semantic fidelity, or a completed audit of Hunch itself. The committed self-policy is manually curated from installed guidance, not falsely attributed to a live compiler run.
 
 ## 0.2 preset and onboarding validation
 

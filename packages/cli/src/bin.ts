@@ -23,8 +23,9 @@ import {
 } from "../../core/src/index.js";
 import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
+import { runAppCommand } from "./setup/command.js";
 
-const VERSION = "0.2.0";
+const VERSION = "0.3.0";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
@@ -33,6 +34,7 @@ Usage
   hunch compile [--force]          turn skills + AGENTS.md into hunch.lock (uses an LLM once)
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
+  hunch app --help                 register and connect a self-hosted GitHub App
 
 Environment
   AI_GATEWAY_API_KEY   Vercel AI Gateway (default provider)
@@ -41,6 +43,7 @@ Environment
 
 async function main() {
   const [cmd = "help", ...rest] = process.argv.slice(2);
+  if (cmd === "app") return runAppCommand(rest);
   const { values, positionals } = parseArgs({
     args: rest,
     allowPositionals: true,

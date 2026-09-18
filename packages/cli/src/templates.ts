@@ -45,7 +45,7 @@ jobs:
           ref: \${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: Kelbie/hunch@v0.2.0
+      - uses: Kelbie/hunch@v0.3.0
         with:
           base: \${{ github.event.pull_request.base.sha }}
           head: \${{ github.event.pull_request.head.sha }}

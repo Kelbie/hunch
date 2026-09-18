@@ -11,12 +11,13 @@ try {
   run('npm', ['init', '-y']);
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(temp, packed[0].filename)]);
   const bin = join(temp, 'node_modules/@hunch/cli/dist/bin.js');
-  if (!run(process.execPath, [bin, '--version']).includes('0.2.0')) throw new Error('Version command failed');
+  if (!run(process.execPath, [bin, '--version']).includes('0.3.0')) throw new Error('Version command failed');
+  if (!run(process.execPath, [bin, 'app', '--help']).includes('app connect')) throw new Error('App setup command missing');
   writeFileSync(join(temp, 'package.json'), '{"type":"module"}');
   writeFileSync(join(temp, 'consumer.ts'), 'import {defineConfig,noul} from "@hunch/cli"; export default defineConfig({rules:{r:["warn",noul({instructions:"Does `hunk` hide a failure?",when:/catch/})]}});');
   run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--module', 'nodenext', '--target', 'es2024', 'consumer.ts']);
   const rust = join(temp, 'rust'); mkdirSync(rust); writeFileSync(join(rust, 'Cargo.toml'), '[package]\nname="fixture"\nversion="0.1.0"');
-  writeFileSync(join(rust, 'package.json'), '{"devDependencies":{"@hunch/cli":"0.2.0"}}');
+  writeFileSync(join(rust, 'package.json'), '{"devDependencies":{"@hunch/cli":"0.3.0"}}');
   run('git', ['init', '--quiet'], rust);
   run(process.execPath, [bin, 'init', '--cwd', rust]);
   if (!existsSync(join(rust, 'hunch.toml'))) throw new Error('Cargo project did not receive TOML config');

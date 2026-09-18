@@ -1,5 +1,7 @@
 # Deploy the GitHub App
 
+**Start with [CLI setup](cli-setup.md)** for the repeatable installation path. The reference below explains runtime requirements and manual recovery.
+
 Project consumers need only a committed config and an installed Hunch App. Operators do this setup once. The CLI requires none of this infrastructure.
 
 ## 1. Deploy on Vercel
@@ -8,7 +10,7 @@ Import `Kelbie/hunch`, choose **Other**, root directory `apps/github-app`, Node 
 
 Gateway authentication uses Vercel OIDC automatically. Enforced zero data retention (Hunch’s default) requires Pro/Enterprise. On Hobby, that request receives HTTP 403; either use an eligible plan or explicitly choose `zeroDataRetention: false` after deciding your data policy. Hunch does not change this automatically. Enable AI Gateway for your Vercel team and fund credits or configure provider access as required by that account. Use `AI_GATEWAY_API_KEY` for CLI/Actions, obtained from the Gateway dashboard. Never commit it. Direct TypeSafe is optional: set `provider: "typesafe"` and `TYPESAFE_API_KEY`; guidance compilation still uses Gateway.
 
-Connect an **Upstash Redis** database through Vercel Storage/Marketplace, with `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` available to production. Redis stores only short-lived lease keys, not source code. It serializes work for each PR. The lease is 360 seconds and the worker is limited to 300 seconds; change these together. Missing Redis access fails closed and the queue retries.
+Connect an **Upstash Redis** database through Vercel Storage/Marketplace, with production `KV_REST_API_URL` and `KV_REST_API_TOKEN` (the Marketplace defaults), or `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`. Hunch accepts either complete pair. Redis stores only short-lived lease keys, not source code. It serializes work for each PR. The lease is 360 seconds and the worker is limited to 300 seconds; change these together. Missing Redis access fails closed and the queue retries.
 
 ## 2. Register and install a GitHub App
 
@@ -22,7 +24,7 @@ In [GitHub App settings](https://github.com/settings/apps/new), create an App wi
 - Subscribe to **Pull request** and **Issue comment** events. An issue_comment webhook for a PR is processed only for exact `/hunch recheck`; the worker verifies the sender's current write/maintain/admin access.
 - Install on the repositories you want reviewed.
 
-The [app.yml](../apps/github-app/app.yml) is a permission reference, not a file GitHub accepts as an upload. GitHub's manifest flow requires a JSON form POST and code exchange; the manual form above avoids an extra public credential-bootstrap endpoint.
+The [app.yml](../apps/github-app/app.yml) is a permission reference, not an uploadable file. `hunch app register` implements GitHub’s manifest POST and code exchange on a temporary loopback server; it needs no public bootstrap endpoint. The manual form above is an alternative for existing Apps.
 
 Generate an App private key and add these production Vercel variables using the dashboard or secure stdin to `vercel env add`:
 
@@ -60,7 +62,7 @@ The queue is at-least-once. A durable lease prevents concurrent publication with
 
 Use the App for external fork PRs. As a simpler alternative for trusted same-repository PRs, add an `AI_GATEWAY_API_KEY` Actions secret and this workflow by running `npx hunch init --github`.
 
-The generated workflow pins `Kelbie/hunch@v0.2.0`, checks out the immutable base commit, and passes the base/head SHAs to the Action. Pin a reviewed full commit SHA for stronger supply-chain immutability. It skips drafts, forks and Dependabot events (which normally cannot access Actions secrets). It fails with a setup message when the API key is absent. Configuration must be on the PR base branch before the first review. Follow the [README](../README.md#get-pr-reviews-in-three-steps) for key creation and repository-secret setup.
+The generated workflow pins `Kelbie/hunch@v0.3.0`, checks out the immutable base commit, and passes the base/head SHAs to the Action. Pin a reviewed full commit SHA for stronger supply-chain immutability. It skips drafts, forks and Dependabot events (which normally cannot access Actions secrets). It fails with a setup message when the API key is absent. Configuration must be on the PR base branch before the first review. Follow the [README](../README.md#get-pr-reviews-in-three-steps) for key creation and repository-secret setup.
 
 The Action prints annotations and a job summary; it does not post a conversation comment. It reads all policy via Git from the immutable PR base and never overwrites the working tree. Do not run untrusted PR scripts with secrets or switch this example to `pull_request_target` while checking out/executing fork code.
 
@@ -79,4 +81,4 @@ node scripts/package-smoke.mjs
 (cd packages/cli && npm pack --ignore-scripts)
 ```
 
-Install the resulting `hunch-cli-0.2.0.tgz` in a consumer project. Bun is needed to build Hunch; the distributed CLI runs on Node 22+.
+Install the resulting `hunch-cli-0.3.0.tgz` in a consumer project. Bun is needed to build Hunch; the distributed CLI runs on Node 22+.
