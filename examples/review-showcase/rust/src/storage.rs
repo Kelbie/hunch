@@ -1,12 +1,7 @@
-use std::io::ErrorKind;
-
 pub enum LoadError { PermissionDenied, Disconnected }
 
-pub fn classify_error(error: std::io::Error) -> LoadError {
-    match error.kind() {
-        ErrorKind::PermissionDenied => LoadError::PermissionDenied,
-        _ => LoadError::Disconnected,
-    }
+pub fn classify_error(_error: std::io::Error) -> LoadError {
+    LoadError::Disconnected
 }
 
 pub fn recovery(error: LoadError) -> &'static str {
