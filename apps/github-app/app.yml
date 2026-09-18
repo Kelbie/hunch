@@ -1,0 +1,16 @@
+# GitHub App manifest: https://docs.github.com/apps/sharing-github-apps/registering-a-github-app-from-a-manifest
+# Replace YOUR-DEPLOYMENT with your Vercel URL, then register the app from this manifest.
+name: hunch
+url: https://github.com/kelbie/hunch
+description: Gut-checks every PR against plain-English rules and agent skills with TypeSafe's Jev.
+public: false
+hook_attributes:
+  url: https://YOUR-DEPLOYMENT.vercel.app/api/webhook
+default_events:
+  - pull_request
+  - issue_comment
+default_permissions:
+  contents: read
+  metadata: read
+  pull_requests: write
+  checks: write

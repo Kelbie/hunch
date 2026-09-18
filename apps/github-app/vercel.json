@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "fluid": true,
+  "regions": [
+    "iad1"
+  ],
+  "installCommand": "cd ../.. && bun install --frozen-lockfile",
+  "functions": {
+    "api/webhook.ts": {
+      "maxDuration": 10
+    },
+    "api/review.ts": {
+      "maxDuration": 300,
+      "experimentalTriggers": [
+        {
+          "type": "queue/v2beta",
+          "topic": "hunch-reviews"
+        }
+      ]
+    }
+  }
+}

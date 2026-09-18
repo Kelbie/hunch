@@ -1,0 +1,188 @@
+import { z } from "zod";
+import { experimental_evaluate as evaluate } from "ai";
+
+/** Question as sent on the wire, in TypeSafe's vocabulary. */
+export type WireQuestion =
+  | { type: "noul"; instructions: string; criteria?: { true?: string; false?: string } }
+  | { type: "choice"; instructions: string; criteria: Record<string, string> }
+  | { type: "score"; instructions: string; criteria: string[] };
+
+/** One normalised answer shape for both providers. */
+export type Answer =
+  | { type: "noul"; p: number }
+  | { type: "choice"; choice: string; probabilities: Record<string, number>; confidence: number }
+  | { type: "score"; score: number; probabilities: Record<string, number>; confidence: number };
+
+export interface EvaluateRequest {
+  model: string;
+  state: Record<string, unknown>;
+  questions: Record<string, WireQuestion>;
+}
+
+export interface EvaluateResult {
+  answers: Record<string, Answer>;
+  usage: { inputTokens: number };
+  modelId: string;
+}
+
+export interface JevClient {
+  evaluate(req: EvaluateRequest): Promise<EvaluateResult>;
+}
+
+/**
+ * Confidence from a distribution: how far the top option sits above a uniform
+ * guess, (p_max − 1/n) / (1 − 1/n). 1 = certain, 0 = no better than chance.
+ * TypeSafe does not publish its formula and the gateway omits the field, so
+ * hunch always computes this itself; `minConfidence` then means the same on
+ * either provider.
+ */
+export function confidenceOf(probabilities: Record<string, number>): number {
+  const ps = Object.values(probabilities);
+  const n = ps.length;
+  if (n < 2) return 0;
+  const top = Math.max(...ps);
+  return Math.max(0, Math.min(1, (top - 1 / n) / (1 - 1 / n)));
+}
+
+/**
+ * Vercel AI Gateway via AI SDK `experimental_evaluate`. Auth comes from
+ * AI_GATEWAY_API_KEY, or automatically from Vercel OIDC when deployed there.
+ * The gateway serves `typesafe-ai/jev` (unpinned); the resolved model id is
+ * returned so reports can show which build answered.
+ */
+export function gatewayClient(opts: { zeroDataRetention: boolean; gatewayModel?: string }): JevClient {
+  return {
+    async evaluate(req) {
+      const questions = Object.fromEntries(
+        Object.entries(req.questions).map(([id, q]) => [
+          id,
+          q.type === "noul"
+            ? { type: "boolean" as const, instructions: q.instructions, ...(q.criteria ? { criteria: q.criteria } : {}) }
+            : q,
+        ]),
+      );
+      const res = await evaluate({
+        model: opts.gatewayModel ?? "typesafe-ai/jev",
+        state: req.state as never,
+        questions: questions as never,
+        maxRetries: 2,
+        abortSignal: AbortSignal.timeout(45_000),
+        providerOptions: { gateway: { zeroDataRetention: opts.zeroDataRetention } },
+      });
+      const answers: Record<string, Answer> = {};
+      for (const [id, a] of Object.entries(res.answers as Record<string, GatewayAnswer>)) {
+        const q = req.questions[id]!;
+        if (a.type === "boolean") answers[id] = { type: "noul", p: a.probability };
+        else if (a.type === "choice") {
+          const probabilities = a.probabilities ?? {};
+          answers[id] = { type: "choice", choice: a.choice, probabilities, confidence: confidenceOf(probabilities) };
+        } else {
+          const probabilities = a.probabilities ?? {};
+          answers[id] = { type: "score", score: a.score, probabilities, confidence: confidenceOf(probabilities) };
+        }
+      }
+      validateAnswers(req, answers);
+      return { answers, usage: { inputTokens: res.usage.inputTokens ?? 0 }, modelId: res.response.modelId };
+    },
+  };
+}
+
+type GatewayAnswer =
+  | { type: "boolean"; probability: number }
+  | { type: "choice"; choice: string; probabilities?: Record<string, number> }
+  | { type: "score"; score: number; probabilities?: Record<string, number> };
+
+/** TypeSafe's own REST API: POST https://api.typesafe.ai/v1/systemone. */
+export function typesafeClient(opts: { apiKey: string; baseUrl?: string; fetch?: typeof fetch }): JevClient {
+  const base = opts.baseUrl ?? "https://api.typesafe.ai/v1";
+  const doFetch = opts.fetch ?? fetch;
+  return {
+    async evaluate(req) {
+      const body = JSON.stringify({ model: req.model, state: req.state, questions: req.questions });
+      let lastErr: unknown;
+      const signal = AbortSignal.timeout(45_000);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const res = await doFetch(`${base}/systemone`, {
+          method: "POST",
+          signal,
+          headers: { authorization: `Bearer ${opts.apiKey}`, "content-type": "application/json" },
+          body,
+        });
+        if (res.status === 429 || res.status === 529 || res.status >= 500) {
+          lastErr = new JevError(res.status);
+          await new Promise((r) => setTimeout(r, 2 ** attempt * 500 + Math.random() * 250));
+          continue;
+        }
+        if (!res.ok) throw new JevError(res.status);
+        const json = responseSchema.parse(await res.json());
+        const answers: Record<string, Answer> = {};
+        for (const [id, a] of Object.entries(json.answers)) {
+          if (a.type === "noul") answers[id] = { type: "noul", p: a.noul };
+          else if (a.type === "choice")
+            answers[id] = { type: "choice", choice: a.choice, probabilities: a.probabilities, confidence: confidenceOf(a.probabilities) };
+          else answers[id] = { type: "score", score: a.score, probabilities: a.probabilities, confidence: confidenceOf(a.probabilities) };
+        }
+        for (const answer of Object.values(answers)) {
+          if (answer.type !== "noul" && Object.keys(answer.probabilities).length < 2) throw new Error("TypeSafe omitted its probability distribution");
+        }
+        validateAnswers(req, answers);
+        return { answers, usage: { inputTokens: json.usage?.input_tokens ?? 0 }, modelId: json.model };
+      }
+      throw lastErr;
+    },
+  };
+}
+
+const probability = z.number().finite().min(0).max(1);
+const distribution = z.record(z.string(), probability);
+const responseSchema = z.object({
+  model: z.string().min(1),
+  answers: z.record(z.string(), z.discriminatedUnion("type", [
+    z.object({ type: z.literal("noul"), noul: probability }),
+    z.object({ type: z.literal("choice"), choice: z.string(), probabilities: distribution }),
+    z.object({ type: z.literal("score"), score: z.number().finite(), probabilities: distribution }),
+  ])),
+  usage: z.object({ input_tokens: z.number().nonnegative() }).optional(),
+});
+
+/** Missing results are transport failures, never evidence that a rule passed. */
+export function validateAnswers(req: EvaluateRequest, answers: Record<string, Answer>): void {
+  if (Object.keys(answers).length !== Object.keys(req.questions).length) throw new Error("Jev returned an incomplete answer set");
+  for (const [id, q] of Object.entries(req.questions)) {
+    const a = answers[id];
+    if (!a || a.type !== q.type) throw new Error("Jev returned an incompatible answer");
+    if (a.type === "noul") probability.parse(a.p);
+    if (a.type === "choice" && q.type === "choice" && !Object.hasOwn(q.criteria, a.choice)) throw new Error("Jev returned an unknown choice");
+    if (a.type === "score" && q.type === "score" && (!Number.isFinite(a.score) || a.score < 0 || a.score > q.criteria.length - 1)) throw new Error("Jev returned an invalid score");
+    if (a.type !== "noul" && q.type !== "noul" && Object.keys(a.probabilities).length) {
+      const keys = q.type === "choice" ? Object.keys(q.criteria) : q.criteria.map((_, i) => String(i));
+      const ps = distribution.parse(a.probabilities);
+      if (Object.keys(ps).length !== keys.length || keys.some((k) => !Object.hasOwn(ps, k)) || Math.abs(Object.values(ps).reduce((n, p) => n + p, 0) - 1) > 0.02) throw new Error("Jev returned an invalid probability distribution");
+    }
+  }
+}
+
+export class JevError extends Error {
+  override name = "JevError";
+  constructor(
+    readonly status: number,
+  ) {
+    super(`Jev request failed (HTTP ${status}). Check provider credentials, quota and availability.`);
+  }
+}
+
+/** Picks a provider from config + environment. */
+export function clientFromEnv(
+  cfg: { provider: "gateway" | "typesafe"; zeroDataRetention: boolean },
+  env: Record<string, string | undefined> = process.env,
+): JevClient {
+  if (cfg.provider === "typesafe") {
+    const apiKey = env.TYPESAFE_API_KEY;
+    if (!apiKey) throw new Error("provider = typesafe needs TYPESAFE_API_KEY");
+    return typesafeClient({ apiKey });
+  }
+  if (!env.AI_GATEWAY_API_KEY && !env.VERCEL_OIDC_TOKEN && !env.VERCEL) {
+    throw new Error("provider = gateway needs AI_GATEWAY_API_KEY (or run on Vercel for OIDC)");
+  }
+  return gatewayClient({ zeroDataRetention: cfg.zeroDataRetention });
+}

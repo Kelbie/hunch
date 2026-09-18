@@ -1,0 +1,9 @@
+# expect:
+# task: Add a subtract helper
+--- a/packages/core/src/math.ts
++++ b/packages/core/src/math.ts
+@@ -1,1 +1,4 @@
+ export const add = (a: number, b: number) => a + b;
++
++/** Subtracts b from a. */
++export const subtract = (a: number, b: number) => a - b;

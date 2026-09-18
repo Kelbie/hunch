@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2024",
+    "lib": [
+      "ES2024",
+      "ESNext.Collection",
+      "DOM",
+      "DOM.Iterable"
+    ],
+    "module": "Preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "bun"
+    ],
+    "verbatimModuleSyntax": false,
+    "allowImportingTsExtensions": true
+  }
+}

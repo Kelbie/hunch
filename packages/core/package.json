@@ -1,0 +1,29 @@
+{
+  "name": "@kelbie/hunch-core",
+  "version": "0.1.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "bun": "./src/index.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "dependencies": {
+    "ai": "7.0.105",
+    "@ai-sdk/gateway": "4.0.85",
+    "oxc-parser": "0.150.0",
+    "parse-diff": "0.12.0",
+    "picomatch": "4.0.7",
+    "smol-toml": "1.8.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/picomatch": "latest"
+  },
+  "private": true,
+  "scripts": {
+    "build": "tsup --config tsup.config.ts"
+  }
+}

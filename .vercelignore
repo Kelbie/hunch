@@ -1,0 +1,10 @@
+.env*
+.git
+.agents
+node_modules
+**/node_modules
+**/test
+**/dist
+examples
+docs
+*.tgz

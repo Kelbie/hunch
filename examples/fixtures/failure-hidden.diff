@@ -1,0 +1,14 @@
+# expect: agents-md/root/failure-as-success
+# task: Preserve failure when payment processing fails
+diff --git a/packages/core/src/payment.ts b/packages/core/src/payment.ts
+--- a/packages/core/src/payment.ts
++++ b/packages/core/src/payment.ts
+@@ -1,3 +1,7 @@
+ export async function pay() {
+-  return await transfer();
++  try {
++    return await transfer();
++  } catch {
++    return { success: true };
++  }
+ }

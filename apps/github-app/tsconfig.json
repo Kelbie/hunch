@@ -1,0 +1,19 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "include": [
+    "api",
+    "lib",
+    "test"
+  ],
+  "compilerOptions": {
+    "types": [
+      "node",
+      "bun"
+    ],
+    "lib": [
+      "ES2024",
+      "DOM",
+      "DOM.Iterable"
+    ]
+  }
+}

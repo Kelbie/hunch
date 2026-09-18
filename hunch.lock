@@ -1,0 +1,116 @@
+{
+  "version": 1,
+  "selectionHash": "b83ebae0413421c45ad5e687456247cb2f68838a6308a0b4fade851942682ef1",
+  "compiler": {
+    "model": "human-reviewed:initial-policy"
+  },
+  "sources": [
+    {
+      "id": "skill/codebase-design",
+      "kind": "skill",
+      "origin": "./.agents/skills/codebase-design",
+      "path": ".agents/skills/codebase-design/SKILL.md",
+      "scope": "",
+      "hash": "ed4a1837af02ce111aa6613e9a04e3bbcc07e7732fe0c613cda2b6035404b8d6",
+      "rules": [
+        {
+          "id": "skill/codebase-design/caller-bookkeeping",
+          "section": "Depth and small interfaces",
+          "instructions": "Does added code in `hunk` expose internal bookkeeping operations that force a caller to coordinate implementation steps instead of requesting its intended task?",
+          "message": "Keep internal bookkeeping inside the module that owns it.",
+          "criteria": {
+            "true": "The added or changed code clearly demonstrates the concern.",
+            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+          },
+          "appliesTo": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.rs"
+          ]
+        },
+        {
+          "id": "skill/codebase-design/hypothetical-adapter",
+          "section": "One adapter means a hypothetical seam",
+          "instructions": "Does `hunk` add an abstraction whose only stated purpose is a hypothetical future provider, while the visible code has only one implementation and no current varying behavior?",
+          "message": "Introduce abstractions for actual variation, not hypothetical providers.",
+          "criteria": {
+            "true": "The added or changed code clearly demonstrates the concern.",
+            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+          },
+          "appliesTo": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.rs"
+          ]
+        },
+        {
+          "id": "skill/codebase-design/test-private-details",
+          "section": "The interface is the test surface",
+          "instructions": "Does a test added in `hunk` couple its assertion to a private implementation detail instead of the observable behavior of the public interface?",
+          "message": "Test observable behavior through the public interface.",
+          "criteria": {
+            "true": "The added or changed code clearly demonstrates the concern.",
+            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+          },
+          "appliesTo": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.rs"
+          ]
+        }
+      ],
+      "notChecked": [
+        {
+          "section": "Whole-project architecture and design exercises",
+          "reason": "Local symptoms only: module depth, dependency quality across files, and the absence of duplication require broader review."
+        }
+      ]
+    },
+    {
+      "id": "agents-md/root",
+      "kind": "agents-md",
+      "origin": "./AGENTS.md",
+      "path": "AGENTS.md",
+      "scope": "",
+      "hash": "57d17bb66ccdef29bf4bb02281ec122a0164105d5e1388d9e3c220ff635d6345",
+      "rules": [
+        {
+          "id": "agents-md/root/failure-as-success",
+          "section": "Preserve failures",
+          "instructions": "Does `hunk` catch a failed operation and return a success-shaped empty result that prevents the caller from distinguishing failure?",
+          "message": "Preserve failures that callers need to handle.",
+          "criteria": {
+            "true": "The added or changed code clearly demonstrates the concern.",
+            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+          },
+          "appliesTo": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.rs"
+          ]
+        },
+        {
+          "id": "agents-md/root/untrusted-policy",
+          "section": "Immutable base policy",
+          "instructions": "Does `hunk` read PR-head configuration as the authoritative policy used to judge that same PR?",
+          "message": "Judge PRs against trusted base policy.",
+          "criteria": {
+            "true": "The added or changed code clearly demonstrates the concern.",
+            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+          },
+          "appliesTo": [
+            "**/*.ts",
+            "**/*.tsx",
+            "**/*.rs"
+          ]
+        }
+      ],
+      "notChecked": [
+        {
+          "section": "Contributor process and verification",
+          "reason": "Running commands, reviewing standards, secret handling across systems and actual deployment require separate verification."
+        }
+      ]
+    }
+  ]
+}

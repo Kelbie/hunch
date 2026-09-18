@@ -1,0 +1,1 @@
+Use GitHub issues in kelbie/hunch (`gh issue view NUMBER --repo kelbie/hunch`). The initial implementation specification is the user's request, recorded in docs/spec.md. Do not automatically send messages or file issues unless requested.
