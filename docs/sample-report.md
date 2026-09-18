@@ -1,33 +1,55 @@
-# Live single-section report
+# Sample PR report
 
-This is the new formatter applied to a real Jev response for the checkout section of [showcase PR #8](https://github.com/Kelbie/hunch/pull/8), evaluated locally on 2026-09-18 through Gateway OIDC with the public repository’s approved ZDR opt-out. It demonstrates an ordered score and a skill-derived boolean concern combined without losing attribution. It is not the full hosted PR report or an accuracy benchmark.
+The GitHub App's summary comment and one inline comment, generated from a real Jev review of the [showcase demo PR](https://github.com/Kelbie/hunch/pull/9) diff on 2026-09-18. On a PR, each **Where** link opens the inline comment's thread; here they link to code instead. Findings are model judgments, not an accuracy benchmark.
+
+## Summary comment
 
 <!-- hunch:summary -->
-## Hunch review
+### 🔮 Hunch · 11 possible issues in 7 files (2 errors, 9 warnings) · review complete
 
-**1 possible issue to review.**
+| | Concern | Where |
+| :-: | --- | --- |
+| 🔴 | The invoice lookup may trust a caller-supplied tenant ID, allowing access to another tenant's invoices.<br><sub>`demo/tenant-access`</sub> | [`authorization.ts:7`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c/examples/review-showcase/typescript/authorization.ts#L7) |
+| 🔴 | A retry may charge the customer twice: each attempt gives the gateway a new idempotency key.<br><sub>`demo/payment-retry`</sub> | [`payment.ts:8`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c/examples/review-showcase/typescript/payment.ts#L8) |
+| 🟡 | 🟡 A previously supported edge case may no longer behave correctly.<br><sub>`correctness/edge-case-regression`</sub><br>🟡 A comment or API description may contradict the changed behavior.<br><sub>`docs/contradictory-comment`</sub><br>🟡 A recoverable input or runtime failure may now panic instead of reaching the caller as an error.<br><sub>`rust/panic-on-recoverable-input`</sub> | [`config.rs:3`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c/examples/review-showcase/rust/src/config.rs#L3) |
+| 🟡 | A comment or API description may contradict the changed behavior.<br><sub>`docs/contradictory-comment`</sub> | [`cache.ts:3`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c/examples/review-showcase/typescript/cache.ts#L3) |
+| 🟡 | Callers may have to coordinate internal steps and intermediate state, making the required order easy to misuse.<br><sub>`demo/checkout-interface`</sub> | [`checkout.ts:11-27`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c/examples/review-showcase/typescript/checkout.ts#L11-L27) |
+| 🟡 | 🟡 A failed operation may now be reported as successful completion.<br><sub>`failures/misleading-success`</sub><br>🟡 Do not turn missing data, provider failures, or partial review into a success result.<br><sub>`agents-md/root/preserve-caller-failures`</sub><br>🟡 Report incomplete review coverage explicitly rather than hiding it.<br><sub>`agents-md/root/report-incomplete-coverage-explicitly`</sub> | [`review.ts:3-8`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c/examples/review-showcase/typescript/review.ts#L3-L8) |
+| 🟡 | Overlapping asynchronous operations may publish stale state or repeat a side effect.<br><sub>`typescript/async-ordering`</sub> | [`search.ts:5`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c/examples/review-showcase/typescript/search.ts#L5) |
 
-### [examples/review-showcase/typescript/checkout.ts:11–27](https://github.com/Kelbie/hunch/blob/02b221b1023e94c2aed53091d65d9e941d7e2dc6/examples/review-showcase/typescript/checkout.ts#L11-L27)
-
-1. Callers may have to coordinate internal steps and intermediate state, making the required order easy to misuse.
-
-Reviewed [02b221b](https://github.com/Kelbie/hunch/blob/02b221b1023e94c2aed53091d65d9e941d7e2dc6).
+<sub>Reviewed [`e4c4d58`](https://github.com/Kelbie/hunch/blob/e4c4d58c306da78d842c4ed689e29290dfbffa2c) with typesafe-ai/jev. Findings are model judgments, not proven bugs.</sub>
 
 <details>
 <summary>Review details</summary>
 
-These are configured concerns selected by the model. Links identify changed sections, not exact offending lines.
-
-| Issue | Rule | Source | Model result |
-| --- | --- | --- | --- |
-| 1 | demo/checkout-interface | config | score 0.08 &lt; 0.5: The caller must coordinate reservation, payment and finalization, preserving intermediate handles and their ordering. |
-| 1 | skill/codebase-design/caller-bookkeeping | skill/codebase-design | p(yes)=0.90 ≥ 0.75 |
+| Rule | Source | Model result |
+| --- | --- | --- |
+| demo/tenant-access | config | p(yes)=0.90 ≥ 0.85 |
+| demo/payment-retry | config | choice=duplicate-charge (confidence 1.00) |
+| correctness/edge-case-regression | hunch:recommended | p(yes)=0.87 ≥ 0.85 |
+| docs/contradictory-comment | hunch:recommended | p(yes)=0.94 ≥ 0.85 |
+| rust/panic-on-recoverable-input | hunch:rust | p(yes)=0.94 ≥ 0.85 |
+| docs/contradictory-comment | hunch:recommended | p(yes)=0.89 ≥ 0.85 |
+| demo/checkout-interface | config | score 0.15 &lt; 0.5: The caller must coordinate reservation, payment and finalization, preserving intermediate handles and their ordering. |
+| failures/misleading-success | hunch:recommended | p(yes)=0.89 ≥ 0.85 |
+| agents-md/root/preserve-caller-failures | agents-md/root | p(yes)=0.95 ≥ 0.75 |
+| agents-md/root/report-incomplete-coverage-explicitly | agents-md/root | p(yes)=0.90 ≥ 0.75 |
+| typescript/async-ordering | hunch:typescript | p(yes)=0.90 ≥ 0.85 |
 
 Guidance requiring human review:
 
-- skill/codebase-design: 1 guidance item(s) require human review (see hunch.lock).
-- agents-md/root: 1 guidance item(s) require human review (see hunch.lock).
-
-Model: typesafe-ai/jev. Scores are estimates, not measured accuracy.
+- skill/codebase-design: 10 guidance item(s) require human review (see hunch.lock).
+- agents-md/root: 10 guidance item(s) require human review (see hunch.lock).
 
 </details>
+
+## Inline comment
+
+Posted on `payment.ts` line 8 as part of a review, so GitHub shows it beside the diff:
+
+<!-- hunch:finding demo%2Fpayment-retry examples%2Freview-showcase%2Ftypescript%2Fpayment.ts -->
+🔴 **Error:** A retry may charge the customer twice: each attempt gives the gateway a new idempotency key.
+
+<sub>`demo/payment-retry` · choice=duplicate-charge (confidence 1.00) · from config</sub>
+
+<sub>🔮 Hunch · Not relevant? Resolve this conversation and Hunch won't raise it again on this PR.</sub>

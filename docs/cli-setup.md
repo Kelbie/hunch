@@ -1,6 +1,6 @@
 # Set up the GitHub App from your terminal
 
-This is the operator setup for bot comments, fork PRs, and multiple repositories. For Actions checks only, use the [three-step install](../README.md#get-pr-reviews-in-three-steps).
+This is the operator setup for bot comments, fork PRs, and multiple repositories. For Actions checks only, use the [three-step install](../README.md#getting-started).
 
 Use Node 22+, Bun 1.3.5+, GitHub CLI and a local macOS/Linux terminal. GitHub still requires browser confirmation of App registration and repository installation; Vercel may require Marketplace terms. Everything else below runs through the CLI. The hosted App authenticates to AI Gateway with Vercel OIDC: **no model API key to copy into repositories**. Gateway credits/quota must be available on your team.
 

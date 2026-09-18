@@ -22,7 +22,7 @@ gh secret set AI_GATEWAY_API_KEY
 npx @kelbie/hunch init --github   # adds .github/workflows/hunch.yml
 ```
 
-Commit the config and workflow. PRs then get a review under **Checks → Hunch**. For bot comments and fork PRs, use the [GitHub App](https://github.com/Kelbie/hunch/blob/main/docs/cli-setup.md) instead.
+Commit the config and workflow. PRs then get a review under **Checks → Hunch**, with each concern marked on the changed lines. For review comments and fork PRs, use the [GitHub App](https://github.com/Kelbie/hunch/blob/main/docs/cli-setup.md) instead.
 
 > On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = false`) to your config. The default needs Pro or Enterprise.
 
@@ -42,23 +42,86 @@ Commit the config and workflow. PRs then get a review under **Checks → Hunch**
 
 Run each as `npx @kelbie/hunch <command>`. Every `check` also takes paths to narrow the review, and `--reporter text|markdown|json|sarif|github`.
 
+## On pull requests
+
+With the [GitHub App](https://github.com/Kelbie/hunch/blob/main/docs/cli-setup.md), each concern is a normal review comment on the changed lines, so it shows the real diff and you can reply to it. One summary comment lists them all, errors first, linking to each thread.
+
+- **Not relevant?** Resolve the conversation. Hunch won't raise that rule in that file again on this PR. Only resolutions by people with write access count.
+- **Fixed it?** Push. Hunch resolves its own comments for concerns that are gone.
+- **Want a fresh look?** Comment `/hunch recheck`.
+
 ## Rules
 
-Rules live in `hunch.config.ts` or `hunch.toml`. Each has a level: `"warn"`, `"error"` or `"off"`.
+Rules live in `hunch.config.ts` or `hunch.toml`. Each has a level: `"warn"`, `"error"` or `"off"`. This example shows every kind of setting; you only need `extends` and a few rules to start.
 
 ```ts
-import { defineConfig, noul } from "@kelbie/hunch";
+import { choice, defineConfig, noul, score } from "@kelbie/hunch";
 
 export default defineConfig({
+  // Ready-made checks. Change or turn off any of them under `rules`.
   extends: ["hunch:recommended", "hunch:typescript"],
+
+  // Which files are reviewed. Lockfiles, minified files and node_modules are always skipped.
+  include: ["src/**"],
+  ignore: ["src/generated/**"],
+
   rules: {
+    // Plain English: flagged when a change likely breaks the sentence.
     "api/stable-errors": ["warn", "Changing an error returned to API clients must not remove information they rely on to recover."],
+
+    // noul: a yes/no question, flagged when P(yes) >= threshold.
     "tests/weakened": ["error", noul({
-      files: ["**/*.test.ts"],
       instructions: "Does `hunk` remove or loosen an assertion without adding an equivalent check?",
+      criteria: { true: "An assertion is deleted or made looser.", false: "Assertions are unchanged, stricter or only renamed." },
       threshold: 0.8,
+      files: ["**/*.test.ts"],            // only ask about these files
+      when: /expect|assert/,              // only ask when the change matches (saves requests)
+      message: "A test may have been weakened.",  // what reviewers see
     })],
+
+    // choice: Jev picks one label; labels listed in `report` are flagged.
+    "payments/retry-safety": ["error", choice({
+      instructions: "If the payment call in `hunk` is retried, what happens to the customer?",
+      criteria: {
+        "safe": "Retries reuse the same idempotency key, so the customer is charged once.",
+        "duplicate-charge": "A retry can charge the customer again.",
+        "not-applicable": "The change does not retry a payment.",
+      },
+      report: ["duplicate-charge"],
+      minConfidence: 0.5,
+      reference: "docs/api-contracts.md",  // a file from the base branch sent along as context
+    })],
+
+    // score: ordered levels, worst to best; flagged below reportBelow (0–1).
+    "tests/specific": ["warn", score({
+      instructions: "How precisely do the tests changed in `hunk` pin down the behavior they cover?",
+      criteria: [
+        "They only check that the code runs without throwing.",
+        "They check broad properties, such as a result being defined.",
+        "They check exact outputs for the main case.",
+        "They check exact outputs, including edge cases and failures.",
+      ],
+      reportBelow: 0.5,
+      files: ["**/*.test.ts"],
+    })],
+
+    // Change a preset's level, or turn it off.
+    "docs/contradictory-comment": "error",
+    "typescript/lossy-serialization": "off",
   },
+
+  // Different levels for some folders.
+  overrides: [{ files: ["scripts/**"], rules: { "api/stable-errors": "off" } }],
+
+  // Guidance to compile into hunch.lock (see "Skills and AGENTS.md").
+  skills: ["./.agents/skills/codebase-design", "mattpocock/skills"],  // omit to use every installed skill; [] for none
+  agentsMd: true,
+  docs: ["docs/api-contracts.md"],
+
+  failOnError: true,       // fail the check when an error-level concern is found
+  task: "pr",              // send the PR title and description as context ("none" to skip)
+  zeroDataRetention: true, // set false on Vercel Hobby
+  budget: { maxHunks: 100, maxRequests: 100, timeoutSeconds: 180 },
 });
 ```
 
@@ -69,7 +132,20 @@ export default defineConfig({
 | `choice` | Jev picks one of the labels you listed in `report`. |
 | `score` | The change scores below (or above) your threshold on a scale you define. |
 
-Presets: `hunch:recommended` (any language), `hunch:typescript`, `hunch:rust`. Every option is in [configuration](https://github.com/Kelbie/hunch/blob/main/docs/configuration.md).
+Every rule type also takes `files`, `when`, `reference` and `message`. In `hunch.toml` the same rules are tables, with kebab-case option names:
+
+```toml
+extends = ["hunch:recommended", "hunch:rust"]
+fail-on-error = true
+
+[rules."payments/retry-safety"]
+level = "error"
+choice = "If the payment call in `hunk` is retried, what happens to the customer?"
+criteria = { safe = "...", duplicate-charge = "...", not-applicable = "..." }
+report = ["duplicate-charge"]
+```
+
+Presets: `hunch:recommended` (any language), `hunch:typescript`, `hunch:rust`. Every option is explained in [configuration](https://github.com/Kelbie/hunch/blob/main/docs/configuration.md).
 
 ## Skills and AGENTS.md
 
