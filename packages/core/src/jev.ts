@@ -66,8 +66,9 @@ export function gatewayClient(opts: { zeroDataRetention: boolean; gatewayModel?:
         state: req.state as never,
         questions: questions as never,
         // Free-tier 429 windows can outlast the SDK's default 2s + 4s backoff.
-        // Five retries reach 62s; 90s bounds the whole call. Together with the
-        // engine's 180s admission deadline this stays within the 300s worker.
+        // Five retries have 62s of default backoff; Retry-After may change it.
+        // The shared signal bounds the whole call at 90s. The worker still
+        // enforces 300s, including GitHub reads and publication overhead.
         maxRetries: 5,
         abortSignal: AbortSignal.timeout(90_000),
         providerOptions: { gateway: { zeroDataRetention: opts.zeroDataRetention } },

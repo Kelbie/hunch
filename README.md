@@ -74,7 +74,7 @@ npx hunch check --base origin/main
 # Or: npx hunch check --staged
 ```
 
-[Sample report](docs/sample-report.md). Text, Markdown, JSON, SARIF and Actions summaries are supported. Reports identify configured concerns and model scores; they do not claim proven defects or hide incomplete coverage.
+[Sample report](docs/sample-report.md). [Live showcase PR](https://github.com/Kelbie/hunch/pull/8) covers boolean, choice and score questions, presets and skills. Text, Markdown, JSON, SARIF and Actions summaries are supported. Reports identify configured concerns and model scores; they do not claim proven defects or hide incomplete coverage.
 
 ## Add your team's skills
 

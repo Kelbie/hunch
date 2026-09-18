@@ -31,3 +31,9 @@ The Standards review found no actionable issues in semantic preset design, file 
 ## 0.3 CLI App setup review
 
 Independent Standards and Spec reviews covered the changes since `8fbfd12`. Standards reproduced a malformed loopback request that could terminate registration; the handler now rejects malformed/non-local request targets, with a real HTTP regression case that continues through successful registration afterward. Spec found a personal-account URL in the repair path for organization-owned Apps; the link now comes from validated App owner metadata and has integration coverage. Publication of the referenced v0.3.0 tag/archive is a release gate. Registration uses a simulated GitHub exchange in tests; existing-App connection, Marketplace provisioning, deployment, PR review and updating the same bot comment have live evidence in status.md.
+
+## PR comment and showcase review
+
+Standards and Spec reviews of `4cb9e0c...6004e70` found no actionable defects. Tests verify that comments lead with concerns, preserve distinct messages, consolidate only identical concerns at identical ranges, retain every contributing rule, and keep incomplete coverage visible. Provenance follows preset questions through severity changes and switches to config when a question is replaced. The showcase's extra questions apply only to their named examples.
+
+A live eight-hunk review encountered Gateway free-tier HTTP 429 responses. The Gateway adapter now permits five SDK retries within a shared 90-second timeout. Independent source review confirmed the SDK propagates that timeout through requests and retry sleeps. It also corrected the timing documentation: 62 seconds is the default backoff total, and GitHub setup/publication overhead means completion within the 300-second worker limit is not guaranteed.
