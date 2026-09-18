@@ -104,8 +104,8 @@ Presets cover common problems. `hunch:recommended` works with any language, and 
 
 Hunch can also review against your [Agent Skills](https://github.com/vercel-labs/skills) and `AGENTS.md` files. Jev only answers questions; it can't read a skill and work out what to check. So skills take two steps:
 
-1. **`hunch compile`** (once, and again when guidance changes) sends each skill and `AGENTS.md` to a general LLM, `anthropic/claude-sonnet-5` by default (set `compileModel` to change it). The LLM writes yes/no review questions and Hunch saves them in `hunch.lock`. This step doesn't touch your code.
-2. **`hunch check`** and PR reviews send those questions, along with your rules, to Jev. They never call the compile model.
+1. **`hunch compile`** (once, and again when guidance changes) asks which coding agent to use, Claude Code or Codex (whichever is installed), and at what effort, then sends each skill and `AGENTS.md` to it. Use the arrow keys to choose, or pass `--with claude --effort high` to skip the menu. The agent runs with your own login, without tools, in an empty folder. It writes yes/no review questions and Hunch saves them in `hunch.lock`. This step doesn't touch your code. Without either agent, `--with gateway` uses `compileModel` through Vercel AI Gateway instead.
+2. **`hunch check`** and PR reviews send those questions, along with your rules, to Jev. They never call the compile agent.
 
 ```sh
 npx skills add mattpocock/skills --skill codebase-design

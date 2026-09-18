@@ -12,7 +12,7 @@ export interface RuleExtractor {
   extract(input: { sourceId: string; sourceKind: SourceDoc["kind"]; chunk: string }): Promise<Extracted>;
 }
 
-const extractedSchema = z.object({
+export const extractedSchema = z.object({
   rules: z.array(
     z.object({
       slug: z.string().describe("kebab-case, unique within the source, e.g. `label-every-input`"),
@@ -24,14 +24,14 @@ const extractedSchema = z.object({
       criteriaTrue: z.string().describe("What a breaking hunk looks like, concretely"),
       criteriaFalse: z.string().describe("What a compliant or unrelated hunk looks like"),
       appliesTo: z.array(z.string()).describe("File globs the rule can apply to, e.g. `**/*.tsx`. Empty for any file."),
-      when: z.string().optional().describe("Optional JS regex that must match the hunk text for the rule to be relevant"),
+      when: z.string().nullable().describe("JS regex that must match the hunk text for the rule to be relevant, or null"),
     }),
   ),
   notChecked: z.array(z.object({ section: z.string(), reason: z.string() })),
 });
 export type Extracted = z.output<typeof extractedSchema>;
 
-const SYSTEM = `You convert engineering guidance (agent skills, AGENTS.md, style guides) into rules for a code-review classifier.
+export const EXTRACTION_SYSTEM = `You convert engineering guidance (agent skills, AGENTS.md, style guides) into rules for a code-review classifier.
 
 The classifier sees ONE diff hunk at a time: the file path and a unified diff (lines starting with + were added, - removed). It answers a single yes/no question per rule with a probability. It reads literally, cannot count or do arithmetic, cannot follow indirection, and cannot see other files.
 
@@ -51,13 +51,18 @@ export function gatewayExtractor(model: string, zeroDataRetention = true): RuleE
         abortSignal: AbortSignal.timeout(90_000),
         maxRetries: 2,
         schema: extractedSchema,
-        system: SYSTEM,
-        prompt: `Source: ${sourceId} (${sourceKind})\n\n<document>\n${chunk}\n</document>`,
+        system: EXTRACTION_SYSTEM,
+        prompt: extractionPrompt({ sourceId, sourceKind, chunk }),
         providerOptions: { gateway: { zeroDataRetention } },
       });
       return object;
     },
   };
+}
+
+/** The user message for one chunk; the document is data, not instructions. */
+export function extractionPrompt({ sourceId, sourceKind, chunk }: Parameters<RuleExtractor["extract"]>[0]): string {
+  return `Source: ${sourceId} (${sourceKind})\n\n<document>\n${chunk}\n</document>`;
 }
 
 /** Splits markdown at `#`/`##` headings into chunks under maxChars, keeping sections whole where possible. */
