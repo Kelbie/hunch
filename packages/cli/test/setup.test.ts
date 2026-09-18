@@ -1,10 +1,11 @@
 import { expect, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
+import { connect } from "node:net";
 import { connectApp, type AppCredentials, type Request } from "../src/setup/app.js";
 import { registerApp } from "../src/setup/register.js";
 
 const privateKey = generateKeyPairSync("rsa", { modulusLength: 2048 }).privateKey.export({ type: "pkcs8", format: "pem" }).toString();
-const metadata = { id: 42, slug: "hunch-test", permissions: { contents: "read", issues: "read", metadata: "read", pull_requests: "write", checks: "write" }, events: ["pull_request", "issue_comment"] };
+const metadata = { id: 42, slug: "hunch-test", owner: { login: "acme", type: "Organization" }, permissions: { contents: "read", issues: "read", metadata: "read", pull_requests: "write", checks: "write" }, events: ["pull_request", "issue_comment"] };
 const webhook = "https://example.vercel.app/api/webhook";
 
 test("App connection resumes a failed secret upload without losing or rotating its saved secret", async () => {
@@ -28,7 +29,7 @@ test("App connection resumes a failed secret upload without losing or rotating i
   expect(saved).toBe(original);
   expect(patches).toBe(1);
   expect(uploaded.get("GITHUB_PRIVATE_KEY")).toBe(privateKey);
-  expect(result).toEqual({ id: 42, slug: "hunch-test", missingEvents: [], installationUrl: "https://github.com/apps/hunch-test/installations/new" });
+  expect(result).toEqual({ id: 42, slug: "hunch-test", missingEvents: [], settingsUrl: "https://github.com/organizations/acme/settings/apps/hunch-test/permissions", installationUrl: "https://github.com/apps/hunch-test/installations/new" });
   expect(JSON.stringify(result)).not.toContain(privateKey);
   await expect(connectApp({ ...options, webhook: "https://another.vercel.app/api/webhook", setSecret: () => { throw new Error("must not upload"); } })).rejects.toThrow("differs");
 });
@@ -54,6 +55,16 @@ test("registration uses a loopback manifest flow and rejects forged callbacks be
     } });
   const start = new URL(await started);
   expect(start.hostname).toBe("127.0.0.1");
+  const malformedStatus = await new Promise<number>((resolve, reject) => {
+    const socket = connect(Number(start.port), start.hostname, () => {
+      socket.write(`GET //[ HTTP/1.1\r\nHost: ${start.host}\r\nConnection: close\r\n\r\n`);
+    });
+    let response = "";
+    socket.on("data", data => { response += data.toString(); });
+    socket.on("end", () => resolve(Number(response.match(/^HTTP\/1\.1 (\d+)/)?.[1])));
+    socket.on("error", reject);
+  });
+  expect(malformedStatus).toBe(400);
   const page = await fetch(start);
   expect(page.headers.get("cache-control")).toBe("no-store");
   const html = await page.text();

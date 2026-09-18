@@ -27,3 +27,7 @@ The live account rejected the default ZDR request because it is on Hobby. No aut
 ## 0.2 preset and setup review
 
 The Standards review found no actionable issues in semantic preset design, file scoping, package migration or generated workflow policy. The Spec review found that generic onboarding selected a TypeScript-only filter for other languages. The CLI now supports `--general`, defaults to general TOML outside Cargo/npm repositories, and documents the explicit flag when npm has introduced a package manifest. Mixed repositories are told to widen/remove `include`. The reviewer rechecked the fix with no remaining findings in that scope. Packed CLI checks exercise both general paths and verify existing policy is preserved when adding a workflow.
+
+## 0.3 CLI App setup review
+
+Independent Standards and Spec reviews covered the changes since `8fbfd12`. Standards reproduced a malformed loopback request that could terminate registration; the handler now rejects malformed/non-local request targets, with a real HTTP regression case that continues through successful registration afterward. Spec found a personal-account URL in the repair path for organization-owned Apps; the link now comes from validated App owner metadata and has integration coverage. Publication of the referenced v0.3.0 tag/archive is a release gate. Registration uses a simulated GitHub exchange in tests; existing-App connection, Marketplace provisioning, deployment, PR review and updating the same bot comment have live evidence in status.md.

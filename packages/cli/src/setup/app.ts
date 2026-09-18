@@ -45,14 +45,19 @@ export async function github(path: string, token: string, request: Request = fet
   try { return await response.json(); } catch { throw new Error("GitHub returned an invalid setup response."); }
 }
 
-const appSchema = z.object({ id: z.number().int().positive(), slug: z.string().regex(/^[a-z0-9-]+$/), permissions: z.record(z.string(), z.string()), events: z.array(z.string()) });
+const appSchema = z.object({
+  id: z.number().int().positive(), slug: z.string().regex(/^[a-z0-9-]+$/),
+  owner: z.object({ login: z.string().regex(/^[a-zA-Z0-9-]+$/), type: z.enum(["User", "Organization"]) }),
+  permissions: z.record(z.string(), z.string()), events: z.array(z.string()),
+});
 export async function inspectApp(id: number, privateKey: string, request: Request = fetch) {
   const parsed = appSchema.safeParse(await github("/app", appJwt(id, privateKey), request));
   if (!parsed.success || parsed.data.id !== id) throw new Error("GitHub returned unexpected App metadata.");
   const app = parsed.data;
   const missingPermissions = Object.entries(APP_PERMISSIONS).filter(([name, level]) => app.permissions[name] !== "write" && app.permissions[name] !== level).map(([name]) => name);
   if (missingPermissions.length) throw new Error(`App needs these permissions: ${missingPermissions.join(", ")}. Update its GitHub settings first.`);
-  return { id: app.id, slug: app.slug, missingEvents: APP_EVENTS.filter(event => !app.events.includes(event)) };
+  const settingsRoot = app.owner.type === "Organization" ? `https://github.com/organizations/${app.owner.login}/settings/apps` : "https://github.com/settings/apps";
+  return { id: app.id, slug: app.slug, missingEvents: APP_EVENTS.filter(event => !app.events.includes(event)), settingsUrl: `${settingsRoot}/${app.slug}/permissions` };
 }
 
 function credentialsPath(id: number): string {

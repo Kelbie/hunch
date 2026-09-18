@@ -45,7 +45,7 @@ export async function runAppCommand(args: string[]) {
   const app = await connectApp({ id, privateKey, webhook: required("webhook-url"), setSecret });
   console.log(`Connected ${app.slug}. Redeploy Vercel to activate the credentials.\nInstall: ${app.installationUrl}`);
   if (app.missingEvents.length) {
-    console.error(`Setup incomplete: enable ${app.missingEvents.join(" and ")} at https://github.com/settings/apps/${app.slug}/permissions`);
+    console.error(`Setup incomplete: enable ${app.missingEvents.join(" and ")} at ${app.settingsUrl}`);
     process.exitCode = 2;
   }
 }

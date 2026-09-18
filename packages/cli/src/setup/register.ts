@@ -31,7 +31,12 @@ export async function registerApp(options: {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Content-Security-Policy", "default-src 'none'; form-action https://github.com; frame-ancestors 'none'; base-uri 'none'");
     if (req.method !== "GET" || req.headers.host !== new URL(origin).host) { res.writeHead(403).end("Forbidden"); return; }
-    const url = new URL(req.url ?? "/", origin);
+    let url: URL;
+    try {
+      if (!req.url?.startsWith("/") || req.url.startsWith("//")) throw new Error("Invalid target");
+      url = new URL(req.url, origin);
+      if (url.origin !== origin) throw new Error("Invalid origin");
+    } catch { res.writeHead(400).end("Invalid request target"); return; }
     if (url.pathname === `/start/${nonce}`) {
       const manifest = { name: options.name, description: "Semantic PR review with Jev and Agent Skills.", url: "https://github.com/Kelbie/hunch", public: false,
         hook_attributes: { url: webhook, active: true }, redirect_url: `${origin}/callback`,
