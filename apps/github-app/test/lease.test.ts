@@ -1,5 +1,10 @@
 import { expect, test } from "bun:test";
-import { withReviewLease, type LeaseStore } from "../lib/lease.js";
+import { leaseCredentials, withReviewLease, type LeaseStore } from "../lib/lease.js";
+
+test("lease credentials accept Marketplace naming without mixing credentials from different stores", () => {
+  expect(leaseCredentials({ KV_REST_API_URL: "https://marketplace.example", KV_REST_API_TOKEN: "marketplace" })).toEqual({ url: "https://marketplace.example", token: "marketplace" });
+  expect(leaseCredentials({ UPSTASH_REDIS_REST_URL: "https://other.example", KV_REST_API_TOKEN: "marketplace" })).toBeNull();
+});
 
 test("overlapping PR jobs cannot both enter publication; errors release only their lease", async () => {
   const owners = new Map<string, string>();

@@ -17,7 +17,8 @@ In [GitHub App settings](https://github.com/settings/apps/new), create an App wi
 - Homepage: your Hunch repository URL.
 - Webhook URL: `https://YOUR-PRODUCTION-DOMAIN/api/webhook`.
 - Webhook secret: generate a random secret in a password manager.
-- Repository permissions: **Contents read**, **Pull requests write**, **Checks write**, **Metadata read**. No contents write or Actions permission is needed.
+- Repository permissions: **Contents read**, **Issues read**, **Pull requests write**, **Checks write**, **Metadata read**. Issues read is required to subscribe to [issue-comment events](https://docs.github.com/en/webhooks/webhook-events-and-payloads#issue_comment). No contents write or Actions permission is needed.
+- Leave redirect/callback and setup URLs empty, OAuth during installation and Device Flow unchecked; Hunch authenticates as the installation. Keep user-token expiration at its default.
 - Subscribe to **Pull request** and **Issue comment** events. An issue_comment webhook for a PR is processed only for exact `/hunch recheck`; the worker verifies the sender's current write/maintain/admin access.
 - Install on the repositories you want reviewed.
 
