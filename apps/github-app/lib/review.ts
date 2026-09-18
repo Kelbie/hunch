@@ -1,4 +1,4 @@
-import { check, clientFromEnv, findingKey, findingKeysIn, githubApi, githubRepoReader, LOCK_FILE, loadConfig, parseHunks, parseLock, planThreads, staleSources, summaryMarkdown, type Config, type JevClient } from "../../../packages/core/src/index.js";
+import { check, clientFromEnv, ConfigError, findingKey, findingKeysIn, githubApi, githubRepoReader, LOCK_FILE, loadConfig, parseHunks, parseLock, planThreads, staleSources, summaryMarkdown, type Config, type JevClient } from "../../../packages/core/src/index.js";
 import { z } from "zod";
 import type { ReviewJob } from "./events.js";
 
@@ -10,7 +10,15 @@ export interface ReviewDeps {
   token: string; appId: number; apiBase?: string;
   jev?: (config: Config) => JevClient;
   log?: (msg: string) => void;
+  /** This delivery's number (from 1) and how many the queue gets before Hunch gives up. */
+  attempt?: number;
+  maxAttempts?: number;
+  /** Wait between GitHub API retries; tests skip it. */
+  sleep?: (ms: number) => Promise<void>;
 }
+
+/** A failure retrying can't fix. Its message is written by Hunch and safe to publish. */
+class PermanentError extends Error {}
 
 const WRITERS = ["admin", "maintain", "write"];
 
@@ -20,9 +28,13 @@ async function threadLinks(api: ReturnType<typeof githubApi>, repo: string, pr: 
   return new Map(threads.filter((t) => t.mine && !t.resolved).flatMap((t) => findingKeysIn(t.body).map((k) => [k, t.url] as const)));
 }
 
-/** Throws on failure so the durable queue retries, with a failed check visible meanwhile. */
-export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skipped" | "done"> {
-  const api = githubApi(deps.token, deps.apiBase);
+/**
+ * Throws on a temporary failure so the durable queue retries; meanwhile the check
+ * says it is retrying. Only the last attempt, or a failure retrying can't fix,
+ * marks the check failed, and then the job is acknowledged instead of retried.
+ */
+export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skipped" | "done" | "failed"> {
+  const api = githubApi(deps.token, deps.apiBase, { sleep: deps.sleep });
   if (job.sender) {
     if (!WRITERS.includes(await api.permission(job.repo, job.sender))) return "skipped";
   }
@@ -32,15 +44,18 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
   const baseSha = pull.base.sha;
   const headSha = pull.head.sha;
   const base = githubRepoReader(api, job.repo, baseSha);
-  const loaded = await loadConfig(base).then((value) => ({ value }), () => ({ error: true as const }));
+  // Only an invalid config is permanent; a GitHub read failure is retried.
+  const loaded = await loadConfig(base).then((value) => ({ value }), (e) => e instanceof ConfigError ? { error: true as const } : Promise.reject(e));
   if ("value" in loaded && !loaded.value) return "skipped";
   const { id } = await api.startCheck(job.repo, headSha, `hunch:${job.pr}:${baseSha}:${headSha}:${job.deliveryId ?? "local"}`, deps.appId);
   try {
-    if ("error" in loaded) throw new Error("Base branch configuration is invalid");
+    if ("error" in loaded) throw new PermanentError("The Hunch config on the base branch is invalid. Run `npx @kelbie/hunch check` locally to see why, fix it on the base branch, then comment /hunch recheck.");
     const { config } = loaded.value!;
-    if (pull.changed_files > 300) throw new Error("PR exceeds GitHub's 300-file comparison limit; split this PR before review");
+    if (pull.changed_files > 300) throw new PermanentError("This PR changes more than 300 files, GitHub's comparison limit. Split it to get a review.");
     const text = await base.read(LOCK_FILE);
-    const lock = text ? parseLock(text) : null;
+    let lock = null;
+    try { lock = text ? parseLock(text) : null; }
+    catch { throw new PermanentError("hunch.lock on the base branch is invalid. Run `npx @kelbie/hunch compile` and commit it, then comment /hunch recheck."); }
     const stale = await staleSources(lock, config, base);
     const diff = await api.compareDiff(job.repo, baseSha, headSha);
     if (diff == null) throw new Error("Immutable comparison unavailable");
@@ -72,9 +87,20 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     await api.finishCheck(job.repo, id, reported, { summary, failOnError: config.failOnError });
     deps.log?.(`${job.repo}#${job.pr}: reviewed ${headSha.slice(0, 7)}`);
     return "done";
-  } catch {
+  } catch (e) {
     // Never publish raw provider errors, source snippets, tokens or private API bodies.
-    await api.failCheck(job.repo, id, "Review could not complete. Check the base configuration, guidance lock, provider credentials/quota and PR size, then retry with /hunch recheck.");
-    throw new Error("Hunch review failed; safe to retry");
+    if (e instanceof PermanentError) {
+      await api.failCheck(job.repo, id, e.message);
+      return "failed";
+    }
+    const attempt = deps.attempt ?? 1, max = deps.maxAttempts ?? 1;
+    if (attempt < max) {
+      await api.retryingCheck(job.repo, id, attempt, max);
+      throw new Error("Hunch review failed; safe to retry");
+    }
+    await api.failCheck(job.repo, id, `Review could not complete after ${plural(max, "attempt")}. This is usually a provider outage, quota or credentials problem. Comment /hunch recheck to try again.`);
+    return "failed";
   }
 }
+
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;

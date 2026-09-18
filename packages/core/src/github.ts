@@ -5,13 +5,42 @@ import { reviewComment, STICKY_MARKER, toAnnotations } from "./report.js";
 import type { Finding } from "./check.js";
 import type { ReviewThread } from "./threads.js";
 
-export function githubApi(token: string, baseUrl = "https://api.github.com") {
+export interface GitHubApiOptions {
+  /** Waits between retries; tests pass a no-op. */
+  sleep?: (ms: number) => Promise<void>;
+}
+
+const RETRIES = 4;
+
+export function githubApi(token: string, baseUrl = "https://api.github.com", { sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }: GitHubApiOptions = {}) {
+  /**
+   * Retries rate limits, server errors and network failures with backoff.
+   * A write is only resent when GitHub rejected it unprocessed (rate limited),
+   * so a retry can't post the same comment twice. GraphQL reads and thread
+   * resolution are safe to repeat.
+   */
   const call = async <T>(method: string, path: string, body?: unknown, accept = "application/vnd.github+json"): Promise<T> => {
-    const res = await fetch(`${baseUrl}${path}`, {
-      method, signal: AbortSignal.timeout(30_000),
-      headers: { accept, authorization: `Bearer ${token}`, "user-agent": "hunch", "x-github-api-version": "2022-11-28", ...(body ? { "content-type": "application/json" } : {}) },
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    const repeatable = method !== "POST" || path === "/graphql";
+    let res: Response | undefined;
+    for (let attempt = 0; ; attempt++) {
+      try {
+        res = await fetch(`${baseUrl}${path}`, {
+          method, signal: AbortSignal.timeout(30_000),
+          headers: { accept, authorization: `Bearer ${token}`, "user-agent": "hunch", "x-github-api-version": "2022-11-28", ...(body ? { "content-type": "application/json" } : {}) },
+          body: body ? JSON.stringify(body) : undefined,
+        });
+      } catch (e) {
+        // No response: the request may have been applied, so only repeat safe calls.
+        if (!repeatable || attempt >= RETRIES) throw e;
+        await sleep(backoff(attempt));
+        continue;
+      }
+      const rateLimited = res.status === 429 || (res.status === 403 && (res.headers.has("retry-after") || res.headers.get("x-ratelimit-remaining") === "0"));
+      const transient = rateLimited || (repeatable && res.status >= 500);
+      if (!transient || attempt >= RETRIES) break;
+      await res.body?.cancel();
+      await sleep(retryAfter(res) ?? backoff(attempt));
+    }
     if (res.status === 404 && method === "GET") return null as T;
     if (!res.ok) throw Object.assign(new Error(`GitHub ${method} request failed (HTTP ${res.status})`), { status: res.status });
     const text = await res.text();
@@ -114,6 +143,10 @@ export function githubApi(token: string, baseUrl = "https://api.github.com") {
     failCheck: (repo: string, checkId: number, message: string) => call("PATCH", `/repos/${repo}/check-runs/${checkId}`, {
       status: "completed", conclusion: "failure", output: { title: "Hunch could not complete", summary: message.slice(0, 60_000) },
     }),
+    /** Keeps the check pending while the queue retries, instead of showing a failure. */
+    retryingCheck: (repo: string, checkId: number, attempt: number, max: number) => call("PATCH", `/repos/${repo}/check-runs/${checkId}`, {
+      status: "in_progress", output: { title: "Retrying after a temporary problem", summary: `Attempt ${attempt} of ${max} couldn't finish, usually because of a provider timeout or rate limit. Hunch retries automatically.` },
+    }),
     supersedeCheck: (repo: string, checkId: number) => call("PATCH", `/repos/${repo}/check-runs/${checkId}`, {
       status: "completed", conclusion: "cancelled", output: { title: "Superseded by a newer PR revision", summary: "A newer revision needs a separate review." },
     }),
@@ -145,4 +178,15 @@ export function githubRepoReader(api: ReturnType<typeof githubApi>, repo: string
     },
     async files() { return (await tree()).filter((e) => e.type === "blob").map((e) => e.path).sort(); },
   };
+}
+
+const backoff = (attempt: number) => 1000 * 2 ** attempt + Math.floor(Math.random() * 250);
+
+/** Honors GitHub's Retry-After or rate-limit reset, capped so one call can't outlast the worker. */
+function retryAfter(res: Response): number | undefined {
+  const after = Number(res.headers.get("retry-after"));
+  if (after > 0) return Math.min(after, 60) * 1000;
+  const reset = Number(res.headers.get("x-ratelimit-reset"));
+  if (res.headers.get("x-ratelimit-remaining") === "0" && reset) return Math.min(Math.max(reset * 1000 - Date.now(), 1000), 60_000);
+  return undefined;
 }
