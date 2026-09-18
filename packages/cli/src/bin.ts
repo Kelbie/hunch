@@ -66,11 +66,12 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
   hunch find "<task>" [paths…]     find the code a change would touch, and print it
         [--facet edit,contract,caller,test,precedent]   ask only these, report only these
         [--min 0.5] [--top 12] [--concurrency 8] [--head ref] [--dry-run]
-        [--reporter markdown|text|json]
+        [--reporter markdown|text|json] [--no-code]
         [--prs] [--pr-max 10] [--drafts]   also ask whether an open PR already does this
-        Prints the matching source, grouped by what each chunk is to the task, as one
-        Markdown document to hand to a coding agent. --reporter text lists the
-        locations only; --dry-run counts chunks and requests without sending anything.
+        Prints the matching source, grouped by what each chunk is to the task: a
+        coloured report at a terminal, Markdown when redirected to a file or a pipe,
+        so it can be handed straight to a coding agent. --no-code prints locations
+        only; --dry-run counts chunks and requests without sending anything.
         --top is per facet, so the one test worth updating is not crowded out by
         thirty definitions.
   hunch doctor [--app slug]        say why this repository is not being reviewed
@@ -134,6 +135,7 @@ async function main() {
       facet: { type: "string", multiple: true },
       concurrency: { type: "string" },
       prs: { type: "boolean", default: false },
+      "no-code": { type: "boolean", default: false },
       "pr-max": { type: "string" },
       drafts: { type: "boolean", default: false },
       min: { type: "string" },
@@ -241,11 +243,16 @@ async function main() {
       const loaded = await loadConfig(repo);
       if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
       const { config } = loaded;
-      // Default markdown, not the shared `reporter` default: find exists to hand code to something
-      // else, so the code has to be in the output unless the person asks for the short list.
+      // A person at a terminal gets the coloured report; a redirect gets Markdown, because the
+      // reason to redirect this is to hand it to something that reads Markdown. Either way the
+      // code is in the output — that is what find is for.
       const chose = rest.some((a) => a === "--reporter" || a.startsWith("--reporter="));
-      const reporter = chose ? values.reporter! : "markdown";
+      const reporter = chose ? values.reporter! : process.stdout.isTTY ? "text" : "markdown";
       if (!["text", "markdown", "json"].includes(reporter)) return fail("Unknown --reporter for find; use markdown, text or json");
+      const style = {
+        color: process.env.FORCE_COLOR ? process.env.FORCE_COLOR !== "0" : Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && process.env.TERM !== "dumb",
+        width: Math.min(process.stdout.columns || 100, 120),
+      };
       const facets = (values.facet ?? []).flatMap((f) => f.split(",")).map((f) => f.trim()).filter(Boolean) as Facet[];
       const unknown = facets.filter((f) => !FACETS.includes(f));
       if (unknown.length) return fail(`Unknown --facet ${unknown.join(", ")}; choose from ${FACETS.join(", ")}`);
@@ -296,7 +303,7 @@ async function main() {
           onProgress: (d, t) => progress(`read ${d}/${t} pull request titles`, d === t),
         });
         existingMd = pullsMarkdown(pulls);
-        existingText = pullsText(pulls);
+        existingText = pullsText(pulls, style);
         existingComplete = pulls.complete;
         existingWork = pulls;
       }
@@ -313,7 +320,7 @@ async function main() {
         onProgress: (d, t) => progress(`searched ${d}/${t} chunks`, d === t),
       });
       if (reporter === "json") console.log(JSON.stringify({ ...result, existingWork }, null, 2));
-      else if (reporter === "text") console.log(findText(result, existingText));
+      else if (reporter === "text") console.log(findText(result, { ...style, code: !values["no-code"], existing: existingText }));
       else console.log(findMarkdown(task, result, existingMd));
       // An unfinished sweep means the answer is "here is some of it", which callers must be able to
       // see — including an unchecked pull request list, since that cannot prove nothing is open.

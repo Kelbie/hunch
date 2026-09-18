@@ -1,4 +1,5 @@
 import { estimateTokens } from "./diff.js";
+import { wrapText as wrap } from "./find.js";
 import type { JevClient } from "./jev.js";
 
 /**
@@ -254,9 +255,56 @@ export function pullsMarkdown(result: PullsResult): string {
 const andList = (items: string[]): string =>
   items.length < 3 ? items.join(" and ") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
 
-/** One line per match for the terminal. */
-export function pullsText(result: PullsResult): string {
-  if (!result.matches.length && !result.notices.length) return "";
-  const out = result.matches.map((m) => `  ${m.score.toFixed(2)}  ${m.verdict === "duplicate" ? "may already do this   " : "touches the same code "} #${m.number} ${m.title}`);
-  return ["existing work:", ...(out.length ? out : ["  none found"]), ...result.notices.map((n) => `! ${n}`), ""].join("\n");
+export interface PullsTextOptions {
+  color?: boolean;
+  width?: number;
 }
+
+/**
+ * The terminal form of the same warning, laid out like `check`'s report. It leads with what to do,
+ * because a duplicate changes the reader's next action and a list of scores does not.
+ */
+export function pullsText(result: PullsResult, { color = false, width = 100 }: PullsTextOptions = {}): string {
+  if (!result.matches.length && !result.notices.length) return "";
+  const paint = (codes: string) => (s: string) => (color ? `\x1b[${codes}m${s}\x1b[0m` : s);
+  const bold = paint("1"), dim = paint("2"), yellow = paint("33"), cyan = paint("36"), magenta = paint("35"), red = paint("31");
+  const out: string[] = [bold("Existing work")];
+
+  const strong = result.matches.filter((m) => m.verdict === "duplicate" && m.score >= 0.7);
+  if (strong.length) {
+    out.push(`  ${red("!")} ${bold("Someone may already be doing this.")}`);
+    out.push(wrap(`Read ${andList(strong.map((m) => `#${m.number}`))} before writing anything — reviewing or finishing that work is probably cheaper than starting again.`, 4, width));
+  } else if (result.matches.length) {
+    out.push(wrap("No open pull request appears to make this change, but these touch the same code and would need rebasing against it — or against you.", 2, width));
+  } else {
+    out.push(wrap("Open pull requests could not be fully checked, so this does not prove the work is not already underway.", 2, width));
+  }
+
+  if (result.matches.length) {
+    const labelW = Math.max(...result.matches.map((m) => VERDICT_LABEL[m.verdict].length));
+    for (const m of result.matches) {
+      out.push("");
+      const label = m.verdict === "duplicate" ? yellow(VERDICT_LABEL[m.verdict].padEnd(labelW)) : dim(VERDICT_LABEL[m.verdict].padEnd(labelW));
+      out.push(`  ${magenta(m.score.toFixed(2))}  ${label}  ${cyan(`#${m.number}`)} ${m.title}`);
+      const detail = [
+        `by ${m.author}`,
+        m.branch ? `branch ${m.branch}` : "",
+        m.draft ? "draft" : "",
+        m.duplicate === undefined ? "judged on its title only; the diff could not be read" : `duplicate ${m.duplicate.toFixed(2)}, overlap ${m.overlap!.toFixed(2)}`,
+        m.truncated ? "diff was too large to read whole" : "",
+      ].filter(Boolean);
+      // Line up under the title: two spaces, the four-character score, two, the label, two.
+      const pad = " ".repeat(labelW + 10);
+      out.push(`${pad}${dim(detail.join(" · "))}`);
+      if (m.url) out.push(`${pad}${dim(m.url)}`);
+    }
+  }
+  for (const n of result.notices) out.push("", yellow("  !") + wrap(n, 4, width).slice(3));
+  return out.join("\n");
+}
+
+const VERDICT_LABEL: Record<PullVerdict, string> = {
+  duplicate: "may already do this",
+  overlap: "touches the same code",
+};
+

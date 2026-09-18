@@ -320,22 +320,85 @@ const FENCE: Record<string, string> = {
 };
 const fence = (language: string | null) => (language ? FENCE[language] : undefined);
 
-/** One line per match, densest first. */
-export function findText(result: FindResult, existing = ""): string {
-  const out: string[] = existing ? [existing] : [];
-  for (const facet of FACETS) {
-    const group = result.matches.filter((m) => m.facet === facet);
-    if (!group.length) continue;
-    out.push(`${FACET_LABEL[facet]}:`);
-    for (const m of group) out.push(`  ${m.score.toFixed(2)}  ${m.file}:${m.startLine}-${m.endLine}`);
-    out.push("");
+/**
+ * Terminal report, laid out like `check`'s: a headline, then one section per facet with its
+ * matches and their code. The gutter carries real file line numbers, so a number read off the
+ * screen is a number you can jump to.
+ */
+export function findText(result: FindResult, options: FindTextOptions = {}): string {
+  const { color = false, width = 100, code: showCode = true, maxLines = 40, existing = "" } = options;
+  const paint = (codes: string) => (s: string) => (color ? `\x1b[${codes}m${s}\x1b[0m` : s);
+  const bold = paint("1"), dim = paint("2"), green = paint("32"), yellow = paint("33"), cyan = paint("36"), magenta = paint("35");
+  const out: string[] = [];
+
+  const groups = FACETS.map((facet) => ({ facet, matches: mergeAdjacent(result.matches.filter((m) => m.facet === facet)) })).filter((g) => g.matches.length);
+  const shown = groups.reduce((n, g) => n + g.matches.length, 0);
+  const files = new Set(result.matches.map((m) => m.file)).size;
+  const summary = shown
+    ? `${plural(shown, "passage")} in ${plural(files, "file")} of ${count(result.stats.scored)} searched`
+    : `${green("nothing")} above the threshold in ${count(result.stats.scored)} chunks`;
+  out.push(`${bold("Hunch find")} · ${summary} · ${result.complete ? green("search complete") : yellow("partial search, see notes")}`);
+  if (existing) out.push("", existing.trimEnd());
+
+  for (const { facet, matches } of groups) {
+    out.push("", `${bold(FACET_LABEL[facet])} ${dim(`— ${FACET_QUESTION[facet]}`)}`);
+    const locW = Math.max(...matches.map((m) => `${m.file}:${m.startLine}-${m.endLine}`.length));
+    for (const m of matches) {
+      const also = FACETS.filter((f) => f !== facet && m.facets[f] >= 0.4).map((f) => `${FACET_LABEL[f]} ${m.facets[f].toFixed(2)}`);
+      const tags = [m.role ? `${m.role} file` : "", ...also].filter(Boolean);
+      out.push("");
+      out.push(`  ${magenta(m.score.toFixed(2))}  ${cyan(`${m.file}:${m.startLine}-${m.endLine}`.padEnd(locW))}${tags.length ? `  ${dim(`· ${tags.join(" · ")}`)}` : ""}`);
+      if (!showCode) continue;
+      const all = m.code.split("\n");
+      // A merged passage can run to hundreds of lines, which is right in the Markdown a model
+      // reads and a wall in a terminal a person reads. The heading already says where the rest is.
+      const lines = all.slice(0, maxLines);
+      const numW = String(m.endLine).length;
+      for (const [i, text] of lines.entries()) {
+        // Lines are never cut: whoever reads this, person or agent, needs the whole line.
+        out.push(`  ${dim(`${String(m.startLine + i).padStart(numW)} │`)} ${text}`);
+      }
+      if (all.length > lines.length) out.push(`  ${dim(`${" ".repeat(numW)} │ … ${plural(all.length - lines.length, "more line")}, to line ${m.endLine}`)}`);
+    }
   }
-  const counted = FACETS.map((f) => ({ f, n: result.matches.filter((m) => m.facet === f).length })).filter((c) => c.n);
-  return [
-    ...out,
-    `${result.matches.length} of ${result.stats.scored} chunks: ${counted.map((c) => `${c.n} ${FACET_LABEL[c.f]}`).join(", ") || "none"}.`,
-    ...result.notices.map((n) => `! ${n}`),
-  ].join("\n");
+
+  if (result.notices.length) {
+    out.push("", bold("Notes"));
+    for (const n of result.notices) out.push(yellow("  !") + wrapText(n, 4, width).slice(3));
+  }
+
+  const models = result.stats.modelIds.length ? ` · ${result.stats.modelIds.join(", ")}` : "";
+  out.push("", dim(`${plural(result.stats.scored, "chunk")} · ${plural(result.stats.requests, "request")} · ${count(result.stats.inputTokens)} input tokens${models}`));
+  return out.join("\n");
+}
+
+export interface FindTextOptions {
+  /** ANSI colors; the CLI enables them for an interactive terminal unless NO_COLOR is set. */
+  color?: boolean;
+  /** Terminal width, for wrapping prose. Code is never wrapped. */
+  width?: number;
+  /** Print the matched source under each location. On by default: the code is the point. */
+  code?: boolean;
+  /** Lines of each passage to print before saying how many were left. Markdown prints them all. */
+  maxLines?: number;
+  /** Rendered "existing work" section, from `pullsText`. */
+  existing?: string;
+}
+
+const count = (n: number) => n.toLocaleString("en-US");
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+/** Word wrap at an indent, matching the terminal report in report.ts. */
+export function wrapText(text: string, indent: number, width = 100): string {
+  const max = Math.max(40, width - indent);
+  const lines: string[] = [];
+  let line = "";
+  for (const word of text.split(/\s+/).filter(Boolean)) {
+    if (line && line.length + 1 + word.length > max) { lines.push(line); line = word; }
+    else line = line ? `${line} ${word}` : word;
+  }
+  if (line) lines.push(line);
+  return lines.map((l) => " ".repeat(indent) + l).join("\n");
 }
 
 async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>) {

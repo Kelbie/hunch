@@ -161,3 +161,36 @@ test("a truncated diff is judged, but the report says the judgment saw only part
   expect(res.matches[0]!.truncated).toBe(true);
   expect(pullsMarkdown(res)).toContain("diff was too large to read whole");
 });
+
+test("the terminal warning leads with what to do, and colour strips back to the same text", async () => {
+  const res = await findPulls({
+    ...base,
+    io: githubIo([pull(7, "Show onchain min and max"), pull(8, "Refactor receive")], { 7: "d", 8: "d" }),
+    client: jev((id, state) => {
+      if (id === "title") return 0.9;
+      const isSeven = String(state.title).includes("min and max");
+      return id === "duplicate" ? (isSeven ? 0.91 : 0.2) : isSeven ? 0.5 : 0.8;
+    }),
+  });
+  const text = pullsText(res, { width: 80 });
+  expect(text).toContain("Existing work");
+  expect(text).toContain("Someone may already be doing this.");
+  expect(text).toContain("Read #7 before writing anything");
+  expect(text).toContain("0.91  may already do this");
+  expect(text).toContain("0.80  touches the same code");
+  expect(text).toContain("#7 Show onchain min and max");
+  expect(text).toContain("duplicate 0.91, overlap 0.50");
+  expect(text).toContain("https://github.com/o/r/pull/7");
+
+  const painted = pullsText(res, { color: true, width: 80 });
+  expect(painted).toContain("\x1b[");
+  expect(painted.replace(/\x1b\[\d+m/g, "")).toBe(text);
+});
+
+test("the detail lines sit under the title, not under the score", async () => {
+  const res = await findPulls({ ...base, io: githubIo([pull(7, "Onchain min and max")], { 7: "d" }), client: jev(() => 0.9) });
+  const lines = pullsText(res).split("\n");
+  const title = lines.find((l) => l.includes("may already do this"))!;
+  const detail = lines.find((l) => l.includes("by someone"))!;
+  expect(detail.match(/^ */)![0].length).toBe(title.indexOf("#7"));
+});

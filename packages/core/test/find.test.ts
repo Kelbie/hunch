@@ -108,7 +108,7 @@ test("markdown output groups by facet and fences the code by language, ready to 
   // The document explains its own headings and its own limits to whoever reads it.
   expect(md).toContain("Code that carrying out the task would require editing.");
   expect(md).toContain("not a guarantee");
-  expect(findText(res)).toContain("2 of 2 chunks: 1 edit here, 1 contract to respect.");
+  expect(findText(res, { code: false })).toContain("2 passages in 2 files of 2 searched");
 });
 
 test("the code returned is the file's own source, not the diff markers it was chunked with", () => {
@@ -186,4 +186,60 @@ test("chunks that do not touch stay apart", () => {
   const far = { ...near, startLine: 50, endLine: 60, code: "b", score: 0.8 };
   expect(mergeAdjacent([near, far])).toHaveLength(2);
   expect(mergeAdjacent([near, { ...far, startLine: 11, endLine: 20 }])).toHaveLength(1);
+});
+
+test("the terminal report leads with a headline, sections each facet, and numbers every code line", async () => {
+  const res = await find({
+    ...base,
+    hunks: fileHunks("app/pay.ts", ["const a = 1;", "const b = 2;", "const c = 3;"].join("\n")),
+    client: scripted({ "app/pay.ts": { edit: 0.9, test: 0.45 } }),
+  });
+  const text = findText(res, { width: 80 });
+  expect(text).toContain("Hunch find · 1 passage in 1 file of 1 searched · search complete");
+  expect(text).toContain("edit here — Code that carrying out the task would require editing.");
+  expect(text).toContain("0.90  app/pay.ts:1-3");
+  // A runner-up facet is named, so a chunk that is nearly two things reads as two things.
+  expect(text).toContain("test to update 0.45");
+  // The gutter carries real file line numbers, so a number read off the screen can be jumped to.
+  expect(text).toContain("1 │ const a = 1;");
+  expect(text).toContain("3 │ const c = 3;");
+  expect(text).toContain("1 chunk · 1 request");
+});
+
+test("colour is opt-in, and the plain form is the same report without escapes", async () => {
+  const res = await find({ ...base, hunks: chunks("a.ts"), client: scripted({ "a.ts": { edit: 0.9 } }) });
+  expect(findText(res, { color: false })).not.toContain("\x1b[");
+  const painted = findText(res, { color: true });
+  expect(painted).toContain("\x1b[1mHunch find\x1b[0m");
+  // Stripping the escapes gets back exactly the uncoloured report.
+  expect(painted.replace(/\x1b\[\d+m/g, "")).toBe(findText(res, { color: false }));
+});
+
+test("an incomplete search says so in the headline, not only in the notes", async () => {
+  const res = await find({
+    ...base, hunks: chunks("a.ts", "b.ts"), budget: { maxRequests: 1, concurrency: 1 },
+    client: scripted({ "a.ts": { edit: 0.9 }, "b.ts": { edit: 0.9 } }),
+  });
+  const text = findText(res, { code: false });
+  expect(text).toContain("partial search, see notes");
+  expect(text).toContain("Notes");
+  expect(text).toContain("never searched");
+});
+
+test("nothing found reads as nothing found, not as an empty screen", async () => {
+  const res = await find({ ...base, hunks: chunks("a.ts"), client: scripted({}) });
+  expect(findText(res)).toContain("nothing above the threshold in 1 chunks");
+});
+
+test("a long passage is cut for the terminal only, and says where the rest is", async () => {
+  const long = Array.from({ length: 120 }, (_, i) => `const line${i + 1} = ${i + 1};`).join("\n");
+  const res = await find({ ...base, hunks: fileHunks("app/big.ts", long), client: scripted({ "app/big.ts": { edit: 0.9 } }) });
+  const text = findText(res, { maxLines: 10 });
+  expect(text).toContain("10 │ const line10 = 10;");
+  expect(text).not.toContain("const line11 = 11;");
+  expect(text).toContain("… 110 more lines, to line 120");
+  // Markdown is read by a model, not scrolled by a person, so it keeps every line.
+  const md = findMarkdown("t", res);
+  expect(md).toContain("const line120 = 120;");
+  expect(md).not.toContain("more lines, to line");
 });

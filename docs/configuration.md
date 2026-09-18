@@ -59,7 +59,10 @@ Five `noul` questions are asked per chunk in one request — `edit`, `contract`,
 result. Ranking compares raw probabilities across facets, which are not calibrated against each
 other; treat the grouping as the signal and the number as a within-facet ordering.
 
-The Markdown reporter (the default) prints the source of each match beneath a heading naming its
+The reporter defaults to the coloured terminal report when stdout is a terminal and to Markdown when
+it is redirected; `--reporter` overrides either way, and `--no-code` drops the source from the
+terminal form. The terminal form cuts a passage after 40 lines and says how many were left and where
+they end; Markdown keeps every line. The Markdown reporter prints the source of each match beneath a heading naming its
 exact file and line range, and merges chunks of one file whose ranges touch so a file split for
 budgeting reads as one passage. Only added lines are quoted, so the code shown always matches the
 range printed above it; `--reporter json` keeps every match separate and unmerged, with each facet's

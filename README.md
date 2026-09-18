@@ -139,14 +139,29 @@ being changed and containing no word from the query except "amount".
 
 ### The output
 
-Markdown on stdout, so redirect it into a file and give that file to your agent:
+At a terminal you get a coloured report, grouped by what each chunk is to the task, with the source
+under each location and real file line numbers in the gutter:
+
+```
+Hunch find · 2 passages in 1 file of 9 searched · search complete
+
+edit here — Code that carrying out the task would require editing.
+
+  0.60  app/features/receive/lib/receiveRailItems.ts:254-321  · affected caller 0.45
+  254 │ export async function buildOnchainItems(
+  255 │   manager: Manager,
+      │ … 46 more lines, to line 321
+```
+
+Redirect it and you get Markdown instead, because the reason to redirect this is to hand it to
+something that reads Markdown:
 
 ```sh
 hunch find "add a rate limit to the upload endpoint" > context.md
 ```
 
-It opens with a map of every match, then prints each one under a heading that gives its exact file
-and line range:
+The Markdown opens with a map of every match, keeps every line of every passage (a model reads it,
+nobody scrolls it), and prints each one under a heading giving its exact file and line range:
 
 ````md
 ## What was found
@@ -169,7 +184,7 @@ export async function upload(req: Request) {
 
 The code under a heading is exactly the lines that heading names, so a line number you cite from it
 is correct. Chunks of one file that touch are printed as a single passage rather than split at the
-150-line boundary they were chunked on.
+150-line boundary they were chunked on. Colour follows `NO_COLOR` and `FORCE_COLOR`, like `check`.
 
 ### Am I duplicating someone's work?
 
@@ -230,8 +245,9 @@ single test worth updating never appears.
 | `find "…"` | Searches everything, prints Markdown with the code. |
 | `find "…" src/api test` | Narrows to those paths. Much cheaper when you already know the area. |
 | `find "…" --dry-run` | Counts chunks and requests. Nothing is sent, nothing is charged. |
-| `find "…" --reporter text` | Locations and scores only, no code. For reading in a terminal. |
-| `find "…" --reporter json` | Every facet probability per match, plus the code. |
+| `find "…" --reporter text` | Forces the coloured terminal report even when redirected. |
+| `find "…" --no-code` | Locations and scores only. |
+| `find "…" --reporter json` | Every facet probability per match, plus the code, unmerged. |
 | `find "…" --facet test,precedent` | Asks only those, so only those come back. |
 | `find "…" --min 0.7 --top 5` | Fewer, surer matches. `--min` defaults to 0.5. |
 | `find "…" --concurrency 16` | More requests in flight. Default 8, maximum 32. |
