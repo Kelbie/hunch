@@ -17,7 +17,7 @@
           "id": "skill/codebase-design/caller-bookkeeping",
           "section": "Depth and small interfaces",
           "instructions": "Does added code in `hunk` expose internal bookkeeping operations that force a caller to coordinate implementation steps instead of requesting its intended task?",
-          "message": "Keep internal bookkeeping inside the module that owns it.",
+          "message": "Callers may have to coordinate internal steps and intermediate state, making the required order easy to misuse.",
           "criteria": {
             "true": "The added or changed code clearly demonstrates the concern.",
             "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
@@ -78,7 +78,7 @@
           "id": "agents-md/root/failure-as-success",
           "section": "Preserve failures",
           "instructions": "Does `hunk` catch a failed operation and return a success-shaped empty result that prevents the caller from distinguishing failure?",
-          "message": "Preserve failures that callers need to handle.",
+          "message": "A failed operation may now be reported as successful completion.",
           "criteria": {
             "true": "The added or changed code clearly demonstrates the concern.",
             "false": "The code does not demonstrate it, or the hunk lacks enough evidence."

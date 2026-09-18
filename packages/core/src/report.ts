@@ -12,9 +12,11 @@ export interface ReportContext {
 export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): string {
   const complete = result.complete && !ctx.staleLock;
   // Keep error-level concerns visible first if a large review needs truncation.
-  const shown = [...result.findings].sort((a, b) => Number(b.level === "error") - Number(a.level === "error")).slice(0, 50);
-  const headline = result.findings.length
-    ? `**${plural(result.findings.length, "possible issue")} to review.**`
+  const issues = [...Map.groupBy(result.findings, f => JSON.stringify([f.file, f.line, f.endLine, f.message])).values()];
+  const isError = (issue: Finding[]) => issue.some(f => f.level === "error");
+  const shown = issues.sort((a, b) => Number(isError(b)) - Number(isError(a))).slice(0, 50);
+  const headline = issues.length
+    ? `**${plural(issues.length, "possible issue")} to review.**`
     : complete ? "No concerns found in the reviewed changes." : "No concerns found in the checked portion.";
   const lines = [STICKY_MARKER, "## Hunch review", "", headline, ""];
   if (!complete) {
@@ -23,29 +25,30 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
     if (ctx.staleLock) lines.push("- Guidance is out of date. Run `npx hunch compile` and commit `hunch.lock`.");
     lines.push("");
   }
-  const sections = Map.groupBy(shown, f => `${f.file}:${f.line}:${f.endLine}`);
+  const sections = Map.groupBy(shown, ([f]) => JSON.stringify([f!.file, f!.line, f!.endLine]));
   let issue = 0;
   for (const group of sections.values()) {
-    const first = group[0]!;
+    const first = group[0]![0]!;
     const range = first.endLine > first.line ? `${first.line}–${first.endLine}` : String(first.line);
     const label = escapeCell(`${first.file}:${range}`);
     const anchor = `#L${first.line}${first.endLine > first.line ? `-L${first.endLine}` : ""}`;
     const location = ctx.blobBase ? `[${label}](${ctx.blobBase}/${first.file.split("/").map(encodeURIComponent).join("/")}${anchor})` : label;
     lines.push(`### ${location}`, "");
-    for (const finding of group) {
-      lines.push(`${++issue}. ${finding.level === "error" ? "**Error:** " : ""}${escapeCell(finding.message)}`);
+    for (const findings of group) {
+      lines.push(`${++issue}. ${isError(findings) ? "**Error:** " : ""}${escapeCell(findings[0]!.message)}`);
     }
     lines.push("");
   }
-  if (result.findings.length > shown.length) lines.push(`${result.findings.length - shown.length} more concerns are available in the check annotations.`, "");
+  if (issues.length > shown.length) lines.push(`${issues.length - shown.length} more concerns are available in the check annotations.`, "");
   if (ctx.blobBase) lines.push(`Reviewed [${escapeCell(ctx.blobBase.split("/").at(-1)?.slice(0, 7) ?? "commit")}](${ctx.blobBase}).`, "");
   if (shown.length || result.notices.length || result.stats.modelIds.length) {
     lines.push("<details>", "<summary>Review details</summary>", "", "These are configured concerns selected by the model. Links identify changed sections, not exact offending lines.", "");
     if (shown.length) {
       lines.push("| Issue | Rule | Source | Model result |", "| --- | --- | --- | --- |");
       issue = 0;
-      for (const group of sections.values()) for (const f of group) {
-        lines.push(`| ${++issue} | ${escapeCell(f.rule)} | ${escapeCell(f.source)} | ${escapeCell(f.evidence)} |`);
+      for (const group of sections.values()) for (const findings of group) {
+        ++issue;
+        for (const f of findings) lines.push(`| ${issue} | ${escapeCell(f.rule)} | ${escapeCell(f.source)} | ${escapeCell(f.evidence)} |`);
       }
       lines.push("");
     }

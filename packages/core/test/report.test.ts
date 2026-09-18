@@ -33,3 +33,13 @@ test("coverage gaps stay visible even when findings exist", () => {
   expect(visible).toContain("remaining rules were skipped");
   expect(summaryMarkdown({ ...result, findings: [] }, { staleLock: true })).not.toContain("No concerns found.");
 });
+
+test("identical concerns from multiple rules appear once without losing their attribution", () => {
+  const first = result.findings[0]!;
+  const markdown = summaryMarkdown({ ...result, findings: [first, { ...first, rule: "skill/payments/retry", source: "skill/payments", level: "warn" }] });
+  const visible = markdown.split("<details>")[0]!;
+  expect(visible).toContain("1 possible issue");
+  expect(visible.match(/Retrying after a timeout/g)).toHaveLength(1);
+  expect(markdown).toContain("skill/payments/retry");
+  expect(markdown).toContain("billing/retry");
+});
