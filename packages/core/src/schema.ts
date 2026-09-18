@@ -161,11 +161,15 @@ export const configSchema = z.strictObject({
   failOnError: z.boolean().default(false),
   budget: z
     .strictObject({
-      maxHunks: z.number().int().min(1).max(200).default(100),
+      maxHunks: z.number().int().min(1).max(10_000).default(100),
       maxRulesPerHunk: z.number().int().min(1).max(64).default(24),
       concurrency: z.number().int().min(1).max(8).default(4),
+      /** Jev requests per run (one per hunk and reference). */
+      maxRequests: z.number().int().min(1).max(10_000).default(100),
+      /** Stop starting new requests after this long. */
+      timeoutSeconds: z.number().int().min(10).max(7200).default(180),
     })
-    .default({ maxHunks: 100, maxRulesPerHunk: 24, concurrency: 4 }),
+    .default({ maxHunks: 100, maxRulesPerHunk: 24, concurrency: 4, maxRequests: 100, timeoutSeconds: 180 }),
   rules: z.record(z.string(), ruleEntrySchema).default({}),
   overrides: z
     .array(z.strictObject({ files: z.array(z.string()).min(1), rules: z.record(z.string(), ruleEntrySchema) }))

@@ -2,6 +2,7 @@ export * from "./check.js";
 export * from "./compile.js";
 export * from "./define.js";
 export * from "./diff.js";
+export * from "./full.js";
 export * from "./github.js";
 export * from "./jev.js";
 export * from "./load/index.js";

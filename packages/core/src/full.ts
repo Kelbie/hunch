@@ -1,0 +1,106 @@
+import picomatch from "picomatch";
+import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
+import type { RepoReader } from "./load/index.js";
+import type { Config } from "./schema.js";
+
+/** Always skipped: lockfiles and generated artifacts carry no reviewable intent. */
+export const DEFAULT_IGNORE = [
+  "**/package-lock.json",
+  "**/npm-shrinkwrap.json",
+  "**/yarn.lock",
+  "**/pnpm-lock.yaml",
+  "**/bun.lock",
+  "**/bun.lockb",
+  "**/deno.lock",
+  "**/Cargo.lock",
+  "**/Gemfile.lock",
+  "**/composer.lock",
+  "**/poetry.lock",
+  "**/uv.lock",
+  "**/go.sum",
+  "**/*.min.js",
+  "**/*.min.css",
+  "**/*.map",
+  "**/node_modules/**",
+];
+
+/** True for files the config reviews: matched by `include`, not by `ignore` or the defaults. */
+export function inScope(config: Pick<Config, "include" | "ignore">): (file: string) => boolean {
+  const include = picomatch(config.include, { dot: true });
+  const ignore = picomatch([...DEFAULT_IGNORE, ...config.ignore], { dot: true });
+  return (file) => include(file) && !ignore(file);
+}
+
+/** True when `file` is one of `paths` or inside one of them. No paths means everything. */
+export function underPaths(paths: string[]): (file: string) => boolean {
+  const prefixes = paths.map((p) => p.replace(/^\.\//, "").replace(/\/+$/, "")).filter((p) => p && p !== ".");
+  return (file) => !prefixes.length || prefixes.some((p) => file === p || file.startsWith(`${p}/`));
+}
+
+const WINDOW_TOKENS = 6000;
+
+const IMPORT = /^\s*(import\b|export\s.*\bfrom\b|use\s|from\s\S+\simport\b|#include\b|package\s|(const|let|var)\s.*=\s*require\()/;
+
+/**
+ * Splits a whole file into review chunks shaped like added-only hunks. Chunks end at
+ * top-level boundaries (a blank line followed by an unindented line) where possible,
+ * and every chunk after the first repeats the file's import block as unchanged
+ * context, so a rule can see what the code depends on.
+ */
+export function fileHunks(file: string, text: string, maxLines = 150): Hunk[] {
+  const lines = text.replace(/\n$/, "").split("\n");
+  let lastImport = -1;
+  for (let i = 0; i < Math.min(lines.length, 80); i++) if (IMPORT.test(lines[i]!)) lastImport = i;
+  const context = lastImport >= 0 && lastImport < 40 ? lines.slice(0, lastImport + 1) : [];
+
+  const boundary = (i: number) => i > 0 && lines[i - 1]!.trim() === "" && /^[^\s})\]]/.test(lines[i]!);
+  const hunks: Hunk[] = [];
+  for (let start = 0; start < lines.length; ) {
+    let end = Math.min(start + maxLines, lines.length);
+    if (end < lines.length) {
+      for (let i = end; i > start + maxLines / 2; i--) if (boundary(i)) { end = i; break; }
+    }
+    const body = lines.slice(start, end);
+    // Oversized chunks (very long lines) drop the context so windowing keeps line numbers exact.
+    const fits = estimateTokens([...context, ...body].join("\n")) <= WINDOW_TOKENS;
+    const shown = start > 0 && fits ? context : [];
+    const hunk: Hunk = {
+      file,
+      status: "added",
+      newStart: start + 1,
+      newLines: body.length,
+      text: [
+        `@@ -0,0 +${start + 1},${body.length} @@ whole-file review${shown.length ? " (imports shown as context)" : ""}`,
+        ...shown.map((l) => ` ${l}`),
+        ...body.map((l) => `+${l}`),
+      ].join("\n"),
+      added: body.map((content, i) => ({ line: start + i + 1, content })),
+      removed: [],
+    };
+    hunks.push(...windowHunk(hunk, WINDOW_TOKENS));
+    start = end;
+  }
+  return hunks;
+}
+
+/** Every in-scope file of `repo` as review chunks; unreadable, binary or oversized files are reported, not reviewed. */
+export async function repoHunks(repo: RepoReader, config: Pick<Config, "include" | "ignore">, paths: string[] = []) {
+  const wanted = inScope(config);
+  const under = underPaths(paths);
+  const hunks: Hunk[] = [];
+  const skipped: string[] = [];
+  for (const file of (await repo.files()).filter((f) => wanted(f) && under(f))) {
+    let text: string | null;
+    try {
+      text = await repo.read(file);
+    } catch {
+      text = null;
+    }
+    if (text == null || text.includes("\0") || text.length > 1_000_000) {
+      skipped.push(file);
+      continue;
+    }
+    if (text.trim()) hunks.push(...fileHunks(file, text));
+  }
+  return { hunks, skipped };
+}

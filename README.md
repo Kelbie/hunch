@@ -21,12 +21,25 @@ On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = fa
 
 ## Run locally
 
+Hunch reads `AI_GATEWAY_API_KEY` from your environment, `.env.local` or `.env`.
+
+**Review a change**: only the lines that changed, split into diff hunks.
+
 ```sh
-export AI_GATEWAY_API_KEY=...
-npx hunch check --base origin/main    # or --staged
+npx hunch check                                  # this branch and uncommitted work vs origin/main
+npx hunch check --base main --head feature/x     # between two branches, no checkout needed
+npx hunch check --staged                         # staged changes only
 ```
 
-Hunch also reads the key from `.env.local` or `.env` in the current directory, and works the same under `npx`, `bunx` and `bun run`.
+**Review a branch in full**: every in-scope file, split into chunks at top-level declarations. Each chunk repeats its file's imports as context.
+
+```sh
+npx hunch check --all --dry-run                  # count files, chunks and questions first
+npx hunch check --all src/payments               # the working tree, limited to a folder
+npx hunch check --all --head feature/x           # another branch, without checking it out
+```
+
+A full pass sends one request per chunk, so start with a folder or `--dry-run` and raise `budget` in your config for larger runs. Both modes accept paths to narrow what's reviewed. Lockfiles, minified files, source maps and `node_modules` are always skipped; add more with `ignore`.
 
 ## Rules
 
@@ -113,4 +126,4 @@ skills: ["./.agents/skills/codebase-design", "mattpocock/skills"],
 - [Sample report](docs/sample-report.md)
 - [Architecture](docs/architecture.md)
 
-Findings are the model's judgment, not proven defects. Hunch reviews one diff hunk at a time, so bugs that span several files can be missed.
+Findings are the model's judgment, not proven defects. Hunch reviews one hunk or chunk at a time, so bugs that depend on other files can be missed; give a rule the file it depends on with `reference`.
