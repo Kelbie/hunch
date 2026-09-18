@@ -9,7 +9,7 @@ const BASE = "a".repeat(40), HEAD = "b".repeat(40), NEXT = "c".repeat(40);
 const DIFF = "diff --git a/src/lib.ts b/src/lib.ts\n--- a/src/lib.ts\n+++ b/src/lib.ts\n@@ -1 +1,2 @@\n export const x = 1;\n+const recover = () => { try { pay(); } catch { return { ok: true }; } };\n";
 const job: ReviewJob = { installationId: 1, repo: "o/r", pr: 7, headSha: HEAD, deliveryId: "delivery-1" };
 const changes: { method: string; path: string; body: any }[] = [];
-let currentHead: string, permission: string, failJev: boolean, moveDuringReview: boolean, duplicate: boolean, rejectLines: boolean;
+let currentHead: string, permission: string, failJev: boolean, moveDuringReview: boolean, duplicate: boolean, rejectLines: boolean, badConfig: boolean, flaky: Record<string, number>, rateLimit = false;
 let threads: { id: string; isResolved: boolean; resolvedBy: { login: string } | null; comments: { nodes: { body: string; url: string; viewerDidAuthor: boolean }[] } }[];
 const KEY = `failure ${encodeURIComponent("src/lib.ts")}`;
 const thread = (id: string, key: string, over: Partial<(typeof threads)[number]> = {}, mine = true) =>
@@ -20,14 +20,16 @@ const jev: JevClient = { async evaluate(req) {
   if (moveDuringReview) currentHead = NEXT;
   return { answers: Object.fromEntries(Object.keys(req.questions).map((id) => [id, { type: "noul" as const, p: 0.95 }])), usage: { inputTokens: 10 }, modelId: "fake" };
 } };
-const deps = () => ({ token: "test", appId: 123, apiBase: `http://localhost:${server.port}`, jev: () => jev });
+const deps = () => ({ token: "test", appId: 123, apiBase: `http://localhost:${server.port}`, jev: () => jev, sleep: async () => {} });
 const pull = () => ({ number: 7, draft: false, state: "open", title: "Fix recovery", body: "", changed_files: 1, base: { sha: BASE }, head: { sha: currentHead } });
-beforeEach(() => { currentHead = HEAD; permission = "write"; failJev = false; moveDuringReview = false; duplicate = false; rejectLines = false; threads = []; changes.length = 0; });
+beforeEach(() => { currentHead = HEAD; permission = "write"; failJev = false; moveDuringReview = false; duplicate = false; rejectLines = false; badConfig = false; flaky = {}; rateLimit = false; threads = []; changes.length = 0; });
 beforeAll(() => {
   server = Bun.serve({ port: 0, async fetch(req) {
     const url = new URL(req.url), path = url.pathname;
     const body = req.method === "GET" ? undefined : await req.json();
     changes.push({ method: req.method, path, body });
+    const key = `${req.method} ${path}`;
+    if (flaky[key]) { flaky[key]--; return key.endsWith("/reviews") && rateLimit ? new Response("Slow down", { status: 403, headers: { "retry-after": "1" } }) : new Response("Bad gateway", { status: 502 }); }
     if (path.endsWith("/permission")) return Response.json({ permission: path.includes("/outsider/") ? "read" : permission });
     if (path === "/graphql") {
       if (body.query.includes("resolveReviewThread")) return Response.json({ data: { resolveReviewThread: { thread: { id: body.variables.id } } } });
@@ -43,7 +45,7 @@ beforeAll(() => {
     if (path.endsWith(`/git/trees/${BASE}`)) return Response.json({ tree: [{ path: "hunch.toml", type: "blob", mode: "100644" }] });
     if (path.endsWith("/contents/hunch.toml")) {
       expect(url.searchParams.get("ref")).toBe(BASE);
-      return new Response('[rules]\n"failure" = ["error", "A failed payment must not return success."]');
+      return new Response(badConfig ? "[rules\nbroken" : '[rules]\n"failure" = ["error", "A failed payment must not return success."]');
     }
     if (path.includes("/compare/")) { expect(path).toEndWith(`${BASE}...${HEAD}`); return new Response(DIFF); }
     if (path.includes(`/commits/${HEAD}/check-runs`)) return Response.json({ check_runs: duplicate ? [{ id: 99, app: { id: 123 }, external_id: `hunch:7:${BASE}:${HEAD}:delivery-1` }] : [] });
@@ -134,11 +136,41 @@ describe("GitHub review", () => {
     expect(await runReview({ ...job, sender: "reader" }, deps())).toBe("skipped");
     expect(changes).toHaveLength(1);
   });
-  test("provider errors fail visibly, remain retryable and redact provider bodies", async () => {
+  test("provider errors say 'retrying' while the queue retries, and redact provider bodies", async () => {
     failJev = true;
-    await expect(runReview(job, deps())).rejects.toThrow("safe to retry");
-    expect(changes.some((c) => c.body?.conclusion === "failure")).toBe(true);
+    await expect(runReview(job, { ...deps(), attempt: 1, maxAttempts: 5 })).rejects.toThrow("safe to retry");
+    const updates = changes.filter((c) => c.path.endsWith("/check-runs/99")).map((c) => c.body);
+    expect(updates.at(-1)).toMatchObject({ status: "in_progress", output: { title: "Retrying after a temporary problem" } });
+    expect(updates.some((u) => u.conclusion === "failure")).toBe(false);
     expect(JSON.stringify(changes)).not.toContain("secret-provider-response");
+  });
+  test("the last attempt fails the check and stops retrying", async () => {
+    failJev = true;
+    expect(await runReview(job, { ...deps(), attempt: 5, maxAttempts: 5 })).toBe("failed");
+    const failed = changes.find((c) => c.body?.conclusion === "failure")!.body;
+    expect(failed.output.summary).toContain("after 5 attempts");
+    expect(JSON.stringify(changes)).not.toContain("secret-provider-response");
+  });
+  test("an invalid base config fails at once with a fix, without retrying", async () => {
+    badConfig = true;
+    expect(await runReview(job, { ...deps(), attempt: 1, maxAttempts: 5 })).toBe("failed");
+    expect(changes.find((c) => c.body?.conclusion === "failure")!.body.output.summary).toContain("config on the base branch is invalid");
+  });
+  test("GitHub server errors are retried for reads, but a write that may have landed is not resent", async () => {
+    flaky = { [`GET /repos/o/r/pulls/7`]: 2, "POST /graphql": 1 };
+    expect(await runReview(job, deps())).toBe("done");
+    expect(changes.filter((c) => c.method === "GET" && c.path === "/repos/o/r/pulls/7").length).toBeGreaterThanOrEqual(3);
+    changes.length = 0;
+    flaky = { "POST /repos/o/r/pulls/7/reviews": 1 };
+    threads = [];
+    await expect(runReview(job, { ...deps(), attempt: 1, maxAttempts: 5 })).rejects.toThrow("safe to retry");
+    expect(changes.filter((c) => c.path.endsWith("/pulls/7/reviews"))).toHaveLength(1);
+  });
+  test("a rate-limited write was never applied, so it is resent", async () => {
+    rateLimit = true;
+    flaky = { "POST /repos/o/r/pulls/7/reviews": 1 };
+    expect(await runReview(job, deps())).toBe("done");
+    expect(changes.filter((c) => c.path.endsWith("/pulls/7/reviews"))).toHaveLength(2);
   });
 });
 

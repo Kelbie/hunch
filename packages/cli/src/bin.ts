@@ -33,7 +33,7 @@ import { runAppCommand } from "./setup/command.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 
-const VERSION = "0.6.1";
+const VERSION = "0.6.2";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
