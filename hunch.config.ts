@@ -5,6 +5,8 @@ export default defineConfig({
   include: ["packages/**/src/**/*.ts", "apps/**/{api,lib}/**/*.ts"],
   skills: ["./.agents/skills/codebase-design"],
   agentsMd: true,
+  // Explicit opt-out for this public repository on Vercel Hobby.
+  zeroDataRetention: false,
   failOnError: false,
   rules: {
     "review/honest-coverage": ["warn", "A missing provider answer or skipped review work must not be represented as evidence that the code passed review."],

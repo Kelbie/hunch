@@ -5,8 +5,15 @@ export interface LeaseStore {
   acquire(key: string, owner: string, seconds: number): Promise<boolean>;
   release(key: string, owner: string): Promise<void>;
 }
+export function leaseCredentials(env: NodeJS.ProcessEnv = process.env) {
+  if (env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN) return { url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN };
+  if (env.KV_REST_API_URL && env.KV_REST_API_TOKEN) return { url: env.KV_REST_API_URL, token: env.KV_REST_API_TOKEN };
+  return null;
+}
 export function redisLeaseStore(): LeaseStore {
-  const redis = Redis.fromEnv();
+  const credentials = leaseCredentials();
+  if (!credentials) throw new Error("Missing Redis REST credentials");
+  const redis = new Redis(credentials);
   return {
     async acquire(key, owner, seconds) { return await redis.set(key, owner, { nx: true, ex: seconds }) === "OK"; },
     async release(key, owner) {
