@@ -37,7 +37,9 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     const stale = await staleSources(lock, config, base);
     const diff = await api.compareDiff(job.repo, baseSha, headSha);
     if (diff == null) throw new Error("Immutable comparison unavailable");
-    const result = await check({ config, hunks: parseHunks(diff), task: `${pull.title}\n\n${pull.body ?? ""}`, lock, client: (deps.jev ?? clientFromEnv)(config), readFile: (p) => base.read(p) });
+    // The hosted worker has a 300-second limit; repository budgets can't raise these.
+    const budget = { ...config.budget, maxHunks: Math.min(config.budget.maxHunks, 200), maxRequests: Math.min(config.budget.maxRequests, 100), timeoutSeconds: Math.min(config.budget.timeoutSeconds, 180) };
+    const result = await check({ config: { ...config, budget }, hunks: parseHunks(diff), task: `${pull.title}\n\n${pull.body ?? ""}`, lock, client: (deps.jev ?? clientFromEnv)(config), readFile: (p) => base.read(p) });
     if (stale.length) { result.complete = false; result.notices.push(`Guidance is uncompiled or stale: ${stale.join(", ")}. Run hunch compile and review hunch.lock.`); }
     if (/^(?:Binary files |GIT binary patch|rename from |old mode )/m.test(diff)) { result.complete = false; result.notices.push("Binary, rename metadata or mode changes require human review."); }
     const latest = await readPull();

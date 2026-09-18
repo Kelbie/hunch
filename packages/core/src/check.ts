@@ -1,5 +1,6 @@
 import picomatch from "picomatch";
 import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
+import { inScope as scopeFilter } from "./full.js";
 import type { Answer, JevClient, WireQuestion } from "./jev.js";
 import type { Lock } from "./lock.js";
 import type { Config, Level, Question } from "./schema.js";
@@ -51,18 +52,17 @@ const REFERENCE_TOKEN_LIMIT = 8000;
 
 export async function check(input: CheckInput): Promise<CheckResult> {
   const { config, client } = input;
-  const include = picomatch(config.include, { dot: true });
-  const ignore = picomatch(config.ignore.length ? config.ignore : ["\0"], { dot: true });
+  const reviewed = scopeFilter(config);
   const notices: string[] = [];
   const stats: CheckResult["stats"] = { hunks: 0, skippedHunks: 0, requests: 0, questions: 0, inputTokens: 0, modelIds: [] };
   const findings: Finding[] = [];
 
-  const deleted = input.hunks.filter((h) => h.status === "deleted" && include(h.file) && !ignore(h.file));
+  const deleted = input.hunks.filter((h) => h.status === "deleted" && reviewed(h.file));
   if (deleted.length) notices.push(`${deleted.length} deleted-file hunks require human review.`);
-  const inScope = input.hunks.filter((h) => include(h.file) && !ignore(h.file) && h.status !== "deleted");
+  const inScope = input.hunks.filter((h) => reviewed(h.file) && h.status !== "deleted");
   let hunks = inScope.flatMap((h) => windowHunk(h));
   if (hunks.length > config.budget.maxHunks) {
-    notices.push(`PR has ${hunks.length} hunks; only the first ${config.budget.maxHunks} were checked (budget.maxHunks).`);
+    notices.push(`${hunks.length} hunks in scope; only the first ${config.budget.maxHunks} were checked (budget.maxHunks).`);
     stats.skippedHunks = hunks.length - config.budget.maxHunks;
     hunks = hunks.slice(0, config.budget.maxHunks);
   }
@@ -81,7 +81,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     if (source.notChecked.length) notices.push(`${source.id}: ${source.notChecked.length} guidance item(s) require human review (see hunch.lock).`);
   }
   let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length));
-  const deadline = Date.now() + 180_000;
+  const deadline = Date.now() + config.budget.timeoutSeconds * 1000;
   let reservedRequests = 0;
   let done = 0;
   await pool(hunks, config.budget.concurrency, async (hunk) => {
@@ -103,7 +103,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     // One request per distinct `reference` (usually just one: none).
     const byRef = Map.groupBy(candidates, (r) => r.question.reference ?? "");
     for (const [ref, group] of byRef) {
-      if (reservedRequests >= 100 || Date.now() >= deadline) {
+      if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
         incomplete = true;
         notices.push("Review request/time budget reached; remaining rules were skipped.");
         continue;

@@ -12,6 +12,7 @@ import {
   loadConfig,
   parseHunks,
   parseLock,
+  repoHunks,
   serializeLock,
   selectionHash,
   staleSources,
@@ -19,6 +20,11 @@ import {
   toSarif,
   toText,
   toWorkflowCommands,
+  underPaths,
+  inScope,
+  rulesFor,
+  windowHunk,
+  type Hunk,
   type JevClient,
   type Lock,
 } from "../../core/src/index.js";
@@ -26,12 +32,15 @@ import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
 
-const VERSION = "0.3.3";
+const VERSION = "0.4.0";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
 Usage
-  hunch check [--base main] [--staged] [--diff file] [--task "…"] [--reporter text|markdown|json|sarif|github]
+  hunch check [--base main] [--staged] [--diff file] [paths…]   review a diff (default: this branch vs main)
+  hunch check --all [--head ref] [paths…]   review whole files at a branch or the working tree
+        [--dry-run]   count files, hunks and questions without calling Jev
+        [--task "…"] [--reporter text|markdown|json|sarif|github]
   hunch compile [--force]          turn skills + AGENTS.md into hunch.lock (uses an LLM once)
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
@@ -66,6 +75,8 @@ async function main() {
       "policy-ref": { type: "string" },
       head: { type: "string" },
       staged: { type: "boolean", default: false },
+      all: { type: "boolean", default: false },
+      "dry-run": { type: "boolean", default: false },
       diff: { type: "string" },
       task: { type: "string" },
       reporter: { type: "string", default: process.env.GITHUB_ACTIONS ? "github" : "text" },
@@ -86,23 +97,43 @@ async function main() {
       if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `hunch init`.");
       const { config } = loaded;
       if (!["text", "markdown", "json", "sarif", "github"].includes(values.reporter!)) return fail("Unknown reporter");
+      const under = underPaths(positionals);
+      let diff = "";
+      let hunks: Hunk[];
+      if (values.all) {
+        if (values.diff || values.staged || rest.some((a) => a === "--base" || a.startsWith("--base="))) return fail("--all reviews whole files; drop --base, --diff and --staged");
+        const source = values.head ? gitRepo(root, values.head) : localRepo(root);
+        const full = await repoHunks(source, config, positionals);
+        hunks = full.hunks;
+        if (full.skipped.length) console.error(`hunch: skipped ${full.skipped.length} unreadable, binary or oversized file(s)`);
+        const files = new Set(hunks.map((h) => h.file)).size;
+        console.error(`hunch: reviewing ${files} file(s) as ${hunks.length} chunk(s) from ${values.head ?? "the working tree"}` +
+          (hunks.length > config.budget.maxHunks ? `; only the first ${config.budget.maxHunks} fit budget.maxHunks` : ""));
+      } else {
       if ([values.diff, values.staged, values.head].filter(Boolean).length > 1) return fail("Choose only one of --diff, --staged or --head");
-      let diff: string;
       if (values.head) {
         const base = git(root, ["rev-parse", "--verify", "--end-of-options", `${values.base}^{commit}`]).trim();
         const head = git(root, ["rev-parse", "--verify", "--end-of-options", `${values.head}^{commit}`]).trim();
         diff = git(root, ["diff", "--no-color", "--no-ext-diff", "--no-textconv", `${base}...${head}`, "--"]);
       } else diff = values.diff ? readFileSync(values.diff, "utf8") : branchDiff(root, values.base!, values.staged);
       if (diff.length > 16_000_000) return fail("Diff exceeds 16 MB; review a smaller change");
+      hunks = parseHunks(diff).filter((h) => under(h.file));
+      }
       const lockText = await repo.read(LOCK_FILE);
       const lock = lockText ? parseLock(lockText) : null;
       const stale = await staleSources(lock, config, repo);
       const task = values.task ?? prTaskFromEvent();
+      if (values["dry-run"]) {
+        const reviewed = hunks.filter((h) => h.status !== "deleted" && inScope(config)(h.file)).flatMap((h) => windowHunk(h)).slice(0, config.budget.maxHunks);
+        const questions = reviewed.reduce((n, h) => n + Math.min(rulesFor(h.file, config, lock).jev.length, config.budget.maxRulesPerHunk), 0);
+        console.log(`hunch: dry run, nothing sent. ${new Set(reviewed.map((h) => h.file)).size} file(s) as ${reviewed.length} hunk(s): up to ${questions} question(s) in ${Math.min(reviewed.length, config.budget.maxRequests)} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
+        return;
+      }
       // Created on first request, so a diff with nothing to review needs no API key.
       let client: JevClient | undefined;
       const result = await check({
         config,
-        hunks: parseHunks(diff),
+        hunks,
         task,
         lock,
         client: { evaluate: (req) => (client ??= clientFromEnv(config)).evaluate(req) },
