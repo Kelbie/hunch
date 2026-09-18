@@ -7,60 +7,97 @@ export interface ReportContext {
   /** Links findings to `blob/<sha>/<file>#L<line>` when set. */
   blobBase?: string;
   staleLock?: boolean;
+  /** Inline review thread per finding key (see `findingKey`); preferred over blob links. */
+  threads?: Map<string, string>;
+  /** Findings someone with write access dismissed by resolving their thread. */
+  dismissed?: number;
+  /** Earlier findings no longer raised, whose threads were resolved. */
+  fixed?: number;
 }
 
+/** GitHub can't color text, so severity is an emoji. */
+const BADGE = { error: "🔴", warn: "🟡" } as const;
+
+/**
+ * PR comment and Markdown report, laid out like the terminal report: a one-line
+ * headline, one row per concern (errors first), then a footer. Diagnostics stay collapsed.
+ */
 export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): string {
   const complete = result.complete && !ctx.staleLock;
-  // Keep error-level concerns visible first if a large review needs truncation.
+  // Identical concerns from several rules at one place are one issue.
   const issues = [...Map.groupBy(result.findings, f => JSON.stringify([f.file, f.line, f.endLine, f.message])).values()];
   const isError = (issue: Finding[]) => issue.some(f => f.level === "error");
-  const shown = issues.sort((a, b) => Number(isError(b)) - Number(isError(a))).slice(0, 50);
-  const headline = issues.length
-    ? `**${plural(issues.length, "possible issue")} to review.**`
-    : complete ? "No concerns found in the reviewed changes." : "No concerns found in the checked portion.";
-  const lines = [STICKY_MARKER, "## Hunch review", "", headline, ""];
+  issues.sort((a, b) => Number(isError(b)) - Number(isError(a)) || a[0]!.file.localeCompare(b[0]!.file) || a[0]!.line - b[0]!.line);
+  const shown = issues.slice(0, 50);
+  const errors = issues.filter(isError).length;
+  const files = new Set(issues.map(i => i[0]!.file)).size;
+  const counts = [errors && plural(errors, "error"), issues.length - errors && plural(issues.length - errors, "warning")].filter(Boolean).join(", ");
+  const headline = issues.length ? `${plural(issues.length, "possible issue")} in ${plural(files, "file")} (${counts})` : "no concerns found";
+  const lines = [STICKY_MARKER, `### 🔮 Hunch · ${headline} · ${complete ? "review complete" : "partial review"}`, ""];
   if (!complete) {
-    lines.push("> **Review is incomplete.** Some changes or guidance could not be checked.", "");
-    for (const notice of result.notices) lines.push(`- ${escapeCell(notice)}`);
-    if (ctx.staleLock) lines.push("- Guidance is out of date. Run `npx @kelbie/hunch compile` and commit `hunch.lock`.");
+    lines.push("> [!CAUTION]", "> **Review is incomplete.** Some changes or guidance could not be checked.");
+    for (const notice of result.notices) lines.push(`> - ${escapeCell(notice)}`);
+    if (ctx.staleLock) lines.push("> - Guidance is out of date. Run `npx @kelbie/hunch compile` and commit `hunch.lock`.");
     lines.push("");
   }
-  const sections = Map.groupBy(shown, ([f]) => JSON.stringify([f!.file, f!.line, f!.endLine]));
-  let issue = 0;
-  for (const group of sections.values()) {
-    const first = group[0]![0]!;
-    const range = first.endLine > first.line ? `${first.line}–${first.endLine}` : String(first.line);
-    const label = escapeCell(`${first.file}:${range}`);
-    const anchor = `#L${first.line}${first.endLine > first.line ? `-L${first.endLine}` : ""}`;
-    const location = ctx.blobBase ? `[${label}](${ctx.blobBase}/${first.file.split("/").map(encodeURIComponent).join("/")}${anchor})` : label;
-    lines.push(`### ${location}`, "");
-    for (const findings of group) {
-      lines.push(`${++issue}. ${isError(findings) ? "**Error:** " : ""}${escapeCell(findings[0]!.message)}`);
+  if (shown.length) {
+    lines.push("| | Concern | Where |", "| :-: | --- | --- |");
+    // One row per place in the code, like the terminal groups rows by file.
+    for (const place of Map.groupBy(shown, i => JSON.stringify([i[0]!.file, i[0]!.line, i[0]!.endLine])).values()) {
+      const f = place[0]![0]!;
+      const range = f.endLine > f.line ? `${f.line}-${f.endLine}` : String(f.line);
+      const label = code(`${f.file.split("/").at(-1)!}:${range}`);
+      const thread = place.flat().map(x => ctx.threads?.get(findingKey(x))).find(Boolean);
+      const anchor = `#L${f.line}${f.endLine > f.line ? `-L${f.endLine}` : ""}`;
+      const href = thread ?? (ctx.blobBase ? `${ctx.blobBase}/${f.file.split("/").map(encodeURIComponent).join("/")}${anchor}` : undefined);
+      const concerns = place.map(issue => `${place.length > 1 ? `${BADGE[isError(issue) ? "error" : "warn"]} ` : ""}${escapeCell(issue[0]!.message)}<br><sub>${issue.map(x => code(x.rule)).join(" · ")}</sub>`);
+      lines.push(`| ${BADGE[place.some(isError) ? "error" : "warn"]} | ${concerns.join("<br>")} | ${href ? `[${label}](${href})` : label} |`);
     }
     lines.push("");
+    if (issues.length > shown.length) lines.push(`${issues.length - shown.length} more concerns are listed in the check run.`, "");
   }
-  if (issues.length > shown.length) lines.push(`${issues.length - shown.length} more concerns are available in the check annotations.`, "");
-  if (ctx.blobBase) lines.push(`Reviewed [${escapeCell(ctx.blobBase.split("/").at(-1)?.slice(0, 7) ?? "commit")}](${ctx.blobBase}).`, "");
-  if (shown.length || result.notices.length || result.stats.modelIds.length) {
-    lines.push("<details>", "<summary>Review details</summary>", "", "These are configured concerns selected by the model. Links identify changed sections, not exact offending lines.", "");
+  const handled = [ctx.dismissed && `${ctx.dismissed} dismissed`, ctx.fixed && `${ctx.fixed} resolved as fixed`].filter(Boolean).join(" · ");
+  if (handled) lines.push(`${handled} since earlier reviews.`, "");
+  const commit = ctx.blobBase ? `[${code(ctx.blobBase.split("/").at(-1)!.slice(0, 7))}](${ctx.blobBase})` : "these changes";
+  const model = result.stats.modelIds.length ? ` with ${result.stats.modelIds.map(id => escapeCell(id.slice(0, 200))).join(", ")}` : "";
+  lines.push(`<sub>Reviewed ${commit}${model}. Findings are model judgments, not proven bugs.${ctx.threads ? " Resolve a comment to dismiss it. Comment <code>/hunch recheck</code> to review again." : ""}</sub>`, "");
+  const guidance = complete ? result.notices : [];
+  if (shown.length || guidance.length) {
+    lines.push("<details>", "<summary>Review details</summary>", "");
     if (shown.length) {
-      lines.push("| Issue | Rule | Source | Model result |", "| --- | --- | --- | --- |");
-      issue = 0;
-      for (const group of sections.values()) for (const findings of group) {
-        ++issue;
-        for (const f of findings) lines.push(`| ${issue} | ${escapeCell(f.rule)} | ${escapeCell(f.source)} | ${escapeCell(f.evidence)} |`);
-      }
+      lines.push("| Rule | Source | Model result |", "| --- | --- | --- |");
+      for (const issue of shown) for (const f of issue) lines.push(`| ${escapeCell(f.rule)} | ${escapeCell(f.source)} | ${escapeCell(f.evidence)} |`);
       lines.push("");
     }
-    if (complete && result.notices.length) {
+    if (guidance.length) {
       lines.push("Guidance requiring human review:", "");
-      for (const notice of result.notices) lines.push(`- ${escapeCell(notice)}`);
+      for (const notice of guidance) lines.push(`- ${escapeCell(notice)}`);
       lines.push("");
     }
-    if (result.stats.modelIds.length) lines.push(`Model: ${result.stats.modelIds.map(id => escapeCell(id.slice(0, 200))).join(", ")}. Scores are estimates, not measured accuracy.`, "");
     lines.push("</details>");
   }
   return lines.join("\n");
+}
+
+/** Identity of a concern across revisions: a rule in a file, not a line that moves. */
+export const findingKey = (f: Pick<Finding, "rule" | "file">) => `${encodeURIComponent(f.rule)} ${encodeURIComponent(f.file)}`;
+const FINDING_MARKER = /<!-- hunch:finding (\S+ \S+) -->/g;
+export const findingKeysIn = (body: string) => [...body.matchAll(FINDING_MARKER)].map(m => m[1]!);
+
+/** One inline review comment for the concerns raised at one place in the diff. */
+export function reviewComment(findings: Finding[]) {
+  const f = findings[0]!;
+  const body = [
+    ...findings.map(x => `<!-- hunch:finding ${findingKey(x)} -->`),
+    ...findings.flatMap(x => [
+      `${BADGE[x.level]} **${x.level === "error" ? "Error" : "Warning"}:** ${escapeCell(x.message)}`,
+      "",
+      `<sub>${code(x.rule)} · ${escapeCell(x.evidence)} · from ${escapeCell(x.source)}</sub>`,
+      "",
+    ]),
+    "<sub>🔮 Hunch · Not relevant? Resolve this conversation and Hunch won't raise it again on this PR.</sub>",
+  ].join("\n");
+  return { path: f.file, side: "RIGHT" as const, line: Math.max(f.line, f.endLine), ...(f.endLine > f.line ? { start_line: f.line, start_side: "RIGHT" as const } : {}), body };
 }
 
 /** GitHub Checks API annotations (max 50 per request; the caller batches). */
@@ -173,3 +210,5 @@ export function toText(result: CheckResult, { color = false, width = 100 }: Text
 
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const escapeCell = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/[\[\]`*|\\]/g, (c) => `&#${c.charCodeAt(0)};`).replace(/[\r\n]/g, " ");
+/** Code span safe inside a table cell; entities would show literally in code. */
+const code = (s: string) => `\`${s.replace(/`/g, "'").replace(/\|/g, "\\|").replace(/[\r\n]/g, " ")}\``;

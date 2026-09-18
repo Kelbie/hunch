@@ -42,7 +42,7 @@ Redeploy after setting variables. Do not paste credentials into a PR or issue. T
 
 Run `npx @kelbie/hunch init`, optionally install skills and run `npx @kelbie/hunch compile`, review and commit those files to the default branch. Then open a PR. Policy is always read from the immutable base SHA, so a PR cannot rewrite its own rules. A PR that first introduces Hunch is skipped until the config is on its base branch.
 
-The App reviews ready/open PRs on opened, synchronize, reopened, ready_for_review and edited events. Draft PRs are skipped. It creates a `hunch` check with annotations and a commit-labelled conversation report. It updates its own existing report for a retried head. It never adopts a comment merely because somebody copied Hunch's marker into it.
+The App reviews ready/open PRs on opened, synchronize, reopened, ready_for_review and edited events. Draft PRs are skipped. It creates a `hunch` check with annotations, posts each new concern as an inline review comment on the changed lines, and writes a commit-labelled summary comment that links to them. Resolving an inline comment dismisses that rule for that file on the PR, but only when the resolver has write, maintain or admin access, and only for threads the App wrote. After a complete review, the App resolves its own open threads whose concerns were not raised again. It updates its own existing report for a retried head. It never adopts a comment merely because somebody copied Hunch's marker into it.
 
 ## Recovery and verification
 

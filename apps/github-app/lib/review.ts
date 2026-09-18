@@ -1,4 +1,4 @@
-import { check, clientFromEnv, githubApi, githubRepoReader, LOCK_FILE, loadConfig, parseHunks, parseLock, staleSources, summaryMarkdown, type Config, type JevClient } from "../../../packages/core/src/index.js";
+import { check, clientFromEnv, findingKey, findingKeysIn, githubApi, githubRepoReader, LOCK_FILE, loadConfig, parseHunks, parseLock, planThreads, staleSources, summaryMarkdown, type Config, type JevClient } from "../../../packages/core/src/index.js";
 import { z } from "zod";
 import type { ReviewJob } from "./events.js";
 
@@ -12,12 +12,19 @@ export interface ReviewDeps {
   log?: (msg: string) => void;
 }
 
+const WRITERS = ["admin", "maintain", "write"];
+
+/** Links for every open concern, including comments just posted. */
+async function threadLinks(api: ReturnType<typeof githubApi>, repo: string, pr: number) {
+  const { threads } = await api.reviewThreads(repo, pr);
+  return new Map(threads.filter((t) => t.mine && !t.resolved).flatMap((t) => findingKeysIn(t.body).map((k) => [k, t.url] as const)));
+}
+
 /** Throws on failure so the durable queue retries, with a failed check visible meanwhile. */
 export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skipped" | "done"> {
   const api = githubApi(deps.token, deps.apiBase);
   if (job.sender) {
-    const permission = await api.call<{ permission: string } | null>("GET", `/repos/${job.repo}/collaborators/${encodeURIComponent(job.sender)}/permission`);
-    if (!permission || !["admin", "maintain", "write"].includes(permission.permission)) return "skipped";
+    if (!WRITERS.includes(await api.permission(job.repo, job.sender))) return "skipped";
   }
   const readPull = async () => pullSchema.parse(await api.call("GET", `/repos/${job.repo}/pulls/${job.pr}`));
   const pull = await readPull();
@@ -47,10 +54,22 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
       await api.supersedeCheck(job.repo, id);
       return "skipped";
     }
-    const summary = summaryMarkdown(result, { blobBase: `https://github.com/${job.repo}/blob/${headSha}` });
+    // Inline threads carry each concern; resolving one dismisses it for this PR.
+    const { self, threads } = await api.reviewThreads(job.repo, job.pr);
+    const resolvers = [...new Set(threads.filter((t) => t.mine && t.resolved && t.resolvedBy && t.resolvedBy !== self).map((t) => t.resolvedBy!))];
+    const writers = new Set<string>();
+    for (const login of resolvers) if (WRITERS.includes(await api.permission(job.repo, login))) writers.add(login);
+    const plan = planThreads(result.findings, threads, { self, canDismiss: (login) => writers.has(login), complete: result.complete });
+    const newIssues = plan.post.length;
+    const rejected = await api.postReview(job.repo, job.pr, headSha, plan.post,
+      `🔮 **Hunch** raised ${newIssues === 1 ? "1 new concern" : `${newIssues} new concerns`} on \`${headSha.slice(0, 7)}\`. Resolve a comment to dismiss it.`);
+    for (const t of plan.resolve) await api.resolveThread(t.id);
+    const links = newIssues > rejected.length ? new Map([...plan.links, ...await threadLinks(api, job.repo, job.pr)]) : plan.links;
+    const reported = { ...result, findings: plan.active };
+    const summary = summaryMarkdown(reported, { blobBase: `https://github.com/${job.repo}/blob/${headSha}`, threads: links, dismissed: new Set(plan.dismissed.map(findingKey)).size, fixed: plan.resolve.length });
     // Comment first: failure must not leave a successful check for an unpublished report.
     await api.upsertSticky(job.repo, job.pr, summary, { appId: deps.appId, headSha });
-    await api.finishCheck(job.repo, id, result, { summary, failOnError: config.failOnError });
+    await api.finishCheck(job.repo, id, reported, { summary, failOnError: config.failOnError });
     deps.log?.(`${job.repo}#${job.pr}: reviewed ${headSha.slice(0, 7)}`);
     return "done";
   } catch {
