@@ -17,7 +17,7 @@ npx hunch init --github    # add --general for languages other than TS/JS and Ru
 
 3. Commit the generated config and `.github/workflows/hunch.yml`. PRs to that branch now get a review under **Checks → Hunch**.
 
-On Vercel Hobby, add `zeroDataRetention: false` to your config. The zero-data-retention default requires Pro or Enterprise.
+On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = false`) to your config. The zero-data-retention default requires Pro or Enterprise. AI Gateway's free tier is rate limited and can fail reviews of larger PRs; buying any amount of credits removes the limit.
 
 ## Run locally
 
