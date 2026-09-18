@@ -33,7 +33,10 @@ export interface CheckInput {
 export interface CheckResult {
   findings: Finding[];
   stats: { hunks: number; skippedHunks: number; requests: number; questions: number; inputTokens: number; modelIds: string[] };
+  /** Gaps in this review: anything here means some changes or guidance weren't checked. */
   notices: string[];
+  /** Standing facts about the policy, such as guidance the lock can't check. Never a gap. */
+  info: string[];
   /** Partial review never means a clean bill of health. */
   complete: boolean;
 }
@@ -54,6 +57,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   const { config, client } = input;
   const reviewed = scopeFilter(config);
   const notices: string[] = [];
+  const info: string[] = [];
   const stats: CheckResult["stats"] = { hunks: 0, skippedHunks: 0, requests: 0, questions: 0, inputTokens: 0, modelIds: [] };
   const findings: Finding[] = [];
 
@@ -78,7 +82,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     notices.push("No review rules configured. Add plain-English rules or compile project guidance.");
   }
   for (const source of input.lock?.sources ?? []) {
-    if (source.notChecked.length) notices.push(`${source.id}: ${plural(source.notChecked.length, "guidance item")} can't be checked one change at a time; see notChecked in hunch.lock.`);
+    if (source.notChecked.length) info.push(`${source.id}: ${plural(source.notChecked.length, "guidance item")} can't be checked one change at a time; see notChecked in hunch.lock.`);
   }
   let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length));
   const deadline = Date.now() + config.budget.timeoutSeconds * 1000;
@@ -158,7 +162,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     }
   }
 
-  return { findings: dedupe(findings), stats, notices: [...new Set(notices)], complete: !incomplete };
+  return { findings: dedupe(findings), stats, notices: [...new Set(notices)], info, complete: !incomplete };
 }
 
 /** Effective rules for one file: config + presets + overrides + compiled skill rules. */

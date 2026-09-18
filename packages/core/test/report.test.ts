@@ -1,6 +1,6 @@
 import { expect, test } from "bun:test";
 import { diffExcerpt, findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
-import { parseHunks } from "../src/diff.js";
+import { parseHunks, unreviewableFiles } from "../src/diff.js";
 import type { CheckResult } from "../src/check.js";
 
 const result: CheckResult = {
@@ -10,7 +10,8 @@ const result: CheckResult = {
     { rule: "failures/misleading-success", source: "hunch:recommended", level: "warn", file: "src/pay.ts", line: 12, endLine: 20, message: "A failed operation may now be reported as successful completion.", evidence: "p(yes)=0.96 ≥ 0.85" },
   ],
   stats: { hunks: 1, skippedHunks: 0, requests: 1, questions: 2, inputTokens: 1234, modelIds: ["typesafe-ai/jev"] },
-  notices: ["skill/codebase-design: 1 guidance item(s) require human review (see hunch.lock)."],
+  notices: [],
+  info: ["skill/codebase-design: 1 guidance item can't be checked one change at a time; see notChecked in hunch.lock."],
 };
 
 test("PR comment reads like the terminal report: headline, one row per concern, diagnostics collapsed", () => {
@@ -89,7 +90,7 @@ test("terminal report shows every concern's line range and message, grouped by p
   expect(text).toMatch(/^src\/pay\.ts\n  L12-20  ✖ error  billing\/retry +choice=duplicate_charge.*\n +Retrying after a timeout may charge the customer twice\.\n +▲ warn   failures\/misleading-success +p\(yes\)=0\.96 ≥ 0\.85 · hunch:recommended\n +A failed operation/m);
   expect(text).toMatch(/^src\/refund\.ts\n  L3 +✖ error  billing\/retry/m);
   expect(text).toMatch(/billing\/retry +2 findings/);
-  expect(text).toContain("Notes\n  ! skill/codebase-design");
+  expect(text).toContain("Notes\n  · skill/codebase-design");
   expect(text.trim().split("\n").at(-1)).toBe("1 hunk · 1 request · 1,234 input tokens · typesafe-ai/jev");
   expect(toText(result, { color: true })).toContain("\x1b[31m✖ error\x1b[0m");
   expect(toText({ ...result, findings: [], notices: [] }).split("\n")[0]).toBe("Hunch · no findings · review complete");
@@ -121,4 +122,22 @@ test("--show-diff prints the changed lines around each place with new-file line 
 test("locations use the shortest path that tells files apart", () => {
   const paths = shortPaths(["apps/api/lib/review.ts", "examples/typescript/review.ts", "src/index.ts", "src/web/index.ts", "index.ts"]);
   expect([...paths.values()]).toEqual(["lib/review.ts", "typescript/review.ts", "src/index.ts", "web/index.ts", "index.ts"]);
+});
+
+test("a partial review's caution lists only real gaps; guidance the lock can't check stays in details", () => {
+  const md = summaryMarkdown({ ...result, findings: [], complete: false, notices: ["Binary, rename-only or mode changes need human review: src/logo.bin."] });
+  const caution = md.slice(md.indexOf("[!CAUTION]"), md.indexOf("<details>"));
+  expect(caution).toContain("src/logo.bin");
+  expect(caution).not.toContain("guidance item");
+  expect(md.slice(md.indexOf("<details>"))).toContain("skill/codebase-design: 1 guidance item");
+});
+
+test("unreviewable changes are named per file, so callers can ignore files outside review scope", () => {
+  const diff = [
+    "diff --git a/docs/shot.png b/docs/shot.png", "index 1..2 100644", "Binary files a/docs/shot.png and b/docs/shot.png differ",
+    "diff --git a/src/a.ts b/src/b.ts", "similarity index 100%", "rename from src/a.ts", "rename to src/b.ts",
+    "diff --git a/bin/run b/bin/run", "old mode 100644", "new mode 100755",
+    "diff --git a/src/c.ts b/src/c.ts", "--- a/src/c.ts", "+++ b/src/c.ts", "@@ -1 +1 @@", "-a", "+b",
+  ].join("\n");
+  expect(unreviewableFiles(diff)).toEqual(["docs/shot.png", "src/b.ts", "bin/run"]);
 });

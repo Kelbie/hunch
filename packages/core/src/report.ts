@@ -67,7 +67,7 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
   const commit = ctx.blobBase ? `[${code(ctx.blobBase.split("/").at(-1)!.slice(0, 7))}](${ctx.blobBase})` : "these changes";
   const model = result.stats.modelIds.length ? ` with ${result.stats.modelIds.map(id => escapeCell(id.slice(0, 200))).join(", ")}` : "";
   lines.push(`<sub>Reviewed ${commit}${model}. Findings are model judgments, not proven bugs.${ctx.threads ? " Resolve a comment to dismiss it. Comment <code>/hunch recheck</code> to review again." : ""}</sub>`, "");
-  const guidance = complete ? result.notices : [];
+  const guidance = result.info ?? [];
   if (shown.length || guidance.length) {
     lines.push("<details>", "<summary>Review details</summary>", "");
     if (shown.length) {
@@ -268,9 +268,12 @@ export function toText(result: CheckResult, { color = false, width = 100, hunks 
     for (const [rule, fs] of rules) out.push(`  ${badge(fs[0]!.level)}  ${cyan(rule.padEnd(w))}  ${dim(plural(fs.length, "finding"))}`);
   }
 
-  if (result.notices.length) {
+  // Gaps get a warning mark; standing facts about the policy are dimmed.
+  const info = result.info ?? [];
+  if (result.notices.length || info.length) {
     out.push("", bold("Notes"));
     for (const n of result.notices) out.push(yellow("  !") + wrap(n, 4).slice(3));
+    for (const n of info) out.push(dim("  ·" + wrap(n, 4).slice(3)));
   }
 
   const models = stats.modelIds.length ? ` · ${stats.modelIds.join(", ")}` : "";

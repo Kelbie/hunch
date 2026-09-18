@@ -19,6 +19,7 @@ import {
   toSarif,
   toText,
   diffExcerpt,
+  unreviewableFiles,
   toWorkflowCommands,
   underPaths,
   inScope,
@@ -170,7 +171,8 @@ async function main() {
       });
       if (values.reporter === "text") process.stderr.write("\n");
       if (stale.length) result.complete = false;
-      if (/^(?:Binary files |GIT binary patch|rename from |old mode )/m.test(diff)) { result.complete = false; result.notices.push("Binary, rename metadata or mode changes require human review."); }
+      const unreviewable = unreviewableFiles(diff).filter(inScope(config));
+      if (unreviewable.length) { result.complete = false; result.notices.push(`Binary, rename-only or mode changes need human review: ${unreviewable.join(", ")}.`); }
       if (stale.length) result.notices.push(`hunch.lock is stale for: ${stale.join(", ")}. Run \`npx @kelbie/hunch compile\`.`);
 
       switch (values.reporter) {
