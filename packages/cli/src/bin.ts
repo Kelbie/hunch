@@ -33,11 +33,11 @@ import { runAppCommand } from "./setup/command.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 
-const VERSION = "0.5.0";
+const VERSION = "0.5.1";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
-Usage
+Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
   hunch check [--base main] [--staged] [--diff file] [paths…]   review a diff (default: this branch vs main)
   hunch check --all [--head ref] [paths…]   review whole files at a branch or the working tree
         [--dry-run]   count files, hunks and questions without calling Jev
@@ -100,7 +100,7 @@ async function main() {
   switch (cmd) {
     case "check": {
       const loaded = await loadConfig(repo);
-      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `hunch init`.");
+      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
       const { config } = loaded;
       if (!["text", "markdown", "json", "sarif", "github"].includes(values.reporter!)) return fail("Unknown reporter");
       const under = underPaths(positionals);
@@ -149,7 +149,7 @@ async function main() {
       if (values.reporter === "text") process.stderr.write("\n");
       if (stale.length) result.complete = false;
       if (/^(?:Binary files |GIT binary patch|rename from |old mode )/m.test(diff)) { result.complete = false; result.notices.push("Binary, rename metadata or mode changes require human review."); }
-      if (stale.length) result.notices.push(`hunch.lock is stale for: ${stale.join(", ")}. Run \`hunch compile\`.`);
+      if (stale.length) result.notices.push(`hunch.lock is stale for: ${stale.join(", ")}. Run \`npx @kelbie/hunch compile\`.`);
 
       switch (values.reporter) {
         case "markdown":
@@ -181,7 +181,7 @@ async function main() {
 
     case "compile": {
       const loaded = await loadConfig(repo);
-      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `hunch init`.");
+      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
       const { config } = loaded;
       const docs = await collectSources(config, repo);
       if (!docs.length) return fail("no skills, AGENTS.md or docs found to compile.");
@@ -213,7 +213,7 @@ async function main() {
       const existing = ["hunch.toml", "hunch.config.ts"].filter(name => existsSync(join(root, name)));
       const workflow = join(root, ".github/workflows/hunch.yml");
       if (existing.length > 1) return fail("Keep exactly one of hunch.config.ts and hunch.toml.");
-      if (existing.length && !values.github) return fail("a hunch config already exists. Use `hunch init --github` to add only the workflow.");
+      if (existing.length && !values.github) return fail("a hunch config already exists. Use `npx @kelbie/hunch init --github` to add only the workflow.");
       if (values.github && existsSync(workflow)) return fail(".github/workflows/hunch.yml already exists; it was not overwritten.");
       if (!existing.length) {
         writeFileSync(join(root, file), ts ? TS_TEMPLATE : rust ? TOML_TEMPLATE : GENERAL_TEMPLATE, { flag: "wx" });
@@ -224,7 +224,7 @@ async function main() {
         writeFileSync(workflow, GITHUB_WORKFLOW, { flag: "wx" });
         console.error("hunch: wrote .github/workflows/hunch.yml. Add AI_GATEWAY_API_KEY under repository Settings > Secrets and variables > Actions, then commit the config and workflow to your base branch.");
       }
-      console.error("hunch: if this repository has skills or AGENTS.md, run `hunch compile` and commit hunch.lock too.");
+      console.error("hunch: if this repository has skills or AGENTS.md, run `npx @kelbie/hunch compile` and commit hunch.lock too.");
       return;
     }
 

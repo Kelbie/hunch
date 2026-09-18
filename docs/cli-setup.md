@@ -74,8 +74,8 @@ From the repository you want reviewed:
 
 ```sh
 npm install -D @kelbie/hunch
-npx hunch init
-# If using skills or AGENTS.md: npx hunch compile (uses your local Claude Code or Codex)
+npx @kelbie/hunch init
+# If using skills or AGENTS.md: npx @kelbie/hunch compile (uses your local Claude Code or Codex)
 ```
 
 Use `--rust`, `--ts`, or `--general` to choose the preset explicitly. Commit the config and any reviewed `hunch.lock` to the PR base branch. You don't need `--github` or an Actions model secret when using the App.

@@ -12,7 +12,7 @@ Requires Node 22+ and the [GitHub CLI](https://cli.github.com).
 ```sh
 gh secret set AI_GATEWAY_API_KEY
 npm install -D @kelbie/hunch
-npx hunch init --github    # add --general for languages other than TS/JS and Rust
+npx @kelbie/hunch init --github  # add --general for languages other than TS/JS and Rust
 ```
 
 3. Commit the generated config and `.github/workflows/hunch.yml`. PRs to that branch now get a review under **Checks → Hunch**.
@@ -26,17 +26,17 @@ Hunch reads `AI_GATEWAY_API_KEY` from your environment, `.env.local` or `.env`.
 **Review a change**: only the lines that changed, split into diff hunks.
 
 ```sh
-npx hunch check                                  # this branch and uncommitted work vs origin/main
-npx hunch check --base main --head feature/x     # between two branches, no checkout needed
-npx hunch check --staged                         # staged changes only
+npx @kelbie/hunch check                               # this branch and uncommitted work vs origin/main
+npx @kelbie/hunch check --base main --head feature/x  # between two branches, no checkout needed
+npx @kelbie/hunch check --staged                      # staged changes only
 ```
 
 **Review a branch in full**: every in-scope file, split into chunks at top-level declarations. Each chunk repeats its file's imports as context.
 
 ```sh
-npx hunch check --all --dry-run                  # count files, chunks and questions first
-npx hunch check --all src/payments               # the working tree, limited to a folder
-npx hunch check --all --head feature/x           # another branch, without checking it out
+npx @kelbie/hunch check --all --dry-run         # count files, chunks and questions first
+npx @kelbie/hunch check --all src/payments      # the working tree, limited to a folder
+npx @kelbie/hunch check --all --head feature/x  # another branch, without checking it out
 ```
 
 A full pass sends one request per chunk, so start with a folder or `--dry-run` and raise `budget` in your config for larger runs. Both modes accept paths to narrow what's reviewed. Lockfiles, minified files, source maps and `node_modules` are always skipped; add more with `ignore`.
@@ -109,7 +109,7 @@ Hunch can also review against your [Agent Skills](https://github.com/vercel-labs
 
 ```sh
 npx skills add mattpocock/skills --skill codebase-design
-npx hunch compile    # review the hunch.lock diff, then commit it
+npx @kelbie/hunch compile  # review the hunch.lock diff, then commit it
 ```
 
 `hunch.lock` is your review policy, so read it like code. Guidance that can't be judged from a single diff hunk is listed there as needing human review, and `check` warns when the lock is out of date.

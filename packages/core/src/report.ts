@@ -22,7 +22,7 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
   if (!complete) {
     lines.push("> **Review is incomplete.** Some changes or guidance could not be checked.", "");
     for (const notice of result.notices) lines.push(`- ${escapeCell(notice)}`);
-    if (ctx.staleLock) lines.push("- Guidance is out of date. Run `npx hunch compile` and commit `hunch.lock`.");
+    if (ctx.staleLock) lines.push("- Guidance is out of date. Run `npx @kelbie/hunch compile` and commit `hunch.lock`.");
     lines.push("");
   }
   const sections = Map.groupBy(shown, ([f]) => JSON.stringify([f!.file, f!.line, f!.endLine]));
