@@ -87,12 +87,17 @@ Presets cover common problems. `hunch:recommended` works with any language, and 
 
 ## Skills and AGENTS.md
 
-Hunch reviews against your installed [Agent Skills](https://github.com/vercel-labs/skills) and `AGENTS.md` files. `hunch compile` turns them into rules and saves them in `hunch.lock`:
+Hunch can also review against your [Agent Skills](https://github.com/vercel-labs/skills) and `AGENTS.md` files. Jev only answers questions; it can't read a skill and work out what to check. So skills take two steps:
+
+1. **`hunch compile`** (once, and again when guidance changes) sends each skill and `AGENTS.md` to a general LLM, `anthropic/claude-sonnet-5` by default (set `compileModel` to change it). The LLM writes yes/no review questions and Hunch saves them in `hunch.lock`. This step doesn't touch your code.
+2. **`hunch check`** and PR reviews send those questions, along with your rules, to Jev. They never call the compile model.
 
 ```sh
 npx skills add mattpocock/skills --skill codebase-design
-npx hunch compile    # review and commit hunch.lock
+npx hunch compile    # review the hunch.lock diff, then commit it
 ```
+
+`hunch.lock` is your review policy, so read it like code. Guidance that can't be judged from a single diff hunk is listed there as needing human review, and `check` warns when the lock is out of date.
 
 To use only specific skills, list them. A skill can be a local path, `owner/repo`, or a GitHub URL:
 
