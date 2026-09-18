@@ -7,7 +7,7 @@ export interface ReportContext {
   /** Links findings to `blob/<sha>/<file>#L<line>` when set. */
   blobBase?: string;
   staleLock?: boolean;
-  /** Inline review thread per finding key (see `findingKey`); preferred over blob links. */
+  /** Inline review thread per `threadKey`, or per `findingKey` as a fallback; preferred over blob links. */
   threads?: Map<string, string>;
   /** Findings someone with write access dismissed by resolving their thread. */
   dismissed?: number;
@@ -51,7 +51,8 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
       const f = place[0]![0]!;
       const range = f.endLine > f.line ? `${f.line}-${f.endLine}` : String(f.line);
       const label = code(`${short.get(f.file)}:${range}`);
-      const thread = place.flat().map(x => ctx.threads?.get(findingKey(x))).find(Boolean);
+      // Prefer the thread at this place: one rule can be raised at several places in a file.
+      const thread = place.flat().map(x => ctx.threads?.get(threadKey(x)) ?? ctx.threads?.get(findingKey(x))).find(Boolean);
       const anchor = `#L${f.line}${f.endLine > f.line ? `-L${f.endLine}` : ""}`;
       const href = thread ?? (ctx.blobBase ? `${ctx.blobBase}/${f.file.split("/").map(encodeURIComponent).join("/")}${anchor}` : undefined);
       const concerns = place.map(issue => `${place.length > 1 ? `${BADGE[isError(issue) ? "error" : "warn"]} ` : ""}${escapeCell(issue[0]!.message)}<br><sub>${issue.map(x => code(x.rule)).join(" · ")}</sub>`);
@@ -87,6 +88,11 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
 export const findingKey = (f: Pick<Finding, "rule" | "file">) => `${encodeURIComponent(f.rule)} ${encodeURIComponent(f.file)}`;
 const FINDING_MARKER = /<!-- hunch:finding (\S+ \S+) -->/g;
 export const findingKeysIn = (body: string) => [...body.matchAll(FINDING_MARKER)].map(m => m[1]!);
+
+/** The line an inline comment for this finding is anchored to (see `reviewComment`). */
+export const anchorLine = (f: Pick<Finding, "line" | "endLine">) => f.endLine - f.line + 1 > MAX_COMMENT_RANGE ? f.line : f.endLine;
+/** A finding's concern at one place: the thread GitHub shows on that line. */
+export const threadKey = (f: Pick<Finding, "rule" | "file" | "line" | "endLine">) => `${findingKey(f)}@${anchorLine(f)}`;
 
 /** Longer ranges (a whole new file) anchor on their first line, so the comment sits where reading starts. */
 const MAX_COMMENT_RANGE = 10;
