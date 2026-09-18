@@ -40,7 +40,7 @@ Redeploy after setting variables. Do not paste credentials into a PR or issue. T
 
 ## 3. Configure a repository
 
-Run `hunch init`, optionally install skills and run `hunch compile`, review and commit those files to the default branch. Then open a PR. Policy is always read from the immutable base SHA, so a PR cannot rewrite its own rules. A PR that first introduces Hunch is skipped until the config is on its base branch.
+Run `npx @kelbie/hunch init`, optionally install skills and run `npx @kelbie/hunch compile`, review and commit those files to the default branch. Then open a PR. Policy is always read from the immutable base SHA, so a PR cannot rewrite its own rules. A PR that first introduces Hunch is skipped until the config is on its base branch.
 
 The App reviews ready/open PRs on opened, synchronize, reopened, ready_for_review and edited events. Draft PRs are skipped. It creates a `hunch` check with annotations and a commit-labelled conversation report. It updates its own existing report for a retried head. It never adopts a comment merely because somebody copied Hunch's marker into it.
 
@@ -60,7 +60,7 @@ The queue is at-least-once. A durable lease prevents concurrent publication with
 
 ## GitHub Actions
 
-Use the App for external fork PRs. As a simpler alternative for trusted same-repository PRs, add an `AI_GATEWAY_API_KEY` Actions secret and this workflow by running `npx hunch init --github`.
+Use the App for external fork PRs. As a simpler alternative for trusted same-repository PRs, add an `AI_GATEWAY_API_KEY` Actions secret and this workflow by running `npx @kelbie/hunch init --github`.
 
 The generated workflow pins `Kelbie/hunch@v0.3.0`, checks out the immutable base commit, and passes the base/head SHAs to the Action. Pin a reviewed full commit SHA for stronger supply-chain immutability. It skips drafts, forks and Dependabot events (which normally cannot access Actions secrets). It fails with a setup message when the API key is absent. Configuration must be on the PR base branch before the first review. Follow the [README](../README.md#get-pr-reviews-in-three-steps) for key creation and repository-secret setup.
 
