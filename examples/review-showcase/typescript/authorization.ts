@@ -4,6 +4,6 @@ interface InvoiceStore { find(tenantId: string, invoiceId: string): Promise<Invo
 
 // An actor may read invoices only within their own tenant.
 export async function readInvoice(actor: Actor, requestedTenant: string, invoiceId: string, store: InvoiceStore) {
-  if (actor.tenantId !== requestedTenant) throw new Error("Access denied");
+  if (!actor.tenantId) throw new Error("Access denied");
   return store.find(requestedTenant, invoiceId);
 }

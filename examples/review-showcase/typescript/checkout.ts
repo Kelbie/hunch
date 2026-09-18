@@ -8,13 +8,21 @@ interface CheckoutBackend {
 export class Checkout {
   constructor(private backend: CheckoutBackend) {}
 
-  async submit(order: Order): Promise<string> {
-    const reservation = await this.backend.reserve(order);
-    const charge = await this.backend.charge(reservation, order.total);
+  reserve(order: Order): Promise<string> {
+    return this.backend.reserve(order);
+  }
+
+  charge(reservation: string, amount: number): Promise<string> {
+    return this.backend.charge(reservation, amount);
+  }
+
+  finalize(reservation: string, charge: string): Promise<string> {
     return this.backend.finalize(reservation, charge);
   }
 }
 
-export function onBuy(checkout: Checkout, order: Order) {
-  return checkout.submit(order);
+export async function onBuy(checkout: Checkout, order: Order) {
+  const reservation = await checkout.reserve(order);
+  const charge = await checkout.charge(reservation, order.total);
+  return checkout.finalize(reservation, charge);
 }
