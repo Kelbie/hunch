@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { findingKey, findingKeysIn, reviewComment, summaryMarkdown, toText } from "../src/report.js";
+import { findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
 import type { CheckResult } from "../src/check.js";
 
 const result: CheckResult = {
@@ -15,7 +15,7 @@ const result: CheckResult = {
 test("PR comment reads like the terminal report: headline, one row per concern, diagnostics collapsed", () => {
   const markdown = summaryMarkdown(result, { blobBase: `https://github.com/acme/repo/blob/${"a".repeat(40)}` });
   const visible = markdown.split("<details>")[0]!;
-  expect(visible).toContain("### 🔮 Hunch · 2 possible issues in 1 file (1 error, 1 warning) · review complete");
+  expect(visible).toContain("### 🔮 Hunch · 1 place to review (1 with errors) · review complete");
   expect(visible).toContain("| 🔴 | 🔴 Retrying after a timeout may charge the customer twice.<br><sub>`billing/retry`</sub><br>");
   expect(visible).toContain(`| [\`pay.ts:12-20\`](https://github.com/acme/repo/blob/${"a".repeat(40)}/src/pay.ts#L12-L20) |`);
   expect(visible.match(/pay\.ts:12-20/g)).toHaveLength(1);
@@ -42,6 +42,18 @@ test("inline comments carry every concern at a location, with a marker per rule 
   expect(comment.body).toContain("🔴 **Error:** Retrying after a timeout");
   expect(comment.body).toContain("🟡 **Warning:** A failed operation");
   expect(reviewComment([{ ...result.findings[0]!, endLine: 12 }])).not.toHaveProperty("start_line");
+  // A whole new file anchors where reading starts, and says which lines it means.
+  const long = reviewComment([{ ...result.findings[0]!, line: 1, endLine: 40 }]);
+  expect(long).toMatchObject({ line: 1 });
+  expect(long).not.toHaveProperty("start_line");
+  expect(long.body).toContain("About lines 1-40");
+});
+
+test("the headline counts places, not every overlapping rule, and names files only when it adds something", () => {
+  const [a, b] = result.findings;
+  const other = { ...a!, file: "src/refund.ts", line: 3, endLine: 3, level: "warn" as const };
+  const markdown = summaryMarkdown({ ...result, findings: [a!, b!, other, { ...other, line: 30, endLine: 30 }] });
+  expect(markdown).toContain("### 🔮 Hunch · 3 places to review in 2 files (1 with errors) · review complete");
 });
 
 test("coverage gaps stay visible even when findings exist", () => {
@@ -56,7 +68,7 @@ test("identical concerns from multiple rules appear once without losing their at
   const first = result.findings[0]!;
   const markdown = summaryMarkdown({ ...result, findings: [first, { ...first, rule: "skill/payments/retry", source: "skill/payments", level: "warn" }] });
   const visible = markdown.split("<details>")[0]!;
-  expect(visible).toContain("1 possible issue in 1 file");
+  expect(visible).toContain("1 place to review (1 with errors)");
   expect(visible.match(/Retrying after a timeout/g)).toHaveLength(1);
   expect(markdown).toContain("skill/payments/retry");
   expect(markdown).toContain("billing/retry");
@@ -80,4 +92,9 @@ test("terminal report lists findings as rows per file and prints each rule's tex
   expect(text.trim().split("\n").at(-1)).toBe("1 hunk · 1 request · 1,234 input tokens · typesafe-ai/jev");
   expect(toText(result, { color: true })).toContain("\x1b[31m✖ error\x1b[0m");
   expect(toText({ ...result, findings: [], notices: [] }).split("\n")[0]).toBe("Hunch · no findings · review complete");
+});
+
+test("locations use the shortest path that tells files apart", () => {
+  const paths = shortPaths(["apps/api/lib/review.ts", "examples/typescript/review.ts", "src/index.ts", "src/web/index.ts", "index.ts"]);
+  expect([...paths.values()]).toEqual(["lib/review.ts", "typescript/review.ts", "src/index.ts", "web/index.ts", "index.ts"]);
 });

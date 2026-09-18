@@ -17,7 +17,7 @@ export const extractedSchema = z.object({
     z.object({
       slug: z.string().describe("kebab-case, unique within the source, e.g. `label-every-input`"),
       section: z.string().describe("Heading path the rule came from, e.g. `Forms > Labels`"),
-      message: z.string().describe("One short sentence stating the rule, shown to PR authors"),
+      message: z.string().describe("One short sentence describing the problem a breaking hunk may have, shown to PR authors, e.g. `A failed request may now be reported as success.` Describe the risk, not a command."),
       instructions: z
         .string()
         .describe("A direct yes/no question about `hunk` where YES means the hunk BREAKS the rule. Name the exact condition."),

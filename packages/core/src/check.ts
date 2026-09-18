@@ -78,7 +78,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     notices.push("No review rules configured. Add plain-English rules or compile project guidance.");
   }
   for (const source of input.lock?.sources ?? []) {
-    if (source.notChecked.length) notices.push(`${source.id}: ${source.notChecked.length} guidance item(s) require human review (see hunch.lock).`);
+    if (source.notChecked.length) notices.push(`${source.id}: ${plural(source.notChecked.length, "guidance item")} can't be checked one change at a time; see notChecked in hunch.lock.`);
   }
   let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length));
   const deadline = Date.now() + config.budget.timeoutSeconds * 1000;
@@ -264,3 +264,5 @@ async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>)
     }),
   );
 }
+
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;

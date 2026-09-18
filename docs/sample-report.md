@@ -5,7 +5,7 @@ The GitHub App's summary comment and one inline comment, generated from a real J
 ## Summary comment
 
 <!-- hunch:summary -->
-### 🔮 Hunch · 11 possible issues in 7 files (2 errors, 9 warnings) · review complete
+### 🔮 Hunch · 7 places to review (2 with errors) · review complete
 
 | | Concern | Where |
 | :-: | --- | --- |
@@ -36,10 +36,10 @@ The GitHub App's summary comment and one inline comment, generated from a real J
 | agents-md/root/report-incomplete-coverage-explicitly | agents-md/root | p(yes)=0.90 ≥ 0.75 |
 | typescript/async-ordering | hunch:typescript | p(yes)=0.90 ≥ 0.85 |
 
-Guidance requiring human review:
+Guidance Hunch doesn't check:
 
-- skill/codebase-design: 10 guidance item(s) require human review (see hunch.lock).
-- agents-md/root: 10 guidance item(s) require human review (see hunch.lock).
+- skill/codebase-design: 10 guidance items can't be checked one change at a time; see notChecked in hunch.lock.
+- agents-md/root: 10 guidance items can't be checked one change at a time; see notChecked in hunch.lock.
 
 </details>
 
