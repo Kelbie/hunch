@@ -26,7 +26,7 @@ import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
 
-const VERSION = "0.3.1";
+const VERSION = "0.3.2";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
@@ -42,7 +42,20 @@ Environment
   TYPESAFE_API_KEY     TypeSafe direct (provider = "typesafe")
   No key is written to your config. Export the key in your shell or secret manager.`;
 
+/**
+ * Loads `.env` files from the working directory in Bun's order, so `npx hunch` (Node) sees
+ * the same credentials as `bun run hunch` or `bunx hunch`. Earlier files win; the real
+ * environment always wins.
+ */
+function loadEnvFiles(dir = process.cwd()) {
+  if (process.versions.bun) return; // Bun has already loaded them.
+  const mode = process.env.NODE_ENV || "development";
+  const files = [`.env.${mode}.local`, ...(mode === "test" ? [] : [".env.local"]), `.env.${mode}`, ".env"];
+  for (const f of files) if (existsSync(join(dir, f))) process.loadEnvFile(join(dir, f));
+}
+
 async function main() {
+  loadEnvFiles();
   const [cmd = "help", ...rest] = process.argv.slice(2);
   if (cmd === "app") return runAppCommand(rest);
   const { values, positionals } = parseArgs({
@@ -247,6 +260,7 @@ function fail(msg: string) {
 }
 
 main().catch((e) => {
-  console.error(`hunch: ${e instanceof Error ? e.message : e}`);
+  // Provider SDK errors carry terminal colour codes; keep output plain and identical across runners.
+  console.error(`hunch: ${String(e instanceof Error ? e.message : e).replace(/\x1b\[[0-9;]*m/g, "").trimEnd()}`);
   process.exitCode = 2;
 });
