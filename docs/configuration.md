@@ -46,6 +46,25 @@ Because `context` names the file's role, a rule need not enumerate test or fixtu
 
 Question IDs are not semantic instructions. Each question must stand alone. Hunch's confidence is distribution concentration `(pmax − 1/n)/(1 − 1/n)`, not TypeSafe's own confidence or empirical accuracy. When a configured confidence threshold needs probabilities the provider omitted, the run fails rather than quietly suppressing a finding.
 
+## Finding code for a change
+
+`hunch find "<task>"` scores every in-scope chunk against a task and returns the ones worth reading
+first. It uses the same `include`/`ignore` scope and the same chunking as `check --all`, and the same
+`model`/`provider` settings, but none of the repository's rules: the questions are fixed and the task
+is sent as state, so nothing needs compiling and there is no config to write.
+
+Five `noul` questions are asked per chunk in one request — `edit`, `contract`, `caller`, `test`,
+`precedent` — and every probability is kept. Matches are grouped by their strongest facet, and
+`--top` applies per facet so that a facet with a higher base rate cannot crowd the others out of the
+result. Ranking compares raw probabilities across facets, which are not calibrated against each
+other; treat the grouping as the signal and the number as a within-facet ordering.
+
+`find` does not use `budget`: those limits are sized to keep a pull-request review inside a worker
+timeout, and applying them here would end a repository sweep partway through. It runs one request per
+chunk at `--concurrency` (default 8, maximum 32) with a one-hour ceiling, and reports an unfinished
+sweep as a notice plus exit code 2. Use `--dry-run` to count chunks and requests before spending
+anything.
+
 ## Guidance
 
 Without an explicit `skills` selection, discovery checks `.agents/skills/*` then `.claude/skills/*`, deduplicating names. An explicit list selects only those sources; `skills: []` selects none. Use local directories or `./path/*`, `owner/repo`, `{ repo, skill?, ref? }`, or `https://github.com/owner/repo/tree/ref/path`. For refs containing `/`, use the object form rather than the ambiguous URL form. Duplicate explicit skill names are errors. Skill Markdown is loaded recursively up to four directory levels, without executing scripts or loading binary assets. Hosted policy must be committed regular files; choose copied project skill installations instead of external symlinks.

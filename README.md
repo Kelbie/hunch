@@ -113,6 +113,7 @@ Running your own deployment of the App instead of the hosted one: [operator setu
 | `check --show-diff` | Prints the changed lines under each finding. Handy for agents fixing findings. Works with `--reporter json` too. |
 | `check --config <json\|file\|->` | Uses rules from JSON instead of the repo's config. [Details](#rules-without-a-config-file) |
 | `check --rule id="…"` | Adds a plain-English rule for this run. Repeatable. |
+| `find "<task>"` | Ranks every chunk of the repository by how it relates to a change you are about to make. [Details](#finding-the-code-for-a-change) |
 | `compile` | Turns your skills and `AGENTS.md` into review questions, saved in `hunch.lock`. [Why?](#skills-and-agentsmd) |
 | `init [--ts\|--rust\|--general] [--github]` | Writes a starter config, and optionally a PR workflow. Asks where reviews should run when it has a terminal; any flag skips the questions. |
 | `doctor` | Says why this repository is not being reviewed, and what to do about it. |
@@ -120,6 +121,47 @@ Running your own deployment of the App instead of the hosted one: [operator setu
 | `app --help` | Sets up a self-hosted GitHub App. |
 
 Run each as `npx @kelbie/hunch <command>`. Every `check` also takes paths to narrow the review, and `--reporter text|markdown|json|sarif|github`.
+
+## Finding the code for a change
+
+`check` asks whether code is wrong. `find` asks where code *is* — it scores every chunk of the
+repository against a task you describe, and returns the ones worth reading before you start.
+
+```sh
+npx @kelbie/hunch find "warn on the amountless onchain receive QR with the mint's minimum and maximum"
+```
+
+Each chunk is asked five questions at once, because "show me the tests" and "show me where to type"
+are different requests that one relevance score would blur together:
+
+| Facet | The question |
+| --- | --- |
+| `edit` | Would doing this require editing these lines? |
+| `contract` | Does this define the value, limit or type the task hinges on? |
+| `caller` | Does this consume the behaviour that would change? |
+| `test` | Does this test the area, so it would need updating or would catch a mistake? |
+| `precedent` | Does this already solve the same kind of problem somewhere else? |
+
+The answer is a probability per facet, so the output is grouped by what each chunk *is* rather than
+flattened into one list. `--top` is per facet for the same reason: the single test worth updating is
+not crowded out by thirty definitions.
+
+```sh
+hunch find "…" --dry-run                  # count chunks and requests before spending anything
+hunch find "…" app/features wallet        # narrow by path
+hunch find "…" --facet test,precedent     # ask only what you want back
+hunch find "…" --min 0.7 --top 5          # fewer, surer
+hunch find "…" --format code > context.md # one Markdown document, to paste into a larger model
+```
+
+`--format code` is the point of the command: it emits the matched source, fenced and grouped, as a
+starting context for a model that reasons better than Jev but cannot afford to read your whole
+repository. `--format json` gives every facet probability for each match.
+
+A sweep is one request per chunk, run concurrently (`--concurrency`, default 8). It is deliberately
+not narrowed by keyword first: the code you most need is often the code you would not have grepped
+for. If the sweep is cut short by its budget it says so and exits `2`, because a partial answer that
+looks whole is worse than no answer.
 
 ## Rules without a config file
 

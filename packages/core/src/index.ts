@@ -3,6 +3,7 @@ export * from "./compile.js";
 export * from "./context.js";
 export * from "./define.js";
 export * from "./diff.js";
+export * from "./find.js";
 export * from "./full.js";
 export * from "./github.js";
 export * from "./jev.js";

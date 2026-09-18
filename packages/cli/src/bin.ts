@@ -6,6 +6,11 @@ import {
   check,
   clientFromEnv,
   collectSources,
+  FACETS,
+  find,
+  findMarkdown,
+  findText,
+  type Facet,
   compileSources,
   LOCK_FILE,
   loadConfig,
@@ -55,6 +60,13 @@ Usage: npx @kelbie/hunch <command>, or hunch <command> once installed
         asks which installed agent to use; --with skips the question
   hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
         asks where reviews should run when it has a terminal; any flag skips the questions
+  hunch find "<task>" [paths…]     rank every chunk of the repo by relevance to a task
+        [--facet edit,contract,caller,test,precedent]   ask only these, report only these
+        [--min 0.5] [--top 12] [--concurrency 8] [--head ref] [--format code|text|json]
+        --top is per facet, so the one test worth updating is not crowded out by
+        thirty definitions.
+        --format code prints the matches as one Markdown document, to paste into a
+        larger model as its starting context. --dry-run counts chunks first.
   hunch doctor [--app slug]        say why this repository is not being reviewed
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
   hunch app --help                 register and connect a self-hosted GitHub App
@@ -113,6 +125,11 @@ async function main() {
       rust: { type: "boolean", default: false },
       ts: { type: "boolean", default: false },
       app: { type: "string" },
+      facet: { type: "string", multiple: true },
+      concurrency: { type: "string" },
+      min: { type: "string" },
+      top: { type: "string" },
+      format: { type: "string", default: "text" },
       cwd: { type: "string", default: process.cwd() },
     },
   });
@@ -207,6 +224,58 @@ async function main() {
       }
       const failed = config.failOnError && result.findings.some((f) => f.level === "error");
       process.exitCode = !result.complete ? 2 : failed ? 1 : 0;
+      return;
+    }
+
+    case "find": {
+      const task = positionals[0];
+      if (!task) return fail('find needs a task: hunch find "add a minimum-amount warning to the onchain receive screen"');
+      const loaded = await loadConfig(repo);
+      if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
+      const { config } = loaded;
+      if (!["text", "code", "json"].includes(values.format!)) return fail("Unknown --format; use text, code or json");
+      const facets = (values.facet ?? []).flatMap((f) => f.split(",")).map((f) => f.trim()).filter(Boolean) as Facet[];
+      const unknown = facets.filter((f) => !FACETS.includes(f));
+      if (unknown.length) return fail(`Unknown --facet ${unknown.join(", ")}; choose from ${FACETS.join(", ")}`);
+      const minScore = values.min === undefined ? 0.5 : Number(values.min);
+      if (!Number.isFinite(minScore) || minScore < 0 || minScore > 1) return fail("--min must be between 0 and 1");
+      const top = values.top === undefined ? 12 : Number(values.top);
+      if (!Number.isInteger(top) || top < 1) return fail("--top must be a positive whole number");
+      // Not config.budget: that is sized to keep a PR review inside a worker timeout, and
+      // inheriting its request cap would end a repository sweep partway through without the
+      // person having asked for that.
+      const concurrency = values.concurrency === undefined ? 8 : Number(values.concurrency);
+      if (!Number.isInteger(concurrency) || concurrency < 1 || concurrency > 32) return fail("--concurrency must be between 1 and 32");
+
+      const source = values.head ? gitRepo(root, values.head) : localRepo(root);
+      const { hunks, skipped } = await repoHunks(source, config, positionals.slice(1));
+      if (skipped.length) console.error(`hunch: skipped ${skipped.length} unreadable, binary or oversized file(s)`);
+      const files = new Set(hunks.map((h) => h.file)).size;
+      if (values["dry-run"]) {
+        console.log(`hunch: dry run, nothing sent. ${files} file(s) as ${hunks.length} chunk(s): ${hunks.length} request(s), ${(facets.length || FACETS.length) * hunks.length} question(s).`);
+        return;
+      }
+      if (!hunks.length) return fail("nothing in scope to search; check `include` and the paths you passed.");
+      console.error(`hunch: searching ${files} file(s) as ${hunks.length} chunk(s) from ${values.head ?? "the working tree"}`);
+
+      let client: JevClient | undefined;
+      const result = await find({
+        task,
+        hunks,
+        model: config.model,
+        facets: facets.length ? facets : undefined,
+        minScore,
+        perFacet: top,
+        budget: { concurrency, maxRequests: hunks.length, timeoutSeconds: 3600 },
+        client: { evaluate: (req) => (client ??= clientFromEnv(config)).evaluate(req) },
+        onProgress: (d, t) => process.stderr.write(`\r  searched ${d}/${t} chunks`),
+      });
+      process.stderr.write("\n");
+      if (values.format === "json") console.log(JSON.stringify(result, null, 2));
+      else if (values.format === "code") console.log(findMarkdown(task, result));
+      else console.log(findText(result));
+      // An unfinished sweep means the answer is "here is some of it", which callers must be able to see.
+      process.exitCode = result.complete ? 0 : 2;
       return;
     }
 
