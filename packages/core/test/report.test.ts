@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { summaryMarkdown } from "../src/report.js";
+import { summaryMarkdown, toText } from "../src/report.js";
 import type { CheckResult } from "../src/check.js";
 
 const result: CheckResult = {
@@ -42,4 +42,24 @@ test("identical concerns from multiple rules appear once without losing their at
   expect(visible.match(/Retrying after a timeout/g)).toHaveLength(1);
   expect(markdown).toContain("skill/payments/retry");
   expect(markdown).toContain("billing/retry");
+});
+
+test("terminal report lists findings as rows per file and prints each rule's text once", () => {
+  const text = toText({
+    ...result,
+    findings: [
+      ...result.findings,
+      { rule: "billing/retry", source: "config", level: "error", file: "src/refund.ts", line: 3, endLine: 3, message: "Retrying after a timeout may charge the customer twice.", evidence: "p(yes)=0.9 ≥ 0.7" },
+    ],
+  }, { width: 80 });
+  expect(text).not.toContain("\x1b[");
+  expect(text.split("\n")[0]).toBe("Hunch · 3 findings in 2 files (2 errors, 1 warning) · review complete");
+  expect(text).toMatch(/^src\/pay\.ts\n  L12  ✖ error  billing\/retry +choice=duplicate_charge/m);
+  expect(text).toContain("failures/misleading-success  p(yes)=0.96 ≥ 0.85 · hunch:recommended");
+  expect(text.split("Retrying after a timeout").length - 1).toBe(1);
+  expect(text).toContain("billing/retry  2 findings");
+  expect(text).toContain("Notes\n  ! skill/codebase-design");
+  expect(text.trim().split("\n").at(-1)).toBe("1 hunk · 1 request · 1,234 input tokens · typesafe-ai/jev");
+  expect(toText(result, { color: true })).toContain("\x1b[31m✖ error\x1b[0m");
+  expect(toText({ ...result, findings: [], notices: [] }).split("\n")[0]).toBe("Hunch · no findings · review complete");
 });

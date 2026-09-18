@@ -102,14 +102,72 @@ export function toSarif(findings: Finding[], version: string) {
   };
 }
 
-export function toText(result: CheckResult): string {
-  const out = result.findings.map(
-    (f) => `${f.file}:${f.line}  ${f.level === "error" ? "error" : "warn "}  ${f.message}  ${f.rule}\n    ${f.evidence} · ${f.source}`,
-  );
-  out.unshift(`Hunch · ${result.complete ? "review complete" : "partial review"}\n`);
-  out.push(...result.notices.map((n) => `note: ${n}`));
-  const s = result.stats;
-  out.push(`\n${plural(result.findings.length, "finding")} · ${s.hunks} hunks · ${s.requests} requests · ${s.inputTokens} input tokens`);
+export interface TextOptions {
+  /** ANSI colors; the CLI enables them for an interactive terminal unless NO_COLOR is set. */
+  color?: boolean;
+  /** Terminal width for wrapping. */
+  width?: number;
+}
+
+/** Terminal report: findings grouped by file, a per-rule summary, then notes and totals. */
+export function toText(result: CheckResult, { color = false, width = 100 }: TextOptions = {}): string {
+  const paint = (codes: string) => (s: string) => (color ? `\x1b[${codes}m${s}\x1b[0m` : s);
+  const bold = paint("1"), dim = paint("2"), red = paint("31"), yellow = paint("33"), green = paint("32"), cyan = paint("36");
+  const wrap = (text: string, indent: number) => {
+    const max = Math.max(40, width - indent);
+    const lines: string[] = [];
+    let line = "";
+    for (const word of text.split(/\s+/).filter(Boolean)) {
+      if (line && line.length + 1 + word.length > max) { lines.push(line); line = word; }
+      else line = line ? `${line} ${word}` : word;
+    }
+    if (line) lines.push(line);
+    return lines.map((l) => " ".repeat(indent) + l).join("\n");
+  };
+  const badge = (level: Finding["level"]) => (level === "error" ? red("✖ error") : yellow("▲ warn "));
+  const count = (n: number) => n.toLocaleString("en-US");
+  const { findings, stats } = result;
+  const errors = findings.filter((f) => f.level === "error").length;
+  const out: string[] = [];
+
+  // Files with errors first; each finding is one aligned row, and each rule's text is printed once below.
+  const hasError = (fs: Finding[]) => fs.some((f) => f.level === "error");
+  const files = [...Map.groupBy(findings, (f) => f.file)]
+    .sort((a, b) => Number(hasError(b[1])) - Number(hasError(a[1])) || a[0].localeCompare(b[0]));
+  const summary = findings.length
+    ? `${plural(findings.length, "finding")} in ${plural(files.length, "file")}` +
+      ` (${[errors && red(plural(errors, "error")), findings.length - errors && yellow(plural(findings.length - errors, "warning"))].filter(Boolean).join(", ")})`
+    : green("no findings");
+  out.push(`${bold("Hunch")} · ${summary} · ${result.complete ? green("review complete") : yellow("partial review, see notes")}`);
+
+  const lineW = Math.max(0, ...findings.map((f) => String(f.line).length)) + 1;
+  const ruleW = Math.max(0, ...findings.map((f) => f.rule.length));
+  for (const [file, group] of files) {
+    out.push("", bold(file));
+    for (const f of group.sort((a, b) => a.line - b.line)) {
+      const origin = f.source === "config" ? "" : ` · ${f.source}`;
+      out.push(`  ${dim(`L${f.line}`.padEnd(lineW))}  ${badge(f.level)}  ${cyan(f.rule.padEnd(ruleW))}  ${dim(f.evidence + origin)}`);
+    }
+  }
+
+  if (findings.length) {
+    const rules = [...Map.groupBy(findings, (f) => f.rule)]
+      .sort((a, b) => Number(hasError(b[1])) - Number(hasError(a[1])) || b[1].length - a[1].length || a[0].localeCompare(b[0]));
+    out.push("", bold("Rules"));
+    for (const [i, [rule, fs]] of rules.entries()) {
+      if (i) out.push("");
+      out.push(`  ${badge(fs[0]!.level)}  ${cyan(rule)}  ${dim(plural(fs.length, "finding"))}`);
+      out.push(wrap(fs[0]!.message, 4));
+    }
+  }
+
+  if (result.notices.length) {
+    out.push("", bold("Notes"));
+    for (const n of result.notices) out.push(yellow("  !") + wrap(n, 4).slice(3));
+  }
+
+  const models = stats.modelIds.length ? ` · ${stats.modelIds.join(", ")}` : "";
+  out.push("", dim(`${plural(stats.hunks, "hunk")} · ${plural(stats.requests, "request")} · ${count(stats.inputTokens)} input tokens${models}`));
   return out.join("\n");
 }
 

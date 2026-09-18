@@ -62,7 +62,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   const inScope = input.hunks.filter((h) => reviewed(h.file) && h.status !== "deleted");
   let hunks = inScope.flatMap((h) => windowHunk(h));
   if (hunks.length > config.budget.maxHunks) {
-    notices.push(`${hunks.length} hunks in scope; only the first ${config.budget.maxHunks} were checked (budget.maxHunks).`);
+    notices.push(`Only ${config.budget.maxHunks.toLocaleString("en-US")} of ${hunks.length.toLocaleString("en-US")} hunks were checked; raise budget.maxHunks or narrow the paths.`);
     stats.skippedHunks = hunks.length - config.budget.maxHunks;
     hunks = hunks.slice(0, config.budget.maxHunks);
   }
