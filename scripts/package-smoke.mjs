@@ -12,7 +12,13 @@ try {
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(temp, packed[0].filename)]);
   const bin = join(temp, 'node_modules/@kelbie/hunch/dist/bin.js');
   if (!run(process.execPath, [bin, '--version']).includes('0.10.0')) throw new Error('Version command failed');
-  if (!run(process.execPath, [bin, 'app', '--help']).includes('app connect')) throw new Error('App setup command missing');
+  const appHelp = run(process.execPath, [bin, 'app', '--help']);
+  if (!appHelp.includes('register') || !appHelp.includes('connect')) throw new Error('App setup subcommands missing');
+  // A flag the command does not take must be refused, not silently ignored.
+  let rejected = '';
+  try { run(process.execPath, [bin, 'init', '--facet', 'edit']); }
+  catch (e) { rejected = `${e.stdout ?? ''}${e.stderr ?? ''}`; }
+  if (!rejected.includes("unknown option '--facet'")) throw new Error('Per-command options are not enforced');
   writeFileSync(join(temp, 'package.json'), '{"type":"module"}');
   writeFileSync(join(temp, 'consumer.ts'), 'import {defineConfig,noul} from "@kelbie/hunch"; export default defineConfig({rules:{r:["warn",noul({instructions:"Does `hunk` hide a failure?",when:/catch/})]}});');
   run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--module', 'nodenext', '--target', 'es2024', 'consumer.ts']);
@@ -37,7 +43,7 @@ try {
   run(process.execPath, [bin, 'init', '--preset', 'general', '--github', '--cwd', generalNpm]);
   if (!existsSync(join(generalNpm, 'hunch.toml'))) throw new Error('--preset general ignored in npm consumer');
   const ts = join(temp, 'typescript'); mkdirSync(ts); run('git', ['init', '--quiet'], ts);
-  run(process.execPath, [bin, 'init', '--ts', '--github', '--cwd', ts]);
+  run(process.execPath, [bin, 'init', '--preset', 'ts', '--github', '--cwd', ts]);
   if (!existsSync(join(ts, '.github/workflows/hunch.yml'))) throw new Error('GitHub workflow was not created');
   // A synthetic direct key is used with an empty diff; this executes no model requests.
   writeFileSync(join(ts, 'hunch.config.ts'), 'export default {provider:"typesafe",agentsMd:false,rules:{r:["warn","Preserve failure"]}};');
