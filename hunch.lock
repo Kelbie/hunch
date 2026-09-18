@@ -1,8 +1,7 @@
 {
   "version": 1,
-  "selectionHash": "b83ebae0413421c45ad5e687456247cb2f68838a6308a0b4fade851942682ef1",
   "compiler": {
-    "model": "human-reviewed:initial-policy"
+    "model": "anthropic/claude-sonnet-5"
   },
   "sources": [
     {
@@ -14,55 +13,78 @@
       "hash": "ed4a1837af02ce111aa6613e9a04e3bbcc07e7732fe0c613cda2b6035404b8d6",
       "rules": [
         {
-          "id": "skill/codebase-design/caller-bookkeeping",
-          "section": "Depth and small interfaces",
-          "instructions": "Does added code in `hunk` expose internal bookkeeping operations that force a caller to coordinate implementation steps instead of requesting its intended task?",
-          "message": "Callers may have to coordinate internal steps and intermediate state, making the required order easy to misuse.",
+          "id": "skill/codebase-design/inject-dependencies-not-create",
+          "section": "Designing for testability > Accept dependencies, don't create them",
+          "message": "Functions should receive dependencies as parameters instead of instantiating them internally.",
+          "instructions": "Does the hunk add a function or method that instantiates a concrete dependency (e.g. `new SomeGateway()`, `new SomeClient()`, `new SomeService()`) inside its own body instead of receiving that dependency as a parameter?",
           "criteria": {
-            "true": "The added or changed code clearly demonstrates the concern.",
-            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+            "true": "The hunk adds a function whose body creates a concrete implementation object (e.g. `const gateway = new StripeGateway();`) and uses it directly, with no way for a caller/test to substitute it.",
+            "false": "The hunk adds a function that accepts the dependency as a parameter/argument, or the hunk is unrelated to dependency creation."
           },
           "appliesTo": [
             "**/*.ts",
             "**/*.tsx",
-            "**/*.rs"
+            "**/*.js",
+            "**/*.jsx"
           ]
         },
         {
-          "id": "skill/codebase-design/hypothetical-adapter",
-          "section": "One adapter means a hypothetical seam",
-          "instructions": "Does `hunk` add an abstraction whose only stated purpose is a hypothetical future provider, while the visible code has only one implementation and no current varying behavior?",
-          "message": "Introduce abstractions for actual variation, not hypothetical providers.",
+          "id": "skill/codebase-design/return-results-not-side-effects",
+          "section": "Designing for testability > Return results, don't produce side effects",
+          "message": "Functions that compute a value should return it rather than mutate a passed-in object as a side effect.",
+          "instructions": "Does the hunk add a function whose primary effect is mutating a property of a parameter object (e.g. `cart.total -= discount;`) instead of computing and returning a result?",
           "criteria": {
-            "true": "The added or changed code clearly demonstrates the concern.",
-            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+            "true": "The hunk adds a function that directly reassigns or mutates a field on an argument it received, with no return value expressing the computed result.",
+            "false": "The hunk adds a function that computes a value and returns it without mutating its arguments, or the hunk is unrelated to this pattern."
           },
           "appliesTo": [
             "**/*.ts",
             "**/*.tsx",
-            "**/*.rs"
-          ]
-        },
-        {
-          "id": "skill/codebase-design/test-private-details",
-          "section": "The interface is the test surface",
-          "instructions": "Does a test added in `hunk` couple its assertion to a private implementation detail instead of the observable behavior of the public interface?",
-          "message": "Test observable behavior through the public interface.",
-          "criteria": {
-            "true": "The added or changed code clearly demonstrates the concern.",
-            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
-          },
-          "appliesTo": [
-            "**/*.ts",
-            "**/*.tsx",
-            "**/*.rs"
+            "**/*.js",
+            "**/*.jsx"
           ]
         }
       ],
       "notChecked": [
         {
-          "section": "Whole-project architecture and design exercises",
-          "reason": "Local symptoms only: module depth, dependency quality across files, and the absence of duplication require broader review."
+          "section": "Glossary",
+          "reason": "Vocabulary/naming guidance for prose and design discussion ('module', 'interface', 'seam' vs 'component', 'service', 'API', 'boundary'); not a code pattern detectable in a diff hunk."
+        },
+        {
+          "section": "Deep vs shallow",
+          "reason": "Conceptual design heuristic about interface-to-implementation ratio; requires whole-module context, not visible in a single hunk."
+        },
+        {
+          "section": "Principles > The deletion test",
+          "reason": "Requires reasoning about the module's effect across all its callers, which spans multiple files."
+        },
+        {
+          "section": "Principles > The interface is the test surface",
+          "reason": "Architectural judgment about where tests should cross a seam; not verifiable from a single hunk without knowing the module's full interface and test suite."
+        },
+        {
+          "section": "Principles > One adapter means a hypothetical seam",
+          "reason": "Requires counting adapters across the whole codebase to know if a seam has one or two implementations."
+        },
+        {
+          "section": "Designing for testability > Small surface area",
+          "reason": "Requires counting methods/parameters across the whole module, not determinable from a single hunk."
+        },
+        {
+          "section": "DEEPENING.md > Dependency categories",
+          "reason": "Architectural classification decision needing knowledge of the whole dependency graph and available test stand-ins, not visible in a single hunk."
+        },
+        {
+          "section": "DEEPENING.md > Seam discipline",
+          "reason": "Requires knowing the number of adapters implementing a port across the codebase; cannot be judged from one hunk."
+        },
+        {
+          "section": "DEEPENING.md > Testing strategy: replace, don't layer",
+          "reason": "Requires knowing about old tests elsewhere in the repo being deleted/replaced; cross-file concern."
+        },
+        {
+          "section": "DESIGN-IT-TWICE.md",
+          "reason": "Describes a multi-agent design exploration process, not a code property checkable from a diff hunk."
         }
       ]
     },
@@ -75,42 +97,146 @@
       "hash": "57d17bb66ccdef29bf4bb02281ec122a0164105d5e1388d9e3c220ff635d6345",
       "rules": [
         {
-          "id": "agents-md/root/failure-as-success",
-          "section": "Preserve failures",
-          "instructions": "Does `hunk` catch a failed operation and return a success-shaped empty result that prevents the caller from distinguishing failure?",
-          "message": "A failed operation may now be reported as successful completion.",
+          "id": "agents-md/root/preserve-caller-failures",
+          "section": "Public interfaces > Failure handling",
+          "message": "Do not turn missing data, provider failures, or partial review into a success result.",
+          "instructions": "Does the hunk change error/failure handling so that missing data, a provider failure, or a partial review is returned or reported as a success instead of being propagated as a failure?",
           "criteria": {
-            "true": "The added or changed code clearly demonstrates the concern.",
-            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+            "true": "The hunk catches an error, missing-data case, or partial-review condition and returns/reports an 'ok'/success/empty-but-successful result instead of surfacing the failure.",
+            "false": "The hunk propagates the error/failure, throws, or returns an explicit failure/error result for these conditions; or the hunk is unrelated to error/failure handling."
           },
           "appliesTo": [
             "**/*.ts",
-            "**/*.tsx",
-            "**/*.rs"
+            "**/*.tsx"
           ]
         },
         {
-          "id": "agents-md/root/untrusted-policy",
-          "section": "Immutable base policy",
-          "instructions": "Does `hunk` read PR-head configuration as the authoritative policy used to judge that same PR?",
-          "message": "Judge PRs against trusted base policy.",
+          "id": "agents-md/root/no-execute-pr-config-with-credentials",
+          "section": "Security > PR configuration and scripts",
+          "message": "Never execute PR-supplied configuration or scripts with credentials.",
+          "instructions": "Does the hunk execute or run configuration or scripts sourced from the PR (untrusted, non-base-commit) while credentials, tokens, or an authenticated context are available to that execution?",
           "criteria": {
-            "true": "The added or changed code clearly demonstrates the concern.",
-            "false": "The code does not demonstrate it, or the hunk lacks enough evidence."
+            "true": "The hunk runs/evals a script or config value taken from the PR/user input and that execution has access to secrets, tokens, or credentials.",
+            "false": "The hunk only executes trusted base-commit configuration, does not involve credentials, or is unrelated to executing PR content."
+          },
+          "appliesTo": []
+        },
+        {
+          "id": "agents-md/root/authenticate-webhooks-before-queue",
+          "section": "Security > Webhooks",
+          "message": "Authenticate webhooks before queueing them for processing.",
+          "instructions": "Does the hunk add or modify a webhook handler that enqueues a job/message for processing without first verifying an authentication/signature check on the incoming request?",
+          "criteria": {
+            "true": "A webhook route/handler pushes to a queue or triggers processing without a preceding signature/token/auth verification step.",
+            "false": "The webhook handler verifies signature/authentication before queueing, or the hunk is unrelated to webhook handling."
+          },
+          "appliesTo": []
+        },
+        {
+          "id": "agents-md/root/no-publish-raw-errors-or-credentials",
+          "section": "Security > Error and credential output",
+          "message": "Never publish raw error bodies or credentials in output.",
+          "instructions": "Does the hunk return, log, or otherwise expose a raw provider error body or a credential/secret/token value directly to the caller or output?",
+          "criteria": {
+            "true": "The hunk forwards an unmodified error.message/body from an external provider to the caller, or logs/returns a secret, API key, or token value directly.",
+            "false": "The hunk sanitizes/wraps error output before exposing it, does not touch error/credential handling, or masks credential values."
+          },
+          "appliesTo": []
+        },
+        {
+          "id": "agents-md/root/no-deterministic-lint-rules-in-presets",
+          "section": "Findings > Presets and policy",
+          "message": "Keep deterministic lint/type rules out of Hunch presets and project policy.",
+          "instructions": "Does the hunk add a deterministic lint or type-checking rule (e.g., style, unused-variable, type-mismatch checks) into a Hunch preset or project policy configuration?",
+          "criteria": {
+            "true": "A preset or policy file gains a rule that checks purely syntactic/deterministic conditions rather than a model-scored semantic concern.",
+            "false": "The hunk adds a semantic/model-scored concern to presets/policy, or does not touch preset/policy files."
           },
           "appliesTo": [
-            "**/*.ts",
-            "**/*.tsx",
-            "**/*.rs"
+            "**/presets/**",
+            "**/policy/**"
+          ]
+        },
+        {
+          "id": "agents-md/root/findings-need-configured-concern-and-score",
+          "section": "Findings > Structure",
+          "message": "Every finding must be a configured concern backed by a model score, not a freeform generated explanation.",
+          "instructions": "Does the hunk construct a finding/report entry that consists only of a freeform generated explanation text, without an associated configured concern identifier and model score field?",
+          "criteria": {
+            "true": "A finding object is created with only free text/explanation and no concern id/score, or explanation text is generated dynamically and used as the finding itself.",
+            "false": "The finding includes a configured concern reference and a model score field, or the hunk does not create/modify finding objects."
+          },
+          "appliesTo": []
+        },
+        {
+          "id": "agents-md/root/report-incomplete-coverage-explicitly",
+          "section": "Findings > Coverage reporting",
+          "message": "Report incomplete review coverage explicitly rather than hiding it.",
+          "instructions": "Does the hunk remove, suppress, or fail to surface an indication that review coverage was incomplete or partial in the produced report?",
+          "criteria": {
+            "true": "Code that previously reported/would report incomplete coverage is removed, silenced, or coverage is marked complete when it is only partial.",
+            "false": "The hunk adds or preserves explicit reporting of incomplete/partial coverage, or is unrelated to coverage reporting."
+          },
+          "appliesTo": []
+        },
+        {
+          "id": "agents-md/root/no-claim-live-validation-from-mocks",
+          "section": "Testing > Validation claims",
+          "message": "Do not claim live Jev quality or Vercel/GitHub App deployment validation based on mocked tests.",
+          "instructions": "Does the hunk add a test, comment, or documentation statement claiming live Jev quality validation or real Vercel/GitHub App deployment validation while the underlying test only uses mocks/stubs?",
+          "criteria": {
+            "true": "A test or doc asserts that deployment or live quality has been validated, but the test implementation relies on mocked adapters/services rather than real integrations.",
+            "false": "The hunk labels mock-based tests accurately as mocked, or does not make claims about live/deployment validation."
+          },
+          "appliesTo": [
+            "**/*.test.ts",
+            "**/*.md"
           ]
         }
       ],
       "notChecked": [
         {
-          "section": "Contributor process and verification",
-          "reason": "Running commands, reviewing standards, secret handling across systems and actual deployment require separate verification."
+          "section": "Architecture > Review engine independence",
+          "reason": "Whether the review engine stays independent of filesystem/auth/queue concerns requires understanding module boundaries and dependencies across the whole codebase, not visible in a single hunk."
+        },
+        {
+          "section": "Architecture > Repository readers",
+          "reason": "Whether repository readers correctly hide local vs immutable GitHub access is a cross-file design property, not decidable from one hunk."
+        },
+        {
+          "section": "Architecture > Avoid speculative abstraction",
+          "reason": "Determining whether an abstraction was added 'solely for a hypothetical future backend' requires judging intent/necessity across the design, which is subjective and not verifiable from a single hunk."
+        },
+        {
+          "section": "Public interfaces > Express caller's task",
+          "reason": "This is a subjective design/naming quality judgment not reducible to a concrete yes/no pattern in a diff hunk."
+        },
+        {
+          "section": "Architecture > Implementation sequencing ownership",
+          "reason": "Whether sequencing logic lives 'inside the module that owns it' requires cross-module knowledge not available from a single hunk."
+        },
+        {
+          "section": "Configuration > Immutable base commit sourcing",
+          "reason": "Verifying that configuration/guidance is sourced from the immutable base commit requires knowledge of the surrounding pipeline and data flow, not visible in one hunk."
+        },
+        {
+          "section": "Security > Untrusted data handling",
+          "reason": "General statement to treat source code and provider output as untrusted data is too broad/vague to convert into a concrete single-hunk check beyond the more specific credential/execution rules already extracted."
+        },
+        {
+          "section": "Tooling > Skill installation and provenance",
+          "reason": "References to installed skills and skills-lock.json provenance are process/setup concerns, not diff-hunk-checkable code rules."
+        },
+        {
+          "section": "Commands > bun install/typecheck/test/build",
+          "reason": "These are process instructions about which commands to run, not properties of a code diff hunk."
+        },
+        {
+          "section": "Testing > Packed npm artifact under Node 22+",
+          "reason": "Requires running/inspecting build artifacts and Node version behavior, not determinable from a single source diff hunk."
         }
       ]
     }
-  ]
+  ],
+  "selectionHash": "b83ebae0413421c45ad5e687456247cb2f68838a6308a0b4fade851942682ef1"
 }
