@@ -4,7 +4,7 @@ import { evaluateConfigSource } from "../src/load/static-ts.js";
 import { ConfigError, parseConfig } from "../src/schema.js";
 
 const TS = `
-import { defineConfig, noul, choice, score } from "@hunch/cli";
+import { defineConfig, noul, choice, score } from "@kelbie/hunch";
 
 const common = ["dist"];
 

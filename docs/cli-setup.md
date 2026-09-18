@@ -73,7 +73,7 @@ Credentials are saved outside the repo at `~/.config/hunch/apps/APP_ID.json` wit
 From the repository you want reviewed:
 
 ```sh
-npm install -D https://github.com/Kelbie/hunch/releases/download/v0.3.0/hunch-cli-0.3.0.tgz
+npm install -D @kelbie/hunch
 npx hunch init
 # If using skills or AGENTS.md: set AI_GATEWAY_API_KEY locally, then npx hunch compile
 ```

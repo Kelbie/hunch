@@ -1,6 +1,6 @@
 {
-  "name": "@hunch/cli",
-  "version": "0.3.0",
+  "name": "@kelbie/hunch",
+  "version": "0.3.1",
   "description": "Gut-check every pull request against plain-English rules and your agent skills, using TypeSafe's Jev.",
   "type": "module",
   "bin": {

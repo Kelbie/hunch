@@ -2,7 +2,7 @@
 
 Use one `hunch.config.ts` or `hunch.toml` at the repository root. The same schema validates both. Unknown keys and invalid shapes fail. TOML uses kebab-case for Hunch options; rule IDs and choice labels keep their original spelling.
 
-TypeScript accepts plain literals, constant bindings, object/array spreads, regex literals, string concatenation, `as`/`satisfies`, and imported `defineConfig`, `noul`, `choice`, `score` helpers from `@hunch/cli`. It never imports or executes the file. Environment access, computed properties, arbitrary calls and function definitions are rejected.
+TypeScript accepts plain literals, constant bindings, object/array spreads, regex literals, string concatenation, `as`/`satisfies`, and imported `defineConfig`, `noul`, `choice`, `score` helpers from `@kelbie/hunch`. It never imports or executes the file. Environment access, computed properties, arbitrary calls and function definitions are rejected.
 
 ## Rules
 
@@ -11,7 +11,7 @@ A plain-English rule `["warn", "The contract to preserve"]` becomes a yes/no vio
 Typed rules can control the exact question:
 
 ```ts
-import { defineConfig, noul, choice, score } from "@hunch/cli";
+import { defineConfig, noul, choice, score } from "@kelbie/hunch";
 export default defineConfig({
   rules: {
     "failures/misleading-success": ["warn", noul({
@@ -71,6 +71,8 @@ The previous entropy/off-task, naming and comment-style defaults were removed in
 
 Change severity or disable a rule in `rules`; use `overrides` for directory-specific choices. A severity-only override preserves the question's language scope. Replacing the entire question replaces its scope too; include `files` on a custom question when needed.
 
-## Upgrading from 0.1
+## Upgrading
 
-The public package is now `@hunch/cli`. Install the new release, remove `@kelbie/hunch` from your dependencies, and change helper imports to `@hunch/cli`. The static parser still accepts old helper imports during migration. Replace `entropy/weakened-test` with `tests/weakened-test` and `entropy/stale-comment` with `docs/contradictory-comment`; delete overrides for removed style/off-task defaults. Review changed questions before enabling them as merge gates.
+0.3.1 renames the package back to `@kelbie/hunch`, because publishing under `@hunch` requires owning that npm organization. If you installed the 0.3.0 preview as `@hunch/cli`, remove it, install `@kelbie/hunch`, and change helper imports to `@kelbie/hunch`. The static parser still accepts `@hunch/cli` imports during migration.
+
+From 0.1: replace `entropy/weakened-test` with `tests/weakened-test` and `entropy/stale-comment` with `docs/contradictory-comment`; delete overrides for removed style/off-task defaults. Review changed questions before enabling them as merge gates.

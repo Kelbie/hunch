@@ -13,14 +13,14 @@
 ## Remaining operational work
 
 1. Install/authorize Vercel's GitHub integration if automatic deployments are desired. CLI deployment works; automatic Git linkage was rejected because that integration is unavailable.
-2. Confirm publishing access to the `@hunch` scope and authenticate npm before publishing `@hunch/cli` to the registry. GitHub's preview archive provides installation meanwhile.
+2. Authenticate npm as the `kelbie` user and publish `@kelbie/hunch` to the registry. The package was renamed from the unpublished `@hunch/cli` in 0.3.1, because `@hunch` requires owning that npm organization and the unscoped `hunch` name belongs to an unrelated package.
 3. Validate fork isolation and overlapping/head-change behavior in deployment acceptance tests before treating the check as a merge requirement. These paths have local integration coverage, but the live demo alone does not prove them.
 
 The owner explicitly approved `zeroDataRetention: false` for this public repository on Vercel Hobby; that setting is committed in the trusted base policy. The default for consumers remains enforced ZDR. The first recheck used the demo's old base policy and failed; updating the demo branch from main activated the approved policy, and the push review succeeded. No claim is made about broad precision/recall, compiler semantic fidelity, or a completed audit of Hunch itself. The committed self-policy is manually curated from installed guidance, not falsely attributed to a live compiler run.
 
 ## 0.2 preset and onboarding validation
 
-Recommended now has four language-independent behavior checks; TypeScript and Rust each add two file-scoped checks. The package is named `@hunch/cli`. `hunch init --github` generates the Actions workflow; `--general` handles languages beyond TS/Rust. Standards review found no issues; the spec review's general-language onboarding finding was fixed and independently rechecked.
+Recommended now has four language-independent behavior checks; TypeScript and Rust each add two file-scoped checks. The package was named `@hunch/cli` at the time (renamed to `@kelbie/hunch` in 0.3.1). `hunch init --github` generates the Actions workflow; `--general` handles languages beyond TS/Rust. Standards review found no issues; the spec review's general-language onboarding finding was fixed and independently rechecked.
 
 Sixteen synthetic fixtures (one positive and one counterexample per rule) are checked into `examples/presets`. `HUNCH_SMOKE_ZDR=false bun scripts/preset-smoke.ts` sends only those fixtures through Gateway on Hobby. In this run, the first five cases matched expectations (allowed fallback, stale-result guard, stale-result regression, contradictory comment, updated comment). The provider then returned HTTP 429; a retry also received 429. The remaining eleven cases were not evaluated live. This is partial synthetic evidence, not a real-project accuracy benchmark.
 

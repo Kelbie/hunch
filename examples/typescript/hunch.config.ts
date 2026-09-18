@@ -1,4 +1,4 @@
-import { defineConfig } from "@hunch/cli";
+import { defineConfig } from "@kelbie/hunch";
 
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript"],

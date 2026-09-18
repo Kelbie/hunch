@@ -1,4 +1,4 @@
-import { choice, defineConfig, noul, score } from "@hunch/cli";
+import { choice, defineConfig, noul, score } from "@kelbie/hunch";
 
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript", "hunch:rust"],
