@@ -2,7 +2,7 @@
 
 Use one `hunch.config.ts` or `hunch.toml` at the repository root. The same schema validates both. Unknown keys and invalid shapes fail. TOML uses kebab-case for Hunch options; rule IDs and choice labels keep their original spelling.
 
-TypeScript accepts plain literals, constant bindings, object/array spreads, regex literals, string concatenation, `as`/`satisfies`, and imported `defineConfig`, `noul`, `choice`, `score` helpers from `@kelbie/hunch`. It never imports or executes the file. Environment access, computed properties, arbitrary calls and function definitions are rejected.
+TypeScript accepts plain literals, constant bindings, object/array spreads, regex literals, string concatenation, `as`/`satisfies`, and imported `defineConfig`, `noul`, `choice`, `score` helpers from `@hunch/cli`. It never imports or executes the file. Environment access, computed properties, arbitrary calls and function definitions are rejected.
 
 ## Rules
 
@@ -11,7 +11,7 @@ A plain-English rule `["warn", "The contract to preserve"]` becomes a yes/no vio
 Typed rules can control the exact question:
 
 ```ts
-import { defineConfig, noul, choice, score } from "@kelbie/hunch";
+import { defineConfig, noul, choice, score } from "@hunch/cli";
 export default defineConfig({
   rules: {
     "failures/misleading-success": ["warn", noul({
@@ -26,7 +26,7 @@ export default defineConfig({
 - `noul`: boolean violation probability; `threshold` defaults to 0.7.
 - `choice`: named `criteria`, `report` options, optional `minConfidence`.
 - `score`: ordered `criteria`, `reportBelow` and/or `reportAbove` normalized to 0–1, optional `minConfidence`.
-- All support `when` (regex prefilter), `reference` (repository-relative trusted file), and `message` (human-readable concern).
+- All support `files` (file glob scope), `when` (regex prefilter), `reference` (repository-relative trusted file), and `message` (human-readable concern).
 
 State names in questions are `hunk`, `file`, optional `task`, and optional `reference`. Question IDs are not semantic instructions. Each question must stand alone. Hunch's confidence is distribution concentration `(pmax − 1/n)/(1 − 1/n)`, not TypeSafe's own confidence or empirical accuracy. When a configured confidence threshold needs probabilities the provider omitted, the run fails rather than quietly suppressing a finding.
 
@@ -48,4 +48,27 @@ Default budgets: 100 hunks (maximum 200), 24 rules per hunk (maximum 64), 4 conc
 
 `provider: "typesafe"` uses `POST https://api.typesafe.ai/v1/systemone`, Bearer `TYPESAFE_API_KEY`, and `model` (default `jev-1.13.0`). Compilation still needs Gateway access because Jev cannot generate rules. Direct-provider data retention is governed by the account agreement, not the Gateway flag.
 
-The recommended preset contains semantic test weakening, comment/behavior disagreement, misleading names, redundant explanatory comments and off-task changes. The off-task rule runs only when a task description is supplied. There are no deterministic lint rules.
+## Presets
+
+`hunch:recommended` is language-independent. `hunch:typescript` and `hunch:rust` are additive; select them alongside recommended. The language questions include file scopes, so mixed repositories can select all three without sending Rust questions for TypeScript or vice versa. TypeScript includes JS, JSX, MJS, CJS, TS, TSX, MTS and CTS; Rust matches `.rs`.
+
+| Rule | Concern beyond linting/type checking |
+| --- | --- |
+| `failures/misleading-success` | A failure becomes a value or state the caller treats as successful completion, outside an intentional fallback contract. |
+| `correctness/edge-case-regression` | A previously supported empty/missing/zero/boundary case breaks, evidenced by visible behavior or a contract. |
+| `tests/weakened-test` | An edited test accepts a specific behavior that remains incorrect; equivalent assertions and intentional contract changes are excluded. |
+| `docs/contradictory-comment` | A factual description contradicts visible implementation; prose style is irrelevant. |
+| `typescript/async-ordering` | Visible overlapping operations can publish stale state or duplicate effects; merely missing `await` is insufficient. |
+| `typescript/lossy-serialization` | A data conversion loses meaning a visible consumer requires; serialization itself is not a violation. |
+| `rust/panic-on-recoverable-input` | Ordinary recoverable input reaches a panic contrary to the visible error contract; proven invariants and test unwraps are excluded. |
+| `rust/error-context` | An error conversion erases a distinction needed by visible recovery behavior; no particular error library is required. |
+
+All default to `warn`, with a violation threshold of 0.85. This is a conservative starting point, not a measured accuracy claim. Questions require evidence in the hunk and instruct the model not to invent missing callers or requirements. Reviews are hunk-local; cross-file or long-range bugs can be missed. Validate thresholds on your own labelled changes with `hunch eval`.
+
+The previous entropy/off-task, naming and comment-style defaults were removed in 0.2. A task description remains available to custom questions, but no default rule infers that nearby changes are out of scope.
+
+Change severity or disable a rule in `rules`; use `overrides` for directory-specific choices. A severity-only override preserves the question's language scope. Replacing the entire question replaces its scope too; include `files` on a custom question when needed.
+
+## Upgrading from 0.1
+
+The public package is now `@hunch/cli`. Install the new release, remove `@kelbie/hunch` from your dependencies, and change helper imports to `@hunch/cli`. The static parser still accepts old helper imports during migration. Replace `entropy/weakened-test` with `tests/weakened-test` and `entropy/stale-comment` with `docs/contradictory-comment`; delete overrides for removed style/off-task defaults. Review changed questions before enabling them as merge gates.

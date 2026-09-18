@@ -1,0 +1,12 @@
+# expect: typescript/async-ordering
+--- a/src/search.ts
++++ b/src/search.ts
+@@ -1,7 +1,5 @@
+-let current = 0;
+ async function search(query: string) {
+-  const request = ++current;
+   const results = await fetchResults(query);
+-  if (request === current) renderResults(results);
++  renderResults(results);
+ }
+ input.onchange = () => search(input.value);

@@ -22,6 +22,8 @@ export type Pattern = z.output<typeof patternSchema>;
 
 const shared = {
   instructions: z.string().min(1).max(8000),
+  /** Only evaluate this question for matching repository-relative file paths. */
+  files: z.array(z.string()).min(1).optional(),
   /** Only ask Jev when the hunk text matches (cheap code-side prefilter). */
   when: patternSchema.optional(),
   /** Repo-relative file sent alongside the hunk as `reference`. */

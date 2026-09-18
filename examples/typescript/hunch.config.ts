@@ -1,11 +1,7 @@
-import { defineConfig } from "@kelbie/hunch";
+import { defineConfig } from "@hunch/cli";
 
 export default defineConfig({
-  extends: ["hunch:recommended"],
-  include: ["**/*.{ts,tsx,js,jsx}"],
+  extends: ["hunch:recommended", "hunch:typescript"],
+  include: ["**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
   ignore: ["dist/**", "node_modules/**", "**/*.generated.ts"],
-  rules: {
-    "design/hide-implementation": ["warn", "Public functions should express the caller's task without requiring callers to coordinate internal bookkeeping."],
-    "errors/preserve-failure": ["warn", "A failed operation must not be presented to the caller as a successful empty result."],
-  },
 });

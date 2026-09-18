@@ -1,0 +1,7 @@
+# expect: 
+--- a/src/cache.ts
++++ b/src/cache.ts
+@@ -1,2 +1,2 @@
+-const encode = (cache: Map<string, number>) => JSON.stringify(Array.from(cache.entries()));
++const encode = (cache: Map<string, number>) => JSON.stringify([...cache]);
+ const decode = (text: string): Map<string, number> => new Map(JSON.parse(text));

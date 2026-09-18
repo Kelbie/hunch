@@ -33,11 +33,11 @@ describe("check", () => {
         ? { type: "choice", choice: "debug", probabilities: { production: 0.05, debug: 0.9, placeholder: 0.03, other: 0.02 }, confidence: confidenceOf({ production: 0.05, debug: 0.9, placeholder: 0.03, other: 0.02 }) }
         : { type: "score", score: 2, probabilities: { "0": 0, "1": 0, "2": 1 }, confidence: 1 },
     );
-    const cfg = config({ extends: ["hunch:recommended"], rules: { "style/comment-purpose": "off" } });
+    const cfg = config({ extends: ["hunch:recommended"] });
     const res = await check({ config: cfg, hunks: parseHunks(DIFF), client, task: "Add payment" });
 
     const rules = res.findings.map((f) => `${f.rule}@${f.file}`);
-    expect(rules).toContain("entropy/stale-comment@src/pay.ts");
+    expect(rules).toContain("docs/contradictory-comment@src/pay.ts");
     // every Jev-backed rule for a hunk goes in one request
     const payCalls = calls.filter((c) => c.state.file === "src/pay.ts");
     expect(payCalls).toHaveLength(1);

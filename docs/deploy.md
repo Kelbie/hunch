@@ -57,26 +57,9 @@ The queue is at-least-once. A durable lease prevents concurrent publication with
 
 ## GitHub Actions
 
-Use the App for external fork PRs. As a simpler alternative for trusted same-repository PRs, add an `AI_GATEWAY_API_KEY` Actions secret and this workflow after publishing/tagging Hunch. Pin a reviewed full Hunch commit in production; `main` below is an initial-install example, not a supply-chain pin.
+Use the App for external fork PRs. As a simpler alternative for trusted same-repository PRs, add an `AI_GATEWAY_API_KEY` Actions secret and this workflow by running `npx hunch init --github`.
 
-```yaml
-name: hunch
-on: pull_request
-permissions:
-  contents: read
-jobs:
-  review:
-    if: github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          persist-credentials: false
-      - uses: Kelbie/hunch@main
-        env:
-          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
-```
+The generated workflow pins `Kelbie/hunch@v0.2.0`, checks out the immutable base commit, and passes the base/head SHAs to the Action. Pin a reviewed full commit SHA for stronger supply-chain immutability. It skips drafts, forks and Dependabot events (which normally cannot access Actions secrets). It fails with a setup message when the API key is absent. Configuration must be on the PR base branch before the first review. Follow the [README](../README.md#get-pr-reviews-in-three-steps) for key creation and repository-secret setup.
 
 The Action prints annotations and a job summary; it does not post a conversation comment. It reads all policy via Git from the immutable PR base and never overwrites the working tree. Do not run untrusted PR scripts with secrets or switch this example to `pull_request_target` while checking out/executing fork code.
 
@@ -84,4 +67,15 @@ This repository's self-review workflow uses a trusted base checkout and the curr
 
 ## Publishing npm
 
-The package is `@kelbie/hunch`; it is not published as part of local development. Authenticate an authorized npm maintainer, run `bun run check` and `node scripts/package-smoke.mjs`, then from `packages/cli` run `npm publish --access public`. `prepack` builds the artifact. The published package contains Node ESM, declarations and runtime dependencies; it has no workspace dependencies. Prefer npm trusted publishing/provenance when configuring a release pipeline.
+The package is `@hunch/cli`; it is not published as part of local development. The `@hunch` organization must be owned or grant the publishing account access; an unpublished package name does not establish scope ownership. Authenticate an authorized npm maintainer, run `bun run check` and `node scripts/package-smoke.mjs`, then from `packages/cli` run `npm publish --access public`. `prepack` builds the artifact. The published package contains Node ESM, declarations and runtime dependencies; it has no workspace dependencies. Prefer npm trusted publishing/provenance when configuring a release pipeline.
+
+## Build from source
+
+```sh
+bun install --frozen-lockfile
+bun run check
+node scripts/package-smoke.mjs
+(cd packages/cli && npm pack --ignore-scripts)
+```
+
+Install the resulting `hunch-cli-0.2.0.tgz` in a consumer project. Bun is needed to build Hunch; the distributed CLI runs on Node 22+.

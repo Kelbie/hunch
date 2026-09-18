@@ -29,7 +29,7 @@ The CLI and App use the same engine and report renderer. The npm artifact bundle
 
 ## Trust and coverage
 
-Base policy is trusted by repository owners, but never executed. Config references stay inside the repository. Local symlinks must resolve inside it; hosted policy requires regular committed files. Full file deletion, binary changes and metadata changes require human review. Hunk locations are approximate context locations, not model-located bug lines. Off-task checks only run when a task description exists. Missing/malformed provider answers are failures. Missing guidance compilation, stale locks, omitted rules and missing references produce partial coverage, never a passing audit.
+Base policy is trusted by repository owners, but never executed. Config references stay inside the repository. Local symlinks must resolve inside it; hosted policy requires regular committed files. Full file deletion, binary changes and metadata changes require human review. Hunk locations are approximate context locations, not model-located bug lines. Presets ask about behavior and contracts; language questions are scoped by file glob. Missing/malformed provider answers are failures. Missing guidance compilation, stale locks, omitted rules and missing references produce partial coverage, never a passing audit.
 
 Jev can identify a local symptom such as a function that exposes bookkeeping or conceals a failed operation. It cannot establish repository-wide module depth, absence of duplication, correct threat modeling, or skill compliance. Both prompt injection and ordinary false positives/negatives remain possible. All semantic findings start advisory; measure per-rule fixtures before enabling failOnError.
 

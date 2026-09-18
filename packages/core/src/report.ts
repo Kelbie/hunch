@@ -32,7 +32,7 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
   if (!result.complete) lines.push("**Coverage: partial.** This is not a passing audit.", "");
   for (const n of notices) lines.push(`> ${escapeCell(n)}`);
   if (ctx.blobBase) lines.push("", `Reviewed commit: [${ctx.blobBase.split("/").at(-1)?.slice(0, 7)}](${ctx.blobBase}).`);
-  if (ctx.staleLock) lines.push("> `hunch.lock` is out of date with your skills or AGENTS.md. Run `npx @kelbie/hunch compile` and commit it.");
+  if (ctx.staleLock) lines.push("> `hunch.lock` is out of date with your skills or AGENTS.md. Run `npx hunch compile` and commit it.");
   lines.push(
     "",
     `<sub>${stats.hunks} hunks · ${stats.requests} Jev requests · ${stats.questions} questions · ${stats.inputTokens.toLocaleString("en")} input tokens` +

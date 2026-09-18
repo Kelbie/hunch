@@ -93,7 +93,6 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     const rules = rulesFor(hunk.file, config, input.lock);
 
     let candidates = rules.jev.filter((r) => !r.question.when || new RegExp(r.question.when.source, r.question.when.flags).test(hunk.text));
-    if (!input.task || config.task === "none") candidates = candidates.filter((r) => r.id !== "entropy/off-task-change");
     if (candidates.length > config.budget.maxRulesPerHunk) {
       notices.push(`${hunk.file}:${hunk.newStart}: ${candidates.length - config.budget.maxRulesPerHunk} rules skipped (budget.maxRulesPerHunk).`);
       incomplete = true;
@@ -175,6 +174,7 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null) {
   const jev: ActiveRule[] = [];
   for (const [id, e] of entries) {
     if (e.level === "off") continue;
+    if (e.question?.files && !picomatch(e.question.files, { dot: true })(file)) continue;
     if (e.question) jev.push({ id, level: e.level, question: e.question, source: "config" });
     else if (!id.includes("*") && !/^(skill|agents-md|doc)\//.test(id)) throw new Error(`rule "${id}" has no question`);
   }

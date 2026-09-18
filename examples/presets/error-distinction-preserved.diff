@@ -1,0 +1,12 @@
+# expect: 
+--- a/src/retry.rs
++++ b/src/retry.rs
+@@ -1,6 +1,5 @@
+ fn read() -> Result<Data, LoadError> {
+-    load().map_err(|e| match e.kind() {
+-        ErrorKind::TimedOut => LoadError::Retry,
+-        _ => LoadError::Permanent,
++    load().map_err(|e| {
++        if e.kind() == ErrorKind::TimedOut { LoadError::Retry } else { LoadError::Permanent }
+     })
+ }

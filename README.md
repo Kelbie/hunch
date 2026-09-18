@@ -1,125 +1,80 @@
 # Hunch 🔮
 
-Semantic code review with [Jev](https://docs.typesafe.ai). Write rules in plain English, reuse Agent Skills, and get a readable report locally or on a GitHub pull request.
+Semantic code review for the mistakes that type checkers and linters miss: failures reported as success, broken edge cases, and tests that stop catching regressions. Powered by [Jev](https://docs.typesafe.ai).
 
-Hunch checks concerns such as **“does this error path pretend the operation succeeded?”** or **“does this interface make callers manage internal bookkeeping?”** Keep formatting, unused imports, forbidden syntax and type errors in your linter and compiler.
+## Get PR reviews in three steps
 
-## Install in a project
+**1. Create an API key.** In [Vercel AI Gateway](https://vercel.com/ai-gateway), choose your team → **API Keys → Create key**. Copy the key. You don't need to deploy anything to Vercel. [Key setup](https://vercel.com/docs/ai-gateway/authentication-and-byok/api-keys).
 
-Requires Node 22+. Install the preview package from GitHub Releases (npm registry publication is pending):
+**2. Add it to the GitHub repository you want reviewed.** Open that repository's **Settings → Secrets and variables → Actions → New repository secret**. Name it **`AI_GATEWAY_API_KEY`** and paste the key as its value. With GitHub CLI, `gh secret set AI_GATEWAY_API_KEY` prompts for it from inside the target repository.
 
-```sh
-npm install --save-dev https://github.com/Kelbie/hunch/releases/download/v0.1.0/kelbie-hunch-0.1.0.tgz
-npx hunch init                        # TypeScript config; detects Cargo for Rust
-# Set AI_GATEWAY_API_KEY in your shell or secret manager.
-npx hunch check --base origin/main
-```
-
-Create the key in [Vercel AI Gateway](https://vercel.com/ai-gateway). No Vercel deployment is needed for local use. Hunch never writes the key to project config. Gateway-enforced zero data retention is enabled by default and requires Vercel Pro/Enterprise; Hobby users must deliberately set `zeroDataRetention: false` (`zero-data-retention = false` in TOML) or use an eligible account. Hunch never silently downgrades it.
-
-After npm publication, the install command becomes `npm install -D @kelbie/hunch`. To build from source:
+**3. Install and generate the config and workflow.** From that repository, using Node 22+. For languages other than TS/JS or Rust, add `--general` to `init`:
 
 ```sh
-bun install --frozen-lockfile
-bun run build
-(cd packages/cli && npm pack --ignore-scripts)
-# In your project: npm install -D /path/to/hunch/packages/cli/kelbie-hunch-0.1.0.tgz
+npm install -D https://github.com/Kelbie/hunch/releases/download/v0.2.0/hunch-cli-0.2.0.tgz
+npx hunch init --github
 ```
 
-The distributed CLI runs under Node; Bun is only needed to build Hunch itself.
+The package is **`@hunch/cli`**; use the release URL until npm publication. `init` selects Rust when `Cargo.toml` exists, TypeScript when `package.json` exists, and general TOML otherwise. **For Python, Go or other languages, run `npx hunch init --general --github`** (npm may have created `package.json`). Use `--ts` or `--rust` to choose explicitly. Existing configs are preserved when adding a workflow.
 
-## Plain-English configuration
+Commit the generated config, `.github/workflows/hunch.yml`, and dependency changes to the branch PRs target. Subsequent same-repository, non-draft PRs receive a report under **Checks → Hunch** in the Actions run summary, plus annotations. Reviews use the base branch's policy. Fork and Dependabot PRs are skipped; for those and conversation comments, [install a self-hosted GitHub App](docs/deploy.md).
 
-TypeScript projects use **hunch.config.ts**:
+**Privacy setting:** Hunch defaults to enforced zero data retention, which requires Vercel Pro/Enterprise. On Hobby, explicitly add `zeroDataRetention: false` to the TS config or `zero-data-retention = false` to TOML if that matches your data policy.
+
+**Already have skills or `AGENTS.md`?** Set the key locally as below, run `npx hunch compile`, then review and commit `hunch.lock` too. Otherwise no compilation is needed.
+
+## Presets
+
+| Preset | What it looks for |
+| --- | --- |
+| `hunch:recommended` | Failures disguised as success, regressions in supported edge cases, weakened behavioral tests, comments contradicting code. Works with any language. |
+| `hunch:typescript` | Async operations publishing stale results or repeating effects; serialization losing meaning a consumer needs. TS and JS files only. |
+| `hunch:rust` | Recoverable input causing a panic; error conversions erasing distinctions needed for recovery. Rust files only. |
+
+Language presets add to the general preset. `init` selects both. Mixed repositories can select all three and remove or widen the generated `include` filter. No naming, formatting, “entropy,” blanket `unwrap` bans, or other syntax checks. Findings are advisory model judgments and should be calibrated on your own changes.
+
+TypeScript (`hunch.config.ts`):
 
 ```ts
-import { defineConfig } from "@kelbie/hunch";
+import { defineConfig } from "@hunch/cli";
 
 export default defineConfig({
-  extends: ["hunch:recommended"],
-  include: ["**/*.{ts,tsx}"],
+  extends: ["hunch:recommended", "hunch:typescript"],
   rules: {
-    "errors/preserve-failure": ["warn",
-      "A failed operation must not be presented to the caller as a successful empty result."],
+    "billing/retry": ["warn", "Retrying a payment must not charge the customer twice."],
   },
 });
 ```
 
-Rust projects use **hunch.toml**, with kebab-case configuration keys:
+Rust (`hunch.toml`):
 
 ```toml
-extends = ["hunch:recommended"]
+extends = ["hunch:recommended", "hunch:rust"]
 include = ["**/*.rs"]
 ignore = ["target/**"]
-
-[rules]
-"errors/preserve-context" = ["warn", "Error conversions should preserve the cause needed for the caller to distinguish recovery from retry."]
 ```
 
-Both formats use one engine, and TOML works for any language. TypeScript config is parsed as data: it supports literals and Hunch helpers, never arbitrary execution. Use exactly one config file. See [configuration](docs/configuration.md) for thresholds, scopes, provider options and limits.
+Use `"rule/id": "off"` to disable a rule. [All rules and configuration](docs/configuration.md).
 
-## Reuse skills and AGENTS.md
+## Review locally
 
-Install standard project skills with the existing [Skills CLI](https://skills.sh/docs/cli):
+Export the same key in your shell or inject it through your secret manager; Hunch never stores it in config:
+
+```sh
+export AI_GATEWAY_API_KEY='your-key'
+npx hunch check --base origin/main
+# Or: npx hunch check --staged
+```
+
+[Sample report](docs/sample-report.md). Text, Markdown, JSON, SARIF and Actions summaries are supported. Reports identify configured concerns and model scores; they do not claim proven defects or hide incomplete coverage.
+
+## Add your team's skills
 
 ```sh
 npx skills add mattpocock/skills --skill codebase-design --agent codex --yes
 npx hunch compile
 ```
 
-Review and commit `.agents/skills/`, `skills-lock.json` and `hunch.lock`. The compiler reads selected skill Markdown and scoped `AGENTS.md`, uses a separate text model to produce atomic review questions, and records guidance it cannot check. Normal reviews use Jev only. Jev does not search, run skills, or generate explanations.
+Review and commit the installed skills, `skills-lock.json` and `hunch.lock`. Hunch reads standard skill Markdown and scoped `AGENTS.md`; a separate text model compiles them into review questions. Normal reviews use Jev. Local paths, `owner/repo`, and GitHub skill URLs are supported. [Guidance configuration](docs/configuration.md#guidance).
 
-You can also select a local skill or a GitHub source directly:
-
-```ts
-skills: [
-  "./.agents/skills/codebase-design",
-  // Or: { repo: "mattpocock/skills", skill: "codebase-design" }
-  // Or a GitHub https://github.com/owner/repo/tree/<ref>/<skill-path> URL
-]
-```
-
-Remote sources resolve to commits during compilation. Installed sources and effective parent/child AGENTS guidance are hashed; outdated or missing compilation is reported. Nested AGENTS exceptions take precedence when compiling the effective guidance for their directory. Review this interpretation in the lock.
-
-Hunch uses these conventions itself: [config](hunch.config.ts), [reviewed policy](hunch.lock), and [installed skills](.agents/skills). Its initial lock was curated from the skills by an agent and reviewed during implementation; it is explicitly labelled `human-reviewed:initial-policy`, not presented as a live compiler result.
-
-## Reports without a pull request
-
-```sh
-npx hunch check --staged
-npx hunch check --diff change.diff --reporter markdown > review.md
-npx hunch check --base origin/main --task "Preserve failed payment state"
-npx hunch eval examples/fixtures
-```
-
-Reports include rule, source location, concern, model score and coverage. [See a real Jev report on synthetic code](docs/sample-report.md). Text, Markdown, JSON, SARIF and GitHub Actions summaries are available. Example below is **illustrative, not a measured Jev result**:
-
-| Level | Concern | Location | Evidence |
-|---|---|---|---|
-| Warning | Preserve failures that callers need to handle | `src/pay.ts:42` | `p(yes)=0.91 ≥ 0.75` |
-
-Messages describe configured concerns; they are not model-written explanations. Locations identify the reviewed hunk, not a proven offending line. Local review includes tracked working-tree changes; stage new files or supply a diff to include them.
-
-## Automatic PR review
-
-Install your self-hosted Hunch GitHub App on a repository containing a committed config. It creates a check and a report per reviewed commit on opened, updated, reopened and ready-for-review PRs. Drafts are skipped. Writers can request `/hunch recheck`.
-
-The one-time App setup uses **Vercel Functions + Queues**, a small **Upstash Redis** lease store, and GitHub App credentials. [Deployment guide](docs/deploy.md) gives the exact setup. Vercel-hosted Gateway calls use OIDC; no model key is needed there. CLI users only need a model key.
-
-An optional [GitHub Action](action.yml) writes annotations and a job summary. It reads **all policy from the base commit**, executes no PR config, and does not need comment-write permissions. Fork PRs normally cannot access model secrets; use the App for fork reviews. [Workflow examples](docs/deploy.md#github-actions).
-
-## What a result means
-
-A complete review means the applicable configured checks ran. It does **not** certify the whole skill, repository architecture or correctness. Review requests are bounded; missing answers fail, and skipped work is marked partial. Findings are advisory by default. `failOnError: true` makes error-level findings fail the check. CLI exit codes: `0` completed without blocking findings, `1` blocking findings, `2` incomplete review or operational/config error.
-
-Code and selected reference content leave your machine for the configured provider. Compilation separately sends guidance to the configured text model. Gateway calls request zero data retention; direct TypeSafe retention depends on your account agreement. Source code can influence Jev through prompt injection. Use labelled fixtures to measure your rules before making them mandatory.
-
-## Develop
-
-```sh
-bun install --frozen-lockfile
-bun run check
-node scripts/package-smoke.mjs
-```
-
-[Research and API contracts](docs/research.md) · [Architecture and rejected alternatives](docs/architecture.md) · [Configuration](docs/configuration.md) · [Deployment](docs/deploy.md)
+Hunch uses Matt Pocock's architecture skill in [its own config](hunch.config.ts). [Architecture](docs/architecture.md) · [Research](docs/research.md) · [Deployment](docs/deploy.md) · [Verified status](docs/status.md).

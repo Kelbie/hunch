@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { existsSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { parseArgs } from "node:util";
 import {
@@ -22,16 +22,16 @@ import {
   type Lock,
 } from "../../core/src/index.js";
 import { branchDiff, localRepo, gitRepo, git } from "./local.js";
-import { TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
+import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 
-const VERSION = "0.1.0";
+const VERSION = "0.2.0";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
 Usage
   hunch check [--base main] [--staged] [--diff file] [--task "…"] [--reporter text|markdown|json|sarif|github]
   hunch compile [--force]          turn skills + AGENTS.md into hunch.lock (uses an LLM once)
-  hunch init [--rust|--ts]         write a starter hunch.config.ts or hunch.toml
+  hunch init [--rust|--ts|--general] [--github]  write config and optionally a PR workflow
   hunch eval <dir>                 precision/recall per rule over labelled .diff fixtures
 
 Environment
@@ -53,6 +53,8 @@ async function main() {
       task: { type: "string" },
       reporter: { type: "string", default: process.env.GITHUB_ACTIONS ? "github" : "text" },
       force: { type: "boolean", default: false },
+      general: { type: "boolean", default: false },
+      github: { type: "boolean", default: false },
       rust: { type: "boolean", default: false },
       ts: { type: "boolean", default: false },
       cwd: { type: "string", default: process.cwd() },
@@ -141,12 +143,25 @@ async function main() {
     }
 
     case "init": {
-      if (values.rust && values.ts) return fail("Choose --rust or --ts");
-      const rust = values.rust || (!values.ts && existsSync(join(root, "Cargo.toml")));
-      const file = rust ? "hunch.toml" : "hunch.config.ts";
-      if (existsSync(join(root, "hunch.toml")) || existsSync(join(root, "hunch.config.ts"))) return fail("a hunch config already exists.");
-      writeFileSync(join(root, file), rust ? TOML_TEMPLATE : TS_TEMPLATE);
-      console.error(`hunch: wrote ${file}.${rust ? "" : " Add @kelbie/hunch as a devDependency for editor types."} Next: \`hunch compile\` if you use skills or AGENTS.md.`);
+      if ([values.rust, values.ts, values.general].filter(Boolean).length > 1) return fail("Choose only one of --rust, --ts or --general");
+      const rust = values.rust || (!values.ts && !values.general && existsSync(join(root, "Cargo.toml")));
+      const ts = values.ts || (!rust && !values.general && existsSync(join(root, "package.json")));
+      const file = ts ? "hunch.config.ts" : "hunch.toml";
+      const existing = ["hunch.toml", "hunch.config.ts"].filter(name => existsSync(join(root, name)));
+      const workflow = join(root, ".github/workflows/hunch.yml");
+      if (existing.length > 1) return fail("Keep exactly one of hunch.config.ts and hunch.toml.");
+      if (existing.length && !values.github) return fail("a hunch config already exists. Use `hunch init --github` to add only the workflow.");
+      if (values.github && existsSync(workflow)) return fail(".github/workflows/hunch.yml already exists; it was not overwritten.");
+      if (!existing.length) {
+        writeFileSync(join(root, file), ts ? TS_TEMPLATE : rust ? TOML_TEMPLATE : GENERAL_TEMPLATE, { flag: "wx" });
+        console.error(`hunch: wrote ${file}.`);
+      }
+      if (values.github) {
+        mkdirSync(join(root, ".github/workflows"), { recursive: true });
+        writeFileSync(workflow, GITHUB_WORKFLOW, { flag: "wx" });
+        console.error("hunch: wrote .github/workflows/hunch.yml. Add AI_GATEWAY_API_KEY under repository Settings > Secrets and variables > Actions, then commit the config and workflow to your base branch.");
+      }
+      console.error("hunch: if this repository has skills or AGENTS.md, run `hunch compile` and commit hunch.lock too.");
       return;
     }
 

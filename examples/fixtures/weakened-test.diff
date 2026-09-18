@@ -1,4 +1,4 @@
-# expect: entropy/weakened-test
+# expect: tests/weakened-test
 # task: Speed up the payments test suite
 --- a/packages/core/src/pay.test.ts
 +++ b/packages/core/src/pay.test.ts

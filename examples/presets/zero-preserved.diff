@@ -1,0 +1,10 @@
+# expect: 
+--- a/src/limit.py
++++ b/src/limit.py
+@@ -1,3 +1,5 @@
+ def limit(value):
+     # Zero means no results; only a missing limit uses 20.
+-    return 20 if value is None else value
++    if value is None:
++        return 20
++    return value

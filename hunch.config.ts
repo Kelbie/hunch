@@ -1,7 +1,7 @@
-import { defineConfig } from "@kelbie/hunch";
+import { defineConfig } from "@hunch/cli";
 
 export default defineConfig({
-  extends: ["hunch:recommended"],
+  extends: ["hunch:recommended", "hunch:typescript"],
   include: ["packages/**/src/**/*.ts", "apps/**/{api,lib}/**/*.ts"],
   skills: ["./.agents/skills/codebase-design"],
   agentsMd: true,

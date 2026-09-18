@@ -1,0 +1,8 @@
+# expect: rust/panic-on-recoverable-input
+--- a/src/port.rs
++++ b/src/port.rs
+@@ -1,3 +1,3 @@
+ pub fn parse_port(input: &str) -> Result<u16, ParseIntError> {
+-    input.parse()
++    Ok(input.parse().unwrap())
+ }

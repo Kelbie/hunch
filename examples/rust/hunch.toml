@@ -1,8 +1,3 @@
-# Hunch uses the same semantic review engine for every language.
-extends = ["hunch:recommended"]
+extends = ["hunch:recommended", "hunch:rust"]
 include = ["**/*.rs"]
 ignore = ["target/**"]
-
-[rules]
-"design/hide-implementation" = ["warn", "Public functions should express the caller's task without requiring callers to coordinate internal bookkeeping."]
-"errors/preserve-context" = ["warn", "Error conversions should preserve the cause needed for the caller to distinguish recovery from retry."]

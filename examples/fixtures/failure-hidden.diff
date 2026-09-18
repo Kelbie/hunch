@@ -1,4 +1,4 @@
-# expect: agents-md/root/failure-as-success
+# expect: agents-md/root/failure-as-success, failures/misleading-success
 # task: Preserve failure when payment processing fails
 diff --git a/packages/core/src/payment.ts b/packages/core/src/payment.ts
 --- a/packages/core/src/payment.ts

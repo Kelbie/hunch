@@ -1,0 +1,11 @@
+# expect: 
+--- a/src/theme.py
++++ b/src/theme.py
+@@ -1,3 +1,6 @@
+ def theme():
+     # A missing optional preference uses the default theme.
+-    return preferences.get("theme", "light")
++    try:
++        return preferences["theme"]
++    except KeyError:
++        return "light"

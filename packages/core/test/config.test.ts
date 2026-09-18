@@ -4,7 +4,7 @@ import { evaluateConfigSource } from "../src/load/static-ts.js";
 import { ConfigError, parseConfig } from "../src/schema.js";
 
 const TS = `
-import { defineConfig, noul, choice, score } from "@kelbie/hunch";
+import { defineConfig, noul, choice, score } from "@hunch/cli";
 
 const common = ["dist"];
 
@@ -14,7 +14,7 @@ export default defineConfig({
   include: ["src/**/*.{ts,tsx}"],
   ignore: [...common, "**/*.generated.ts"],
   rules: {
-    "entropy/stale-comment": "off",
+    "docs/contradictory-comment": "off",
     "style/error-handling": ["error", choice({
       instructions: "How does new code in \`hunk\` handle failures?",
       criteria: { result: "Returns a Result.", throws: "Throws.", none: "No failure handling." },
@@ -35,8 +35,8 @@ describe("static TS config", () => {
   test("evaluates helpers, spreads, concatenation and regex without executing code", () => {
     const cfg = applyPresets(parseConfig(evaluateConfigSource(TS), "hunch.config.ts"));
     expect(cfg.ignore).toEqual(["dist", "**/*.generated.ts"]);
-    expect(cfg.rules["entropy/stale-comment"]!.level).toBe("off");
-    expect(cfg.rules["entropy/stale-comment"]!.question?.kind).toBe("noul"); // inherited from preset
+    expect(cfg.rules["docs/contradictory-comment"]!.level).toBe("off");
+    expect(cfg.rules["docs/contradictory-comment"]!.question?.kind).toBe("noul"); // inherited from preset
     const btn = cfg.rules["style/button-variant"]!.question!;
     expect(btn.kind).toBe("noul");
     expect(btn.instructions).toContain("destructive variant");
@@ -70,7 +70,7 @@ fail-on-error = true
 skills = ["./skills/*", { repo = "vercel-labs/agent-skills", skill = "web-design-guidelines" }]
 
 [rules]
-"entropy/stale-comment" = "off"
+"docs/contradictory-comment" = "off"
 "team/no-unwrap-in-lib" = ["warn", "Library code under src/ never calls .unwrap() on a Result."]
 
 [rules."team/unsafe-justified"]
@@ -79,7 +79,7 @@ noul = "Does \`hunk\` add an unsafe block without a SAFETY comment?"
 when = "unsafe"
 threshold = 0.8
 
-[rules."entropy/size"]
+[rules."team/focus"]
 score = "How focused is \`hunk\`?"
 criteria = ["Sprawling", "Mixed", "Focused"]
 report-below = 0.3
@@ -103,7 +103,7 @@ files = ["tests/**"]
     const unsafe = cfg.rules["team/unsafe-justified"]!;
     expect(unsafe.level).toBe("error");
     expect(unsafe.question).toMatchObject({ kind: "noul", threshold: 0.8, when: { source: "unsafe" } });
-    expect(cfg.rules["entropy/size"]!.question).toMatchObject({ kind: "score", reportBelow: 0.3 });
+    expect(cfg.rules["team/focus"]!.question).toMatchObject({ kind: "score", reportBelow: 0.3 });
     // user-chosen option names are not camelized
     expect(Object.keys((cfg.rules["style/errors"]!.question as { criteria: object }).criteria)).toContain("question-mark");
     expect(cfg.overrides[0]!.rules["team/no-unwrap-in-lib"]!.level).toBe("off");

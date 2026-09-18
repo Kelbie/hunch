@@ -1,0 +1,8 @@
+# expect: docs/contradictory-comment
+--- a/src/order.py
++++ b/src/order.py
+@@ -1,3 +1,3 @@
+ def sorted_names(names):
+     # Return names in ascending order.
+-    return sorted(names)
++    return sorted(names, reverse=True)

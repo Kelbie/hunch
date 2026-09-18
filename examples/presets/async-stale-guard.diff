@@ -1,0 +1,12 @@
+# expect: 
+--- a/src/search.ts
++++ b/src/search.ts
+@@ -1,5 +1,7 @@
++let current = 0;
+ async function search(query: string) {
++  const request = ++current;
+   const results = await fetchResults(query);
+-  renderResults(results);
++  if (request === current) renderResults(results);
+ }
+ input.onchange = () => search(input.value);

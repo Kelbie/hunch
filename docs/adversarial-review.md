@@ -23,3 +23,7 @@ The npm artifact originally depended on Bun and unpublished workspace source. It
 The first real Vercel deployment reached Ready but failed at runtime because extensionless ESM imports did not resolve. Explicit `.js` imports and a runtime health route now make that failure observable. Production checks must inspect endpoints as well as the build status.
 
 The live account rejected the default ZDR request because it is on Hobby. No automatic downgrade was added. Synthetic-only tests explicitly disabled ZDR and verified Jev's three primitive contracts. Real repository review quality and installed-App lifecycle remain separate validation requirements.
+
+## 0.2 preset and setup review
+
+The Standards review found no actionable issues in semantic preset design, file scoping, package migration or generated workflow policy. The Spec review found that generic onboarding selected a TypeScript-only filter for other languages. The CLI now supports `--general`, defaults to general TOML outside Cargo/npm repositories, and documents the explicit flag when npm has introduced a package manifest. Mixed repositories are told to widen/remove `include`. The reviewer rechecked the fix with no remaining findings in that scope. Packed CLI checks exercise both general paths and verify existing policy is preserved when adding a workflow.
