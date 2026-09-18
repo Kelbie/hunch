@@ -1,3 +1,5 @@
+import { VERSION } from "./version.js";
+
 export const TS_TEMPLATE = `import { defineConfig } from "@kelbie/hunch";
 
 export default defineConfig({
@@ -45,7 +47,7 @@ jobs:
           ref: \${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: Kelbie/hunch@v0.3.0
+      - uses: Kelbie/hunch@v${VERSION}
         with:
           base: \${{ github.event.pull_request.base.sha }}
           head: \${{ github.event.pull_request.head.sha }}

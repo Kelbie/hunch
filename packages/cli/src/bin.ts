@@ -31,10 +31,10 @@ import { branchDiff, localRepo, gitRepo, git } from "./local.js";
 import { GENERAL_TEMPLATE, GITHUB_WORKFLOW, TOML_TEMPLATE, TS_TEMPLATE } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
 import { resolveConfig } from "./inline.js";
+import { VERSION } from "./version.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 
-const VERSION = "0.7.0";
 
 const HELP = `hunch ${VERSION}: gut-check a diff against your rules and skills with TypeSafe's Jev
 
@@ -112,6 +112,13 @@ async function main() {
   switch (cmd) {
     case "check": {
       const loaded = await resolveConfig(repo, { config: values.config, rules: values.rule });
+      if (!loaded && values["policy-ref"]) {
+        // The PR that adds Hunch: its base has no config yet, so there is no trusted policy to apply.
+        console.log(values.reporter === "github"
+          ? "::notice title=Hunch::Hunch isn't set up on the base branch yet. PRs are reviewed once hunch.config.ts or hunch.toml is merged."
+          : "hunch: no config on the base branch yet; nothing to review.");
+        return;
+      }
       if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`, or pass rules with --config or --rule.");
       const { config } = loaded;
       if (!["text", "markdown", "json", "sarif", "github"].includes(values.reporter!)) return fail("Unknown reporter");

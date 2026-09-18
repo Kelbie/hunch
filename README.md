@@ -22,7 +22,7 @@ gh secret set AI_GATEWAY_API_KEY
 npx @kelbie/hunch init --github   # adds .github/workflows/hunch.yml
 ```
 
-Commit the config and workflow. PRs then get a review under **Checks → Hunch**, with each concern marked on the changed lines. For review comments and fork PRs, use the [GitHub App](docs/cli-setup.md) instead.
+Commit the config and workflow, and merge them. Hunch reviews against the base branch's config, so the PR that adds Hunch is skipped with a notice. After that, PRs get a review under **Checks → Hunch**, with each concern marked on the changed lines. For review comments and fork PRs, use the [GitHub App](docs/cli-setup.md) instead.
 
 > On Vercel Hobby, add `zeroDataRetention: false` (TOML: `zero-data-retention = false`) to your config. The default needs Pro or Enterprise.
 

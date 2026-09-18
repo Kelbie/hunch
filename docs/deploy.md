@@ -70,7 +70,7 @@ This repository's self-review workflow uses a trusted base checkout and the curr
 
 ## Publishing npm
 
-The package is `@kelbie/hunch`, under the maintainer's personal npm scope; it is not published as part of local development. Authenticate as that npm user, run `bun run check` and `node scripts/package-smoke.mjs`, then from `packages/cli` run `bun run build && npm publish --ignore-scripts --access public`. Build before publishing and skip scripts: npm 11 validates the manifest before `prepack` runs, and `prepack` cleans `dist`, so a plain `npm publish` drops the `hunch` bin from the published package. The published package contains Node ESM, declarations and runtime dependencies; it has no workspace dependencies. Prefer npm trusted publishing/provenance when configuring a release pipeline.
+The package is `@kelbie/hunch`, under the maintainer's personal npm scope; it is not published as part of local development. Authenticate as that npm user, run `bun run check` and `node scripts/package-smoke.mjs`, then from `packages/cli` run `bun run build && npm publish --ignore-scripts --access public`. Then tag the release so the GitHub Action matches: `git tag vX.Y.Z && git push origin vX.Y.Z`. `init --github` writes a workflow pinned to `Kelbie/hunch@v<the CLI's version>`, so a missing tag breaks new installs. Build before publishing and skip scripts: npm 11 validates the manifest before `prepack` runs, and `prepack` cleans `dist`, so a plain `npm publish` drops the `hunch` bin from the published package. The published package contains Node ESM, declarations and runtime dependencies; it has no workspace dependencies. Prefer npm trusted publishing/provenance when configuring a release pipeline.
 
 ## Build from source
 
