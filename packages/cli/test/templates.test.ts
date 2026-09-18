@@ -12,3 +12,11 @@ test("init templates are valid configs", () => {
   expect(rulesFor("tests/it.rs", toml).jev.map((r) => r.id)).toContain("failures/misleading-success");
   expect(rulesFor("src/lib.rs", toml).jev.map((r) => r.id)).toContain("failures/misleading-success");
 });
+
+test("the PR workflow runs the same Hunch version that wrote it", async () => {
+  const { GITHUB_WORKFLOW } = await import("../src/templates.js");
+  const { VERSION } = await import("../src/version.js");
+  const pkg = JSON.parse(await Bun.file(new URL("../package.json", import.meta.url)).text());
+  expect(VERSION).toBe(pkg.version);
+  expect(GITHUB_WORKFLOW).toContain(`uses: Kelbie/hunch@v${pkg.version}\n`);
+});
