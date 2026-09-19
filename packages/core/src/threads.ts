@@ -1,5 +1,5 @@
 import type { Finding } from "./check.js";
-import { findingKey, findingKeysIn, threadKey } from "./report.js";
+import { anchorLine, findingKey, findingKeysIn, threadKey } from "./report.js";
 
 /** An inline review thread on the PR, as GitHub reports it. */
 export interface ReviewThread {
@@ -25,7 +25,7 @@ export interface ThreadPlan {
   post: Finding[][];
   /** Open threads whose concerns were not raised again. */
   resolve: ReviewThread[];
-  /** Thread URL per `threadKey` and per finding key, for summary links. */
+  /** Thread URL per exact `threadKey`, for summary links. */
   links: Map<string, string>;
 }
 
@@ -50,17 +50,14 @@ export function planThreads(findings: Finding[], threads: ReviewThread[], opts: 
     const t = byKey.get(key);
     if (t?.resolved && t.resolvedBy && t.resolvedBy !== opts.self && opts.canDismiss(t.resolvedBy)) { plan.dismissed.push(f); continue; }
     plan.active.push(f);
-    if (!t || resolvedBySelf(t, opts.self)) unposted.push(f);
-    else {
-      const here = threads.find(x => x.mine && x.line === Number(threadKey(f).split("@").pop()) && findingKeysIn(x.body).includes(key));
-      plan.links.set(threadKey(f), (here ?? t).url);
-      if (!plan.links.has(key)) plan.links.set(key, t.url);
-    }
+    const here = threads.find(x => x.mine && !resolvedBySelf(x, opts.self) && x.line === anchorLine(f) && findingKeysIn(x.body).includes(key));
+    if (!here) unposted.push(f);
+    else plan.links.set(threadKey(f), here.url);
   }
   plan.post = [...Map.groupBy(unposted, f => JSON.stringify([f.file, f.line, f.endLine])).values()];
   if (opts.complete) {
-    const raised = new Set(findings.map(findingKey));
-    plan.resolve = threads.filter(t => t.mine && !t.resolved && findingKeysIn(t.body).length && !findingKeysIn(t.body).some(k => raised.has(k)));
+    const raised = new Set(findings.map(threadKey));
+    plan.resolve = threads.filter(t => t.mine && !t.resolved && findingKeysIn(t.body).length && !findingKeysIn(t.body).some(k => raised.has(`${k}@${t.line}`)));
   }
   return plan;
 }

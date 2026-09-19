@@ -1,0 +1,380 @@
+{
+  "version": 1,
+  "annotation": "Agent-authored source evidence, frozen before Jev runs; sparse positive labels, not exhaustive relevance judgments or human-adjudicated ground truth.",
+  "scope": {
+    "include": [
+      "**"
+    ],
+    "ignore": [
+      "**/*.png",
+      "**/.env",
+      "**/.env.*"
+    ]
+  },
+  "variants": [
+    {
+      "id": "lines-50",
+      "chunkLines": 50,
+      "overlapLines": 0
+    },
+    {
+      "id": "lines-150",
+      "chunkLines": 150,
+      "overlapLines": 0
+    },
+    {
+      "id": "lines-300",
+      "chunkLines": 300,
+      "overlapLines": 0
+    },
+    {
+      "id": "lines-150-overlap-30",
+      "chunkLines": 150,
+      "overlapLines": 30
+    }
+  ],
+  "thresholds": [
+    0.2,
+    0.35,
+    0.5,
+    0.7
+  ],
+  "repositories": [
+    {
+      "id": "p-retry",
+      "url": "https://github.com/sindresorhus/p-retry.git",
+      "tag": "v6.2.1",
+      "commit": "0a288cc203d657eb20e317163ae21834b86ba1bb",
+      "license": "MIT",
+      "split": "development"
+    },
+    {
+      "id": "flask",
+      "url": "https://github.com/pallets/flask.git",
+      "tag": "3.1.0",
+      "commit": "ab8149664182b662453a563161aa89013c806dc9",
+      "license": "BSD-3-Clause",
+      "split": "evaluation"
+    },
+    {
+      "id": "chi",
+      "url": "https://github.com/go-chi/chi.git",
+      "tag": "v5.2.1",
+      "commit": "71307f9b7e4e9527638bc951c42b782cd1560331",
+      "license": "MIT",
+      "split": "evaluation"
+    }
+  ],
+  "cases": [
+    {
+      "id": "p-retry-abort-cleanup",
+      "repository": "p-retry",
+      "query": "Does this code remove a cancellation listener when an asynchronous operation finishes?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "index.js",
+          "startLine": 48,
+          "endLine": 57,
+          "sha256": "496e252a2958f4477c052d0ec684f30a6c8c192c6e20898ac4c418acf3d3a1d0"
+        }
+      ],
+      "rationale": "Cleanup removes the abort listener and is called on success; final errors also use it.",
+      "lexicalTerms": [
+        "abort",
+        "cancel",
+        "listener",
+        "cleanup"
+      ]
+    },
+    {
+      "id": "p-retry-non-error",
+      "repository": "p-retry",
+      "query": "Does this code reject a thrown value that is not an Error object instead of retrying it?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "index.js",
+          "startLine": 60,
+          "endLine": 62,
+          "sha256": "47bb8296b6cf2314586f2aea413faf96fd2528c08f569e4b9b5d5d4abe62a853"
+        },
+        {
+          "file": "index.js",
+          "startLine": 84,
+          "endLine": 87,
+          "sha256": "3b6ca732a769b136ac7bdcc538bbc6e24a9cf72de1076d48ec8228dd4f0fb86e"
+        }
+      ],
+      "rationale": "Non-Error values raise TypeError inside a catch that rejects the operation.",
+      "lexicalTerms": [
+        "throw",
+        "error",
+        "retry"
+      ]
+    },
+    {
+      "id": "p-retry-veto",
+      "repository": "p-retry",
+      "query": "Does this code let a caller-provided asynchronous decision stop further retries?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "index.js",
+          "startLine": 74,
+          "endLine": 77,
+          "sha256": "f218edb29c289456760fcbc6ffe110c7dfc7b19768886754200dd46850723c8a"
+        }
+      ],
+      "rationale": "Awaited shouldRetry can stop the operation and reject it.",
+      "lexicalTerms": [
+        "retry",
+        "stop",
+        "decision"
+      ]
+    },
+    {
+      "id": "p-retry-unwrap",
+      "repository": "p-retry",
+      "query": "Does this code preserve and propagate the underlying error from an explicit abort wrapper?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "index.js",
+          "startLine": 8,
+          "endLine": 13,
+          "sha256": "5a1bb6b20323466c07ec32ccda806857742e0c721a2fb104dabbfb699a482b15"
+        },
+        {
+          "file": "index.js",
+          "startLine": 64,
+          "endLine": 66,
+          "sha256": "819b497d0e7aa8556473566e33607a9d71e8c0b1237d629ec5ce4994ce557fb4"
+        }
+      ],
+      "rationale": "AbortError stores originalError and the retry catch propagates it.",
+      "lexicalTerms": [
+        "abort",
+        "original",
+        "cause",
+        "error"
+      ]
+    },
+    {
+      "id": "p-retry-non-error-control",
+      "repository": "p-retry",
+      "query": "Does the retry implementation retry thrown non-Error values instead of rejecting them?",
+      "kind": "unsupported-control",
+      "targets": [],
+      "rationale": "Unsupported-query control: index.js:60-62 and 84-87 instead reject non-Error values. No claim that every returned documentation/test window is a false positive.",
+      "lexicalTerms": [
+        "throw",
+        "retry"
+      ]
+    },
+    {
+      "id": "flask-bad-signature",
+      "repository": "flask",
+      "query": "Does this code replace a session cookie with an empty session when signature validation fails?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "src/flask/sessions.py",
+          "startLine": 343,
+          "endLine": 348,
+          "sha256": "a777194d1a867ddaf35978d861f2897021c140e534cf5251026e1b6171e1b167"
+        }
+      ],
+      "rationale": "BadSignature returns an empty session_class rather than the deserialized payload.",
+      "lexicalTerms": [
+        "session",
+        "signature",
+        "cookie"
+      ]
+    },
+    {
+      "id": "flask-refresh-cookie",
+      "repository": "flask",
+      "query": "Does this code decide to renew a session cookie when it changed or when a permanent session should be refreshed on every request?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "src/flask/sessions.py",
+          "startLine": 259,
+          "endLine": 261,
+          "sha256": "800ef76fb8afcd0b730fbe4fe5b6d080cf98baebce1789fe69ce30c9a166c18e"
+        },
+        {
+          "file": "src/flask/sessions.py",
+          "startLine": 382,
+          "endLine": 383,
+          "sha256": "a0b2f38df5b1d432fab62a7b5f161dd4410d52c55f992c6731355e5e2b6282bf"
+        }
+      ],
+      "rationale": "The predicate combines modified and configured permanent refresh; save_session consults it.",
+      "lexicalTerms": [
+        "session",
+        "cookie",
+        "refresh",
+        "modified"
+      ]
+    },
+    {
+      "id": "flask-close-iterator",
+      "repository": "flask",
+      "query": "Does this code close an underlying response iterator in a finally block after streaming it?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "src/flask/helpers.py",
+          "startLine": 124,
+          "endLine": 128,
+          "sha256": "e72cf0b8f571879593efdd1a7ffa591662ae457d2c30a69273c43a86f31f630c"
+        }
+      ],
+      "rationale": "yield from is protected by finally calling close if supported.",
+      "lexicalTerms": [
+        "stream",
+        "iterator",
+        "close",
+        "finally"
+      ]
+    },
+    {
+      "id": "flask-context-reset",
+      "repository": "flask",
+      "query": "Does this code restore the previous application context even if a teardown callback raises an exception?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "src/flask/ctx.py",
+          "startLine": 258,
+          "endLine": 265,
+          "sha256": "5d5e35ddf2e5bd6f584c69af8172e747855cf21e9a3d668db39f331ba4cdc08a"
+        }
+      ],
+      "rationale": "Context variable reset is in finally after application teardown.",
+      "lexicalTerms": [
+        "context",
+        "teardown",
+        "reset",
+        "finally"
+      ]
+    },
+    {
+      "id": "flask-encryption-control",
+      "repository": "flask",
+      "query": "Does the default session implementation encrypt the cookie payload so the browser cannot read its contents?",
+      "kind": "unsupported-control",
+      "targets": [],
+      "rationale": "Unsupported-query control: sessions.py:298-334 and 385-389 sign serialized data; signing is not encryption. This is not a whole-corpus false-positive label.",
+      "lexicalTerms": [
+        "session",
+        "encrypt",
+        "cookie"
+      ]
+    },
+    {
+      "id": "chi-panic-abort",
+      "repository": "chi",
+      "query": "Does this code rethrow the special server-abort panic instead of converting it into an internal-server-error response?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "middleware/recoverer.go",
+          "startLine": 25,
+          "endLine": 30,
+          "sha256": "5b816115814aef8d7c76faf37509fd0e1f4c86b68a4502191d325b6ab9d0658a"
+        },
+        {
+          "file": "middleware/recoverer.go",
+          "startLine": 39,
+          "endLine": 41,
+          "sha256": "26ccc498c4bbcb2c2ff6c97dc4efc104cb9e34323156fe93e860f36c68b1e96b"
+        }
+      ],
+      "rationale": "ErrAbortHandler is re-panicked before normal recovery response handling.",
+      "lexicalTerms": [
+        "panic",
+        "abort",
+        "recover",
+        "error"
+      ]
+    },
+    {
+      "id": "chi-constant-time",
+      "repository": "chi",
+      "query": "Does this code compare supplied credentials using a constant-time comparison before allowing a request through?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "middleware/basic_auth.go",
+          "startLine": 19,
+          "endLine": 25,
+          "sha256": "da2b8b3b07b4a17cd270361638f3c72107d5d91c164f8d232688c20733210a9e"
+        }
+      ],
+      "rationale": "The middleware compares password bytes with subtle.ConstantTimeCompare before next.ServeHTTP.",
+      "lexicalTerms": [
+        "credential",
+        "password",
+        "compare",
+        "auth"
+      ]
+    },
+    {
+      "id": "chi-backlog",
+      "repository": "chi",
+      "query": "Does this code return a request-capacity token when a handler finishes, while rejecting new requests if the waiting queue is full?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "middleware/throttle.go",
+          "startLine": 102,
+          "endLine": 114,
+          "sha256": "051860f77a67e54da57567142fa50b62bd29bf24977a268ae2261f3abfbbc74a"
+        }
+      ],
+      "rationale": "Token is restored with defer and the outer default rejects when no backlog token is available.",
+      "lexicalTerms": [
+        "throttle",
+        "capacity",
+        "queue",
+        "token"
+      ]
+    },
+    {
+      "id": "chi-deadline",
+      "repository": "chi",
+      "query": "Does this code give a handler a deadline-bound request context and send a gateway-timeout status when the deadline expires?",
+      "kind": "positive",
+      "targets": [
+        {
+          "file": "middleware/timeout.go",
+          "startLine": 35,
+          "endLine": 44,
+          "sha256": "bcfdc7477d25f99a4249f0574e7640380042e3abf8a0e6b3f84e77a20a3b0665"
+        }
+      ],
+      "rationale": "WithTimeout wraps the request context and deferred completion checks DeadlineExceeded.",
+      "lexicalTerms": [
+        "timeout",
+        "deadline",
+        "context"
+      ]
+    },
+    {
+      "id": "chi-kill-control",
+      "repository": "chi",
+      "query": "Does the timeout middleware forcibly terminate the handler goroutine immediately when its deadline expires?",
+      "kind": "unsupported-control",
+      "targets": [],
+      "rationale": "Unsupported-query control: timeout.go:9-14 documents cooperative cancellation; lines 35-44 call next.ServeHTTP synchronously. Candidate counts require adjudication, not automatic false-positive labeling.",
+      "lexicalTerms": [
+        "timeout",
+        "goroutine",
+        "deadline"
+      ]
+    }
+  ]
+}

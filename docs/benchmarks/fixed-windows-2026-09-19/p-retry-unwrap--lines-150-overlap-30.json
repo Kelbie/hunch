@@ -1,0 +1,142 @@
+{
+  "identity": "48bc7daad8d655ca0b5b677f65636444b0edfb3dad4a8f2d5a0b0ac173725ade",
+  "caseId": "p-retry-unwrap",
+  "repository": "p-retry",
+  "commit": "0a288cc203d657eb20e317163ae21834b86ba1bb",
+  "variant": {
+    "id": "lines-150-overlap-30",
+    "chunkLines": 150,
+    "overlapLines": 30
+  },
+  "query": "Does this code preserve and propagate the underlying error from an explicit abort wrapper?",
+  "provider": "gateway",
+  "requestedModel": "jev-1.13.0",
+  "zeroDataRetention": false,
+  "startedAt": "2026-09-19T19:21:35.648Z",
+  "elapsedMs": 791.452959000002,
+  "complete": true,
+  "notices": [],
+  "stats": {
+    "chunks": 16,
+    "scored": 16,
+    "requests": 16,
+    "inputTokens": 16019,
+    "modelIds": [
+      "typesafe-ai/jev"
+    ]
+  },
+  "matches": [
+    {
+      "file": "test.js",
+      "startLine": 1,
+      "endLine": 129,
+      "score": 0.82,
+      "sourceHash": "dfb973f1d1616cd90316e9ed6d94ee2e794ada63bce0f747cc6c0ded49f1e661"
+    },
+    {
+      "file": "index.js",
+      "startLine": 1,
+      "endLine": 92,
+      "score": 0.81,
+      "sourceHash": "097626a182dd22b1995ac69d96c6a4ffcb533d5c1ba4bdd87ee3abc3d8bf2407"
+    },
+    {
+      "file": "test.js",
+      "startLine": 208,
+      "endLine": 330,
+      "score": 0.7,
+      "sourceHash": "198b74c072474de53911fe59216a7e09bf1eebcc0d42fe84a5a2fa3bcbba1cf8"
+    },
+    {
+      "file": "index.d.ts",
+      "startLine": 1,
+      "endLine": 134,
+      "score": 0.49,
+      "sourceHash": "ca41085c31dfa56a1fee459712c54f1d75fb38a61110c1e9dd6e615252e2dab5"
+    },
+    {
+      "file": "readme.md",
+      "startLine": 121,
+      "endLine": 184,
+      "score": 0.37,
+      "sourceHash": "dc8d8a326850a38af9a68b9d2599d373df496e760d1e5a09e7a73831697f1c4b"
+    },
+    {
+      "file": "readme.md",
+      "startLine": 1,
+      "endLine": 150,
+      "score": 0.33,
+      "sourceHash": "95e8245cc7a75429ffece6befd0f905d08157c69c2a71c4eae906e179ccb128d"
+    },
+    {
+      "file": "test.js",
+      "startLine": 100,
+      "endLine": 237,
+      "score": 0.28,
+      "sourceHash": "2b8a47c060d1dd2d2a937fe231cd8a01dc5867f4cb27276089850e5a08daf1d5"
+    },
+    {
+      "file": "index.test-d.ts",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.15,
+      "sourceHash": "6e9a2dbd388af1249631ba8e459f3bfed9a1965db653e30eec2eaef6e56462eb"
+    },
+    {
+      "file": "package.json",
+      "startLine": 1,
+      "endLine": 57,
+      "score": 0.07,
+      "sourceHash": "5bad7154a818eae1241caeebc5e456fc218ca72f77c9abebfb739b266b4e55be"
+    },
+    {
+      "file": ".github/workflows/main.yml",
+      "startLine": 1,
+      "endLine": 22,
+      "score": 0.06,
+      "sourceHash": "fcfeae1f7b3bf3247129d04b240bcd0ff3593965fa47c12670d7071a5fbb2181"
+    },
+    {
+      "file": ".gitattributes",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.04,
+      "sourceHash": "afcb36402f6046c8b1ac90f6dc92dab8e6654c95a3b14437c5a179501ff07a9e"
+    },
+    {
+      "file": ".github/security.md",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.04,
+      "sourceHash": "d428ea8fb524d87bc06cab936ba5e3e4e6088b15999b5f434c203a33403c97e7"
+    },
+    {
+      "file": ".editorconfig",
+      "startLine": 1,
+      "endLine": 12,
+      "score": 0.03,
+      "sourceHash": "2c554173b4ab3734c46d6595995459b59d255c1c66339e404099f21127b72ced"
+    },
+    {
+      "file": ".gitignore",
+      "startLine": 1,
+      "endLine": 2,
+      "score": 0.03,
+      "sourceHash": "8c2f073caaa789a70bf3522ee2400f14cc5d5e829f165b84bcc1bafb8e7a963d"
+    },
+    {
+      "file": ".npmrc",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.03,
+      "sourceHash": "cfb952eca67df9db7155300869cc34f4b58235c02610d9fec183976e8ad4e9ff"
+    },
+    {
+      "file": "license",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.03,
+      "sourceHash": "3014fc7b222d02673a621b75164c9c83b95a1daaeb7111bee3aff473789a2683"
+    }
+  ]
+}

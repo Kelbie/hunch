@@ -68,7 +68,7 @@ Tell the user plainly when a request belongs to another tool, and offer to write
 | --- | --- | --- |
 | one sentence of contract: "X keeps Y" | **plain English** `["warn", "sentence"]` | fastest; becomes a `noul` "does the change break this rule?" at threshold 0.7 |
 | a yes/no question that needs exceptions, a threshold, a file scope or a custom message | **`noul`** | you control the question, `criteria.true`/`criteria.false`, and `threshold` |
-| several named outcomes, only some of them bad, including "doesn't apply" | **`choice`** | gives Jev an explicit place for the harmless outcomes, which cuts false positives on unrelated hunks |
+| several named outcomes, only some of them bad, including "doesn't apply" | **`choice`** | distinguishes concern, preserved, unrelated and insufficient context; use `abstain` for the last |
 | a quality on an ordered scale ("how specific are these tests?") | **`score`** | criteria from worst to best, reported below or above a cut-off |
 
 Start with plain English. Move to `noul` as soon as you need a scope, exclusions or a message. Pick
@@ -105,6 +105,7 @@ plain-English string. TOML uses a table per rule with kebab-case keys, and exact
 | `criteria` | score | required, ≥ 2 | descriptions ordered **worst → best** |
 | `threshold` | noul | 0.7 | report when P(yes) ≥ this |
 | `report` | choice | required | labels that produce a finding; each must be a criteria label |
+| `abstain` | choice | `[]` | labels meaning relevant but undecidable; mark coverage incomplete rather than passing or reporting. Must exist in criteria and be disjoint from report. |
 | `reportBelow` / `report-below` | score | one of the two is required | report when the normalised level (0 = first criterion, 1 = last) is below this |
 | `reportAbove` / `report-above` | score | | …or above this |
 | `minConfidence` / `min-confidence` | choice, score | 0 | require Hunch's certainty before reporting: the distribution's concentration, `(pmax − 1/n) / (1 − 1/n)`, 0–1. This is not TypeSafe's own confidence, and not an accuracy. If the provider omits the distribution, the run fails rather than guessing |

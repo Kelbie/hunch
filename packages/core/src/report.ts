@@ -8,7 +8,7 @@ export interface ReportContext {
   /** Links findings to `blob/<sha>/<file>#L<line>` when set. */
   blobBase?: string;
   staleLock?: boolean;
-  /** Inline review thread per `threadKey`, or per `findingKey` as a fallback; preferred over blob links. */
+  /** Inline review thread per `threadKey`; preferred over blob links. */
   threads?: Map<string, string>;
   /** Findings someone with write access dismissed by resolving their thread. */
   dismissed?: number;
@@ -53,7 +53,7 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
       const range = f.endLine > f.line ? `${f.line}-${f.endLine}` : String(f.line);
       const label = code(`${short.get(f.file)}:${range}`);
       // Prefer the thread at this place: one rule can be raised at several places in a file.
-      const thread = place.flat().map(x => ctx.threads?.get(threadKey(x)) ?? ctx.threads?.get(findingKey(x))).find(Boolean);
+      const thread = place.flat().map(x => ctx.threads?.get(threadKey(x))).find(Boolean);
       const anchor = `#L${f.line}${f.endLine > f.line ? `-L${f.endLine}` : ""}`;
       const href = thread ?? (ctx.blobBase ? `${ctx.blobBase}/${f.file.split("/").map(encodeURIComponent).join("/")}${anchor}` : undefined);
       const concerns = place.map(issue => `${place.length > 1 ? `${BADGE[isError(issue) ? "error" : "warn"]} ` : ""}${escapeCell(issue[0]!.message)}<br><sub>${issue.map(x => code(x.rule)).join(" · ")}</sub>`);

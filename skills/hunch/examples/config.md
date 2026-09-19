@@ -25,6 +25,7 @@ hunch.config.ts is valid.
   ignore       nothing beyond lockfiles, minified files and node_modules
   PR context   title and description sent as task
   failOnError  false
+  review       150 lines, 0 whole-file overlap, 40 context; localization off
   budget       100 hunks, 100 requests, 24 rules per hunk, 180s
   guidance     no skills
 
@@ -73,6 +74,7 @@ hunch.config.ts has 1 problem:
   ignore       nothing beyond lockfiles, minified files and node_modules
   PR context   title and description sent as task
   failOnError  false
+  review       150 lines, 0 whole-file overlap, 40 context; localization off
   budget       100 hunks, 100 requests, 24 rules per hunk, 180s
   guidance     ./.agents/skills/api-style, AGENTS.md
 
@@ -120,6 +122,7 @@ hunch.config.ts is valid.
   ignore       nothing beyond lockfiles, minified files and node_modules
   PR context   title and description sent as task
   failOnError  false
+  review       150 lines, 0 whole-file overlap, 40 context; localization off
   budget       100 hunks, 100 requests, 24 rules per hunk, 180s
   guidance     no skills
 
@@ -161,16 +164,18 @@ State sent with the question:
   context    what the chunk is (diff or whole file), its path, language and role, the lines under review, the other files the change touches, and how to answer
   file       the repository-relative path
   hunk       the code, as a unified diff
+  surrounding bounded source around the window from the reviewed head, index or working tree, when available; never fetched for an arbitrary saved diff
   task       the pull request title and description, up to 8,000 characters (check --task locally)
 
 Instructions, exactly as sent (Hunch adds the closing sentences to every rule):
-  Does the code added or changed in `hunk` break this rule? Rule: Error responses keep their code
-  field, because clients branch on it. Read `context` first: it says what `hunk` is, which lines
-  are under review, and what you cannot see. Follow its "How to answer" rules. Answer no if this
-  hunk is unrelated to the question, or shows no concrete evidence either way.
+  Does the change in `hunk`, including a removal, break this rule? For a whole-file review, judge
+  the existing code. Rule: Error responses keep their code field, because clients branch on it.
+  Read `context` first: it says what `hunk` is, which lines are under review, and what you cannot
+  see. Follow its "How to answer" rules. Answer no if this hunk is unrelated to the question, or
+  shows no concrete evidence either way.
 
 Criteria:
-  yes: The added or changed lines clearly break the rule.
+  yes: The change (including a removal), or the existing code in a whole-file review, visibly breaks the rule.
   no:  The rule is followed, or the hunk has nothing to do with it.
 ```
 
@@ -198,6 +203,7 @@ State sent with the question:
   context    what the chunk is (diff or whole file), its path, language and role, the lines under review, the other files the change touches, and how to answer
   file       the repository-relative path
   hunk       the code, as a unified diff
+  surrounding bounded source around the window from the reviewed head, index or working tree, when available; never fetched for an arbitrary saved diff
   task       the pull request title and description, up to 8,000 characters (check --task locally)
 
 Instructions, exactly as sent (Hunch adds the closing sentences to every rule):
@@ -235,6 +241,7 @@ State sent with the question:
   context    what the chunk is (diff or whole file), its path, language and role, the lines under review, the other files the change touches, and how to answer
   file       the repository-relative path
   hunk       the code, as a unified diff
+  surrounding bounded source around the window from the reviewed head, index or working tree, when available; never fetched for an arbitrary saved diff
   task       the pull request title and description, up to 8,000 characters (check --task locally)
   reference  docs/contracts.md, read from the base branch
 
@@ -272,6 +279,7 @@ State sent with the question:
   context    what the chunk is (diff or whole file), its path, language and role, the lines under review, the other files the change touches, and how to answer
   file       the repository-relative path
   hunk       the code, as a unified diff
+  surrounding bounded source around the window from the reviewed head, index or working tree, when available; never fetched for an arbitrary saved diff
   task       the pull request title and description, up to 8,000 characters (check --task locally)
 
 Instructions, exactly as sent (Hunch adds the closing sentences to every rule):
@@ -313,6 +321,7 @@ hunch.config.ts has 2 problems:
   ignore       nothing beyond lockfiles, minified files and node_modules
   PR context   title and description sent as task
   failOnError  false
+  review       150 lines, 0 whole-file overlap, 40 context; localization off
   budget       100 hunks, 100 requests, 24 rules per hunk, 180s
   guidance     no skills
 
@@ -371,6 +380,14 @@ stdout:
       "concurrency": 4,
       "maxRequests": 100,
       "timeoutSeconds": 180
+    },
+    "review": {
+      "contextLines": 40,
+      "chunkLines": 150,
+      "overlapLines": 0,
+      "localize": false,
+      "localizationLines": 10,
+      "maxLocalizationRequests": 32
     },
     "skills": [],
     "agentsMd": false,

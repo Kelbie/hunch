@@ -22,6 +22,19 @@ Reviews changed lines, or whole files, against the rules. Real output:
 `--staged`. A `--config` replaces the repository's config file, and `--rule` adds to whichever config
 applies. An inline config selects no skills or AGENTS.md unless it asks for them.
 
+## Context and precise locations
+
+`review` settings in [config.md](config.md#review-context) apply equally to Actions, the App and
+local checks. Every question receives the window, its role, supplied task and optional trusted
+reference. Diff checks can include surrounding source from the exact reviewed revision. This
+helps distinguish a changed defect from an existing guard or unrelated nearby defect.
+
+Opt-in localization narrows positive findings after baseline coverage finishes. It retains full
+context and falls back to the broader finding when attribution is uncertain. Treat the indicated
+range as evidence to inspect, not an exact causal proof. Actions annotations and App inline threads
+use these ranges; summaries link to the reviewed head SHA. A new location gets its own thread
+even if the same concern already has a thread elsewhere in the file.
+
 ## Dry runs
 
 Reviews are cheap (see [cost](../SKILL.md#cost)), so just run `check`. `--dry-run` is for when the
@@ -31,6 +44,8 @@ warns on stderr when `hunch.lock` is missing or stale, because the real run woul
 ```text
 hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 15 question(s) in 2 request(s). Budget: 100 hunks, 100 requests, 180s.
 ```
+
+The dry run counts baseline requests; optional localization uses the remaining budget.
 
 A request carries every question for one hunk, plus one more request per distinct `reference`. What
 matters on a large branch is `budget.maxRequests`, not money: anything past the budget is skipped

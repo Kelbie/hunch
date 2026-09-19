@@ -1,0 +1,128 @@
+{
+  "identity": "48bc7daad8d655ca0b5b677f65636444b0edfb3dad4a8f2d5a0b0ac173725ade",
+  "caseId": "p-retry-non-error-control",
+  "repository": "p-retry",
+  "commit": "0a288cc203d657eb20e317163ae21834b86ba1bb",
+  "variant": {
+    "id": "lines-300",
+    "chunkLines": 300,
+    "overlapLines": 0
+  },
+  "query": "Does the retry implementation retry thrown non-Error values instead of rejecting them?",
+  "provider": "gateway",
+  "requestedModel": "jev-1.13.0",
+  "zeroDataRetention": false,
+  "startedAt": "2026-09-19T19:21:43.200Z",
+  "elapsedMs": 839.2785000000003,
+  "complete": true,
+  "notices": [],
+  "stats": {
+    "chunks": 14,
+    "scored": 14,
+    "requests": 14,
+    "inputTokens": 14372,
+    "modelIds": [
+      "typesafe-ai/jev"
+    ]
+  },
+  "matches": [
+    {
+      "file": "readme.md",
+      "startLine": 1,
+      "endLine": 184,
+      "score": 0.26,
+      "sourceHash": "e43525a8599dbb36d80b424a396d596bdf7783ff9af5464cc3a2a1b81f8124fe"
+    },
+    {
+      "file": "index.d.ts",
+      "startLine": 1,
+      "endLine": 134,
+      "score": 0.19,
+      "sourceHash": "ca41085c31dfa56a1fee459712c54f1d75fb38a61110c1e9dd6e615252e2dab5"
+    },
+    {
+      "file": "index.test-d.ts",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.16,
+      "sourceHash": "6e9a2dbd388af1249631ba8e459f3bfed9a1965db653e30eec2eaef6e56462eb"
+    },
+    {
+      "file": "test.js",
+      "startLine": 283,
+      "endLine": 330,
+      "score": 0.15,
+      "sourceHash": "9cb557048c9a904e77b16d8472cce2f4506b6a48183345590430be27c4ad6021"
+    },
+    {
+      "file": "package.json",
+      "startLine": 1,
+      "endLine": 57,
+      "score": 0.12,
+      "sourceHash": "5bad7154a818eae1241caeebc5e456fc218ca72f77c9abebfb739b266b4e55be"
+    },
+    {
+      "file": "test.js",
+      "startLine": 1,
+      "endLine": 282,
+      "score": 0.1,
+      "sourceHash": "58ff62bee426123cffb54d4f3c3e5d1390145539b88d3a40116fe912fa029bd5"
+    },
+    {
+      "file": ".editorconfig",
+      "startLine": 1,
+      "endLine": 12,
+      "score": 0.09,
+      "sourceHash": "2c554173b4ab3734c46d6595995459b59d255c1c66339e404099f21127b72ced"
+    },
+    {
+      "file": ".gitattributes",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.08,
+      "sourceHash": "afcb36402f6046c8b1ac90f6dc92dab8e6654c95a3b14437c5a179501ff07a9e"
+    },
+    {
+      "file": ".gitignore",
+      "startLine": 1,
+      "endLine": 2,
+      "score": 0.08,
+      "sourceHash": "8c2f073caaa789a70bf3522ee2400f14cc5d5e829f165b84bcc1bafb8e7a963d"
+    },
+    {
+      "file": "license",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.08,
+      "sourceHash": "3014fc7b222d02673a621b75164c9c83b95a1daaeb7111bee3aff473789a2683"
+    },
+    {
+      "file": ".npmrc",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.07,
+      "sourceHash": "cfb952eca67df9db7155300869cc34f4b58235c02610d9fec183976e8ad4e9ff"
+    },
+    {
+      "file": ".github/security.md",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.06,
+      "sourceHash": "d428ea8fb524d87bc06cab936ba5e3e4e6088b15999b5f434c203a33403c97e7"
+    },
+    {
+      "file": ".github/workflows/main.yml",
+      "startLine": 1,
+      "endLine": 22,
+      "score": 0.06,
+      "sourceHash": "fcfeae1f7b3bf3247129d04b240bcd0ff3593965fa47c12670d7071a5fbb2181"
+    },
+    {
+      "file": "index.js",
+      "startLine": 1,
+      "endLine": 92,
+      "score": 0.05,
+      "sourceHash": "097626a182dd22b1995ac69d96c6a4ffcb533d5c1ba4bdd87ee3abc3d8bf2407"
+    }
+  ]
+}

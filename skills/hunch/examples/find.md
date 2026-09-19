@@ -4,6 +4,110 @@
 
 `find` scores every chunk of the repository against a task. It needs no rules, and no config at all.
 
+<!-- case: find-condition-dry -->
+### Plan a condition sweep with overlapping windows
+
+```sh
+npx @kelbie/hunch find "Does this code retry a payment with a new idempotency key?" --mode condition --chunk-lines 80 --overlap-lines 10 --top 0 --dry-run
+```
+
+Exit code **0**.
+
+stdout:
+
+```text
+hunch: dry run, nothing sent. 3 file(s) as 3 chunk(s): 3 request(s), 3 question(s).
+```
+
+<!-- /case -->
+
+<!-- case: find-condition -->
+### An existing-behavior condition, with complete candidate output
+
+```sh
+npx @kelbie/hunch find "Does this code retry a payment with a new idempotency key?" --mode condition --top 0 --reporter json
+```
+
+Exit code **0**. Captured from a real run with hunch 0.12.0 on 2026-09-19; model output varies between runs.
+
+stderr:
+
+```text
+hunch: searching 3 file(s) as 3 chunk(s) from the working tree
+```
+
+stdout:
+
+```json
+{
+  "query": "Does this code retry a payment with a new idempotency key?",
+  "mode": "condition",
+  "matches": [
+    {
+      "file": "src/payments/charge.ts",
+      "startLine": 1,
+      "endLine": 9,
+      "code": "export async function charge(gateway: Gateway, order: Order) {\n  for (let attempt = 1; attempt <= 3; attempt++) {\n    try {\n      return await gateway.charge({ amount: order.total, idempotencyKey: crypto.randomUUID() });\n    } catch (error) {\n      if (attempt === 3) throw error;\n    }\n  }\n}",
+      "language": "TypeScript",
+      "role": null,
+      "facet": "condition",
+      "score": 0.94,
+      "facets": {
+        "condition": 0.94
+      }
+    }
+  ],
+  "stats": {
+    "chunks": 3,
+    "scored": 3,
+    "requests": 3,
+    "inputTokens": 1780,
+    "modelIds": [
+      "typesafe-ai/jev"
+    ]
+  },
+  "notices": [],
+  "selection": {
+    "minScore": 0.5,
+    "perFacet": null,
+    "matched": 1,
+    "returned": 1
+  },
+  "complete": true,
+  "scope": {
+    "paths": [],
+    "include": [
+      "src/**"
+    ],
+    "ignore": [
+      "**/package-lock.json",
+      "**/npm-shrinkwrap.json",
+      "**/yarn.lock",
+      "**/pnpm-lock.yaml",
+      "**/bun.lock",
+      "**/bun.lockb",
+      "**/deno.lock",
+      "**/Cargo.lock",
+      "**/Gemfile.lock",
+      "**/composer.lock",
+      "**/poetry.lock",
+      "**/uv.lock",
+      "**/go.sum",
+      "**/*.min.js",
+      "**/*.min.css",
+      "**/*.map",
+      "**/node_modules/**"
+    ],
+    "chunkLines": 150,
+    "overlapLines": 0,
+    "skippedFiles": [],
+    "revision": "working-tree"
+  }
+}
+```
+
+<!-- /case -->
+
 <!-- case: find-dry -->
 ### What would a search cost?
 
@@ -51,7 +155,55 @@ hunch: dry run, nothing sent. 7 file(s) as 7 chunk(s): 7 request(s), 35 question
 npx @kelbie/hunch find "make payment retries configurable" --reporter markdown
 ```
 
-Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts/skill-examples.ts --live` where that is available.
+Exit code **0**. Captured from a real run with hunch 0.12.0 on 2026-09-19; model output varies between runs.
+
+stderr:
+
+```text
+hunch: searching 3 file(s) as 3 chunk(s) from the working tree
+```
+
+stdout:
+
+```text
+# Code relevant to: make payment retries configurable
+
+Chunks of this repository, ranked by how they relate to that task by a classifier that read
+each one in isolation. Headings give the exact file and line range of the code beneath them.
+Scores are the classifier's probability, not a guarantee: treat the grouping as the signal and
+verify anything you rely on. This is a starting point — relevant code may be missing, and
+nothing here has been checked for correctness.
+
+Selection: 1 of 1 above-threshold chunks returned (minimum 0.5; per-facet limit 12).
+
+Complete means the selected sweep finished, not that all semantic matches were found. Merged passage scores are maxima of individual chunk scores.
+
+## What was found
+
+- **edit here** — Code that carrying out the task would require editing.
+  - `src/payments/charge.ts`:1-9 (0.94)
+
+## edit here
+
+Code that carrying out the task would require editing.
+
+### `src/payments/charge.ts`:1-9
+
+edit here 0.94 · also contract to respect 0.78, affected caller 0.77, test to update 0.40
+
+```ts
+export async function charge(gateway: Gateway, order: Order) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      return await gateway.charge({ amount: order.total, idempotencyKey: crypto.randomUUID() });
+    } catch (error) {
+      if (attempt === 3) throw error;
+    }
+  }
+}
+```
+```
+
 <!-- /case -->
 
 <!-- case: find-json -->
@@ -61,5 +213,83 @@ Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts
 npx @kelbie/hunch find "make payment retries configurable" --facet edit,test --reporter json --top 3
 ```
 
-Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts/skill-examples.ts --live` where that is available.
+Exit code **0**. Captured from a real run with hunch 0.12.0 on 2026-09-19; model output varies between runs.
+
+stderr:
+
+```text
+hunch: searching 3 file(s) as 3 chunk(s) from the working tree
+```
+
+stdout:
+
+```json
+{
+  "query": "make payment retries configurable",
+  "mode": "task",
+  "matches": [
+    {
+      "file": "src/payments/charge.ts",
+      "startLine": 1,
+      "endLine": 9,
+      "code": "export async function charge(gateway: Gateway, order: Order) {\n  for (let attempt = 1; attempt <= 3; attempt++) {\n    try {\n      return await gateway.charge({ amount: order.total, idempotencyKey: crypto.randomUUID() });\n    } catch (error) {\n      if (attempt === 3) throw error;\n    }\n  }\n}",
+      "language": "TypeScript",
+      "role": null,
+      "facet": "edit",
+      "score": 0.94,
+      "facets": {
+        "edit": 0.94,
+        "test": 0.41
+      }
+    }
+  ],
+  "stats": {
+    "chunks": 3,
+    "scored": 3,
+    "requests": 3,
+    "inputTokens": 3025,
+    "modelIds": [
+      "typesafe-ai/jev"
+    ]
+  },
+  "notices": [],
+  "selection": {
+    "minScore": 0.5,
+    "perFacet": 3,
+    "matched": 1,
+    "returned": 1
+  },
+  "complete": true,
+  "scope": {
+    "paths": [],
+    "include": [
+      "src/**"
+    ],
+    "ignore": [
+      "**/package-lock.json",
+      "**/npm-shrinkwrap.json",
+      "**/yarn.lock",
+      "**/pnpm-lock.yaml",
+      "**/bun.lock",
+      "**/bun.lockb",
+      "**/deno.lock",
+      "**/Cargo.lock",
+      "**/Gemfile.lock",
+      "**/composer.lock",
+      "**/poetry.lock",
+      "**/uv.lock",
+      "**/go.sum",
+      "**/*.min.js",
+      "**/*.min.css",
+      "**/*.map",
+      "**/node_modules/**"
+    ],
+    "chunkLines": 150,
+    "overlapLines": 0,
+    "skippedFiles": [],
+    "revision": "working-tree"
+  }
+}
+```
+
 <!-- /case -->

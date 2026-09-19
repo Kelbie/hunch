@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { diffExcerpt, findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
+import { diffExcerpt, threadKey, findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
 import { parseHunks, unreviewableFiles } from "../src/diff.js";
 import type { CheckResult } from "../src/check.js";
 
@@ -30,7 +30,7 @@ test("PR comment reads like the terminal report: headline, one row per concern, 
 });
 
 test("PR comment links concerns to their review threads and counts dismissed and fixed ones", () => {
-  const threads = new Map([[findingKey(result.findings[0]!), "https://github.com/acme/repo/pull/1#discussion_r1"]]);
+  const threads = new Map([[threadKey(result.findings[0]!), "https://github.com/acme/repo/pull/1#discussion_r1"]]);
   const markdown = summaryMarkdown(result, { blobBase: `https://github.com/acme/repo/blob/${"a".repeat(40)}`, threads, dismissed: 2, fixed: 1 });
   expect(markdown).toContain("[`pay.ts:12-20`](https://github.com/acme/repo/pull/1#discussion_r1)");
   expect(markdown).toContain("2 dismissed · 1 resolved as fixed");

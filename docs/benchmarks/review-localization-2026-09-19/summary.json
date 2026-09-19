@@ -1,0 +1,202 @@
+[
+  {
+    "caseId": "tail-failure",
+    "variant": "patch-only",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 1,
+    "indicatedLines": 32,
+    "requests": 1,
+    "inputTokens": 1080
+  },
+  {
+    "caseId": "tail-failure",
+    "variant": "small-with-context",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 1,
+    "indicatedLines": 8,
+    "requests": 4,
+    "inputTokens": 4623
+  },
+  {
+    "caseId": "tail-failure",
+    "variant": "contextual",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 1,
+    "indicatedLines": 32,
+    "requests": 1,
+    "inputTokens": 1361
+  },
+  {
+    "caseId": "tail-failure",
+    "variant": "localized",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 2,
+    "indicatedLines": 8,
+    "requests": 7,
+    "inputTokens": 11523
+  },
+  {
+    "caseId": "two-failures",
+    "variant": "patch-only",
+    "expectedTargets": 2,
+    "recovered": 2,
+    "findings": 1,
+    "indicatedLines": 32,
+    "requests": 1,
+    "inputTokens": 1071
+  },
+  {
+    "caseId": "two-failures",
+    "variant": "small-with-context",
+    "expectedTargets": 2,
+    "recovered": 2,
+    "findings": 2,
+    "indicatedLines": 16,
+    "requests": 4,
+    "inputTokens": 4574
+  },
+  {
+    "caseId": "two-failures",
+    "variant": "contextual",
+    "expectedTargets": 2,
+    "recovered": 2,
+    "findings": 1,
+    "indicatedLines": 32,
+    "requests": 1,
+    "inputTokens": 1342
+  },
+  {
+    "caseId": "two-failures",
+    "variant": "localized",
+    "expectedTargets": 2,
+    "recovered": 2,
+    "findings": 3,
+    "indicatedLines": 12,
+    "requests": 11,
+    "inputTokens": 17739
+  },
+  {
+    "caseId": "preserved-error",
+    "variant": "patch-only",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 1,
+    "inputTokens": 1082
+  },
+  {
+    "caseId": "preserved-error",
+    "variant": "small-with-context",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 4,
+    "inputTokens": 4633
+  },
+  {
+    "caseId": "preserved-error",
+    "variant": "contextual",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 1,
+    "inputTokens": 1365
+  },
+  {
+    "caseId": "preserved-error",
+    "variant": "localized",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 1,
+    "inputTokens": 1365
+  },
+  {
+    "caseId": "small-edit-needs-catch-context",
+    "variant": "patch-only",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 1,
+    "indicatedLines": 1,
+    "requests": 1,
+    "inputTokens": 817
+  },
+  {
+    "caseId": "small-edit-needs-catch-context",
+    "variant": "small-with-context",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 1,
+    "indicatedLines": 1,
+    "requests": 1,
+    "inputTokens": 1098
+  },
+  {
+    "caseId": "small-edit-needs-catch-context",
+    "variant": "contextual",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 1,
+    "indicatedLines": 1,
+    "requests": 1,
+    "inputTokens": 1098
+  },
+  {
+    "caseId": "small-edit-needs-catch-context",
+    "variant": "localized",
+    "expectedTargets": 1,
+    "recovered": 1,
+    "findings": 1,
+    "indicatedLines": 1,
+    "requests": 1,
+    "inputTokens": 1098
+  },
+  {
+    "caseId": "unrelated-edit-near-old-defect",
+    "variant": "patch-only",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 1,
+    "inputTokens": 811
+  },
+  {
+    "caseId": "unrelated-edit-near-old-defect",
+    "variant": "small-with-context",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 1,
+    "inputTokens": 1092
+  },
+  {
+    "caseId": "unrelated-edit-near-old-defect",
+    "variant": "contextual",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 1,
+    "inputTokens": 1092
+  },
+  {
+    "caseId": "unrelated-edit-near-old-defect",
+    "variant": "localized",
+    "expectedTargets": 0,
+    "recovered": 0,
+    "findings": 0,
+    "indicatedLines": 0,
+    "requests": 1,
+    "inputTokens": 1092
+  }
+]

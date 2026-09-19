@@ -26,6 +26,6 @@ runs:
         [[ "$HUNCH_BASE" =~ ^[a-f0-9]{40}$ && "$HUNCH_HEAD" =~ ^[a-f0-9]{40}$ ]] || { echo "Valid base and head SHAs required"; exit 2; }
         git cat-file -e "$HUNCH_BASE^{commit}"
         git cat-file -e "$HUNCH_HEAD^{commit}"
-        # Run from the action's own directory so its bunfig.toml applies, not the reviewed repo's.
+        # Run from the action's own directory so a reviewed repository's bunfig.toml cannot preload code.
         cd "$GITHUB_ACTION_PATH"
         bun packages/cli/src/bin.ts check --cwd "$GITHUB_WORKSPACE" --base "$HUNCH_BASE" --head "$HUNCH_HEAD" --policy-ref "$HUNCH_BASE" --reporter github

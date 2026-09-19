@@ -35,3 +35,17 @@ test("one rule raised at two places in a file links each place to its own thread
   expect(md).toContain("[`pay.ts:10`](urlA)");
   expect(md).toContain("[`pay.ts:40-41`](urlB)");
 });
+
+test("a new location receives its own thread even when the same concern is already open elsewhere", () => {
+  const existing = { ...f, line: 10, endLine: 10 }, added = { ...f, line: 80, endLine: 81 };
+  const plan = planThreads([existing, added], [t({ line: 10, url: "old" })], opts);
+  expect(plan.post).toEqual([[added]]);
+  expect(plan.links.has(`${findingKey(added)}@81`)).toBe(false);
+});
+
+test("a complete review closes the old location when the concern remains only elsewhere", () => {
+  const moved = { ...f, line: 80, endLine: 81 };
+  const old = t({ line: 10 });
+  expect(planThreads([moved], [old], opts).resolve).toEqual([old]);
+  expect(planThreads([moved], [old], { ...opts, complete: false }).resolve).toEqual([]);
+});

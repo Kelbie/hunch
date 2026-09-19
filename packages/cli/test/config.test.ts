@@ -74,9 +74,9 @@ test("--explain prints the question exactly as sent, with the state it will rece
     expect(e.question.type).toBe("choice");
     expect(e.question.instructions).toStartWith("What happens on retry in `hunk`?");
     expect(e.question.instructions).toContain("Read `context` first");
-    expect(e.state.map((s: { name: string }) => s.name)).toEqual(["context", "file", "hunk", "task", "reference"]);
+    expect(e.state.map((s: { name: string }) => s.name)).toEqual(["context", "file", "hunk", "surrounding", "task", "reference"]);
     const plain = JSON.parse(hunch(root, "config", "--explain", "api/errors", "--reporter", "json").out);
-    expect(plain.question.criteria.true).toContain("clearly break the rule");
+    expect(plain.question.criteria.true).toContain("visibly breaks the rule");
     const missing = hunch(root, "config", "--explain", "nope");
     expect(missing.status).toBe(2);
     expect(missing.err).toContain('no rule "nope"');

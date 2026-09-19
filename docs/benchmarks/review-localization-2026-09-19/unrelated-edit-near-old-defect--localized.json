@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-09-19T19:55:38.613Z",
+  "caseId": "unrelated-edit-near-old-defect",
+  "variant": {
+    "id": "localized",
+    "chunkLines": 150,
+    "contextLines": 40,
+    "localize": true
+  },
+  "elapsedMs": 398.3994169999787,
+  "result": {
+    "findings": [],
+    "stats": {
+      "hunks": 1,
+      "skippedHunks": 0,
+      "requests": 1,
+      "questions": 1,
+      "inputTokens": 1092,
+      "modelIds": [
+        "typesafe-ai/jev"
+      ]
+    },
+    "notices": [],
+    "info": [],
+    "complete": true
+  }
+}

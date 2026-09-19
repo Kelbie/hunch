@@ -39,6 +39,11 @@ export function git(cwd: string, args: string[]): string {
   return execFileSync("git", args, { cwd, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
 }
 
+/** Read staged content without substituting a possibly different working-tree version. */
+export async function readStagedFile(root: string, path: string): Promise<string | null> {
+  return git(root, ["show", `:${repoPath(path)}`]);
+}
+
 /**
  * A ref as a commit SHA, or an error that says what to pass instead. The default base is
  * `origin/main`, which a fresh repository or one without a remote does not have, and git's own

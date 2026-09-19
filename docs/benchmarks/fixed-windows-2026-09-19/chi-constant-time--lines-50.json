@@ -1,0 +1,2123 @@
+{
+  "identity": "48bc7daad8d655ca0b5b677f65636444b0edfb3dad4a8f2d5a0b0ac173725ade",
+  "caseId": "chi-constant-time",
+  "repository": "chi",
+  "commit": "71307f9b7e4e9527638bc951c42b782cd1560331",
+  "variant": {
+    "id": "lines-50",
+    "chunkLines": 50,
+    "overlapLines": 0
+  },
+  "query": "Does this code compare supplied credentials using a constant-time comparison before allowing a request through?",
+  "provider": "gateway",
+  "requestedModel": "jev-1.13.0",
+  "zeroDataRetention": false,
+  "startedAt": "2026-09-19T19:39:03.683Z",
+  "elapsedMs": 14814.189874999982,
+  "complete": true,
+  "notices": [],
+  "stats": {
+    "chunks": 299,
+    "scored": 299,
+    "requests": 299,
+    "inputTokens": 289912,
+    "modelIds": [
+      "typesafe-ai/jev"
+    ]
+  },
+  "matches": [
+    {
+      "file": "middleware/basic_auth.go",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.95,
+      "sourceHash": "911efdbc9a606b7534d82a6905812c49ebb581db1da2f42cc41e57f5dc67ff43"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.07,
+      "sourceHash": "d121a3f968b7e5fec6de19ef247825f46745e70fb8befba8fb8e07df17b9f5b1"
+    },
+    {
+      "file": "_examples/graceful/main.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.06,
+      "sourceHash": "a937b62a020987fa69f398ce9c9ad467e77d84dc568022d259152449e86cbef1"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 38,
+      "endLine": 87,
+      "score": 0.06,
+      "sourceHash": "817f202d98c6eae74b267d878c91b6a5fe8f06620a2b7af1454ac42543e0f306"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 88,
+      "endLine": 120,
+      "score": 0.06,
+      "sourceHash": "14b30a655efc6f3e33dc9b0c67f56bf5e49a7cb14b0ab8da996a71fb926e5fd8"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 392,
+      "endLine": 438,
+      "score": 0.06,
+      "sourceHash": "aea1a734d6327192e9a41dbe59b3b3842b80b30eb5e958088e0b60052920f1fc"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.06,
+      "sourceHash": "5d3d439d8e0ba99d8b98d938ab940cac1da7ba1be25f95989bdc96458f87d5fa"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.06,
+      "sourceHash": "b8ca0f94d2669fa615d99dfa08df8bcde87686906688d204d7c9373744d45f29"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 251,
+      "endLine": 260,
+      "score": 0.06,
+      "sourceHash": "2c881640781c70257e8a29ad3eaa0e8467f385753d2c7633c741e2cab676367d"
+    },
+    {
+      "file": "middleware/middleware_test.go",
+      "startLine": 83,
+      "endLine": 132,
+      "score": 0.06,
+      "sourceHash": "d97acfacdd75bda8a50d622d790d58117967229cb67f8b921aa3163176077e08"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 921,
+      "endLine": 947,
+      "score": 0.06,
+      "sourceHash": "ad3896345668e5cc0a1e712f5f985a7f58718131c37f83d0ea718fc3be0a2a58"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 2043,
+      "endLine": 2043,
+      "score": 0.06,
+      "sourceHash": "66de955a85f5f12cfaf15f11de2f59a2da997d90d23139bc24200ebf69265be2"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 1,
+      "endLine": 37,
+      "score": 0.05,
+      "sourceHash": "185951247e9a18e56e1ffb05bfcae15816a3ec491cefa94f03094c1e91025fb9"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 169,
+      "endLine": 217,
+      "score": 0.05,
+      "sourceHash": "11fc41b44c18ba1ad31091bee4156abcf6347eff99a8a649deeece799f09b65c"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 218,
+      "endLine": 255,
+      "score": 0.05,
+      "sourceHash": "657eb8fd946fddfd076be0fa00a3ce7ed0eee34cc253b1015c7907463203a54b"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 256,
+      "endLine": 304,
+      "score": 0.05,
+      "sourceHash": "c777a89aca3ebe5e2f02a202faa327ba20d01f796c06a39bbdae7ef8c62e7fca"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 305,
+      "endLine": 343,
+      "score": 0.05,
+      "sourceHash": "5a07dc7cc05150711642a59ec3ddf4256c6f38aedc5f322562a6395473396303"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 439,
+      "endLine": 483,
+      "score": 0.05,
+      "sourceHash": "56d1b1bf7746cd1e7b2fa89d36da886f71543b6f478b85e4eedb9e26e4d24828"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 484,
+      "endLine": 520,
+      "score": 0.05,
+      "sourceHash": "fe57e1251fa10557244db61fbc09d2e78762f73956720fdb138709c4e29436d0"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 151,
+      "endLine": 200,
+      "score": 0.05,
+      "sourceHash": "1930f64d9653d518a45c14a1f6c431121c78ac50acd68c2558ea5e46cb5011e8"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 201,
+      "endLine": 250,
+      "score": 0.05,
+      "sourceHash": "0c87c5b2d2853a0bf4b7f17c7935af0e921d5029a5f4ed650cd2a52a3312a7d6"
+    },
+    {
+      "file": "_examples/rest/routes.md",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.05,
+      "sourceHash": "0c27bce1ea4313f7e1c0340d96e865998af2f2ed8ca9f1a5cfbe252131459a1f"
+    },
+    {
+      "file": "_examples/rest/routes.md",
+      "startLine": 49,
+      "endLine": 98,
+      "score": 0.05,
+      "sourceHash": "8306a53234d40f15871fecc78013d58d5e527f1525f0e40b0a28b6329638143f"
+    },
+    {
+      "file": "_examples/versions/main.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.05,
+      "sourceHash": "7a7312e24076b9c245fd9130b8c23e0dde10003016b791234050b34420a554f9"
+    },
+    {
+      "file": "middleware/get_head_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.05,
+      "sourceHash": "ab4f151960fd61e7f5df050c85e2f49d54546719472dde2805479f12c90fb5f3"
+    },
+    {
+      "file": "middleware/get_head_test.go",
+      "startLine": 51,
+      "endLine": 66,
+      "score": 0.05,
+      "sourceHash": "7a003efe25273a4e469c3ea46d0e7b287ddb2c6b225d4e687eddcf0d106b26ec"
+    },
+    {
+      "file": "middleware/middleware_test.go",
+      "startLine": 51,
+      "endLine": 82,
+      "score": 0.05,
+      "sourceHash": "fb3bd51f9b1e187ff030417cad50d57795f6359160b5531b42416a6e63606337"
+    },
+    {
+      "file": "middleware/middleware_test.go",
+      "startLine": 133,
+      "endLine": 155,
+      "score": 0.05,
+      "sourceHash": "70a1fa8231dadec5e4ca2107ba660b8361db2d82d1227cdc0db902e8ff8a6f26"
+    },
+    {
+      "file": "middleware/recoverer.go",
+      "startLine": 201,
+      "endLine": 203,
+      "score": 0.05,
+      "sourceHash": "a00c9c529f4d0240d12ecd0c972466ae2168a606e638f65863be02a3ef1a991d"
+    },
+    {
+      "file": "middleware/route_headers.go",
+      "startLine": 77,
+      "endLine": 114,
+      "score": 0.05,
+      "sourceHash": "ab21cdb8017d7749e706488d4a6adcb3069e46d0224581a13915a17504bce34e"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.05,
+      "sourceHash": "4fa51d90bb19b9893afd31172dc8c908cfa3c82679f6a97ffd0d73ff6fefad92"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 871,
+      "endLine": 920,
+      "score": 0.05,
+      "sourceHash": "b9b48e787d1a86be08dabb510e936e056062a22e8d59293b620bf586dbd21939"
+    },
+    {
+      "file": "_examples/limits/main.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.04,
+      "sourceHash": "7dd6b0319faa3ac9badc826f18445d3cc785a8f5d43f5fb5c56d062a3125e742"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 121,
+      "endLine": 168,
+      "score": 0.04,
+      "sourceHash": "e7860ba0c9fe0717eb68117aeab2a9783cd62558616c81f9c4fbd68e2a1cdf71"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 344,
+      "endLine": 391,
+      "score": 0.04,
+      "sourceHash": "66fb93ec26c8725fe246261072a8fbd7fd7c0ffc0e2895d36d1b3eaeea438ebd"
+    },
+    {
+      "file": "_examples/rest/routes.md",
+      "startLine": 99,
+      "endLine": 146,
+      "score": 0.04,
+      "sourceHash": "bd599c5ef3e304e3550893f543f4d20b9f74ae8b48e553f091a8fc80e9ccf934"
+    },
+    {
+      "file": "_examples/todos-resource/main.go",
+      "startLine": 1,
+      "endLine": 30,
+      "score": 0.04,
+      "sourceHash": "92c239b29dbaf77985a1d3991a5fc7fe97ba6cbd9016429c4d227e154febdee8"
+    },
+    {
+      "file": "_examples/versions/main.go",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.04,
+      "sourceHash": "a2cdedeef86a699eb47ca37184ac29cfc4b316dcede31b11f479a257dc3542c0"
+    },
+    {
+      "file": "_examples/versions/main.go",
+      "startLine": 142,
+      "endLine": 154,
+      "score": 0.04,
+      "sourceHash": "5fd6fd44fcefed3b4994e4777a973a21ec12e8410ee41ad924bfc0b2bf007825"
+    },
+    {
+      "file": "chi.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.04,
+      "sourceHash": "de1e8c97da2e6ccc5b2fe3a16e431f70f86142d951fd8358dd40123f4f6c3a30"
+    },
+    {
+      "file": "chi.go",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.04,
+      "sourceHash": "5db61da7a33b2e27360ad63c6331fc2fe9596249cb16f13ae26f3f13abd43501"
+    },
+    {
+      "file": "middleware/middleware_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.04,
+      "sourceHash": "c903d1b61d67c8d2594d2f38c599cba3287de8487ae0307e0628bb7f99fc61a1"
+    },
+    {
+      "file": "middleware/sunset_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.04,
+      "sourceHash": "7acd4f701d132d67026061f9ead78532ce02cb611982fed6f8874919d493bf50"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.04,
+      "sourceHash": "e170caf5210b02aa669551104ae7d7a3c436cd0393872f41411fceb62cd7091d"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 190,
+      "endLine": 239,
+      "score": 0.04,
+      "sourceHash": "7954a29ff16cb5a3b0bfdb09cd544aa0ac91456908fafe3be27dc80a10dafe53"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 290,
+      "endLine": 301,
+      "score": 0.04,
+      "sourceHash": "45520c7c2689ae99f36ecfb741cf6db67cfac703b844ec67a4a313c938f856dd"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.04,
+      "sourceHash": "b3fe7e184a9962e9009cb841b0b266dbdb649bea6ce91ca027da0bb8896cd5cb"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.04,
+      "sourceHash": "68025798ef3bdb6f40a95e9976088826f84017a4f7ddaf8707d05c9b82e6782e"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 151,
+      "endLine": 200,
+      "score": 0.04,
+      "sourceHash": "3c76be973b1b23b331af1c945247221c9646968c924fb8e1c10634d39a8953e0"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 482,
+      "endLine": 531,
+      "score": 0.04,
+      "sourceHash": "fc76e1e0a3bc2fbd47d799bad83810c02d63648cebb6b31aa52018dc6a94b065"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 532,
+      "endLine": 581,
+      "score": 0.04,
+      "sourceHash": "64c040ef686a4f38cd359dc3ec64455f6378661bb36c86889ee549410676579b"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 632,
+      "endLine": 681,
+      "score": 0.04,
+      "sourceHash": "127673f83c6ff5bdacc53f495dcfe3185c6792b7d6b42fb2b58d0fcd2372ac6c"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 998,
+      "endLine": 1047,
+      "score": 0.04,
+      "sourceHash": "5764ab05a525c7aa05540c6772817334355337d242dd9ddbfc7083637bff50c4"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1955,
+      "endLine": 1992,
+      "score": 0.04,
+      "sourceHash": "9e6c2daab0efeab99eda5f3168bb3dd66db4d3305bb6276bc697618263c9fb0d"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.04,
+      "sourceHash": "d7c3dd97a277f945606c99e79964c8d1c7028425c05f89288c65c3b15e42aa00"
+    },
+    {
+      "file": "README.md",
+      "startLine": 127,
+      "endLine": 174,
+      "score": 0.04,
+      "sourceHash": "f179d7950ee9aa2b46a9a0349c3305de9349ce4933613e4c4ef85a572755d40c"
+    },
+    {
+      "file": "README.md",
+      "startLine": 311,
+      "endLine": 360,
+      "score": 0.04,
+      "sourceHash": "140a0118a0722a309c959446a482238e8f31074d0c101bc11d80c8d8da3c02fd"
+    },
+    {
+      "file": "README.md",
+      "startLine": 361,
+      "endLine": 406,
+      "score": 0.04,
+      "sourceHash": "448fbdea33f6d8eba2ac75dc56011ca8268269f17a3d317f630e566d5dd7416f"
+    },
+    {
+      "file": "_examples/fileserver/main.go",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.03,
+      "sourceHash": "8b9f9fa42bc12663090fd1e47f864c5d3c10e5a74212b310eda4c3af709f98b9"
+    },
+    {
+      "file": "_examples/graceful/main.go",
+      "startLine": 51,
+      "endLine": 82,
+      "score": 0.03,
+      "sourceHash": "9c8e510ebda7f64e22b0b502560435166d30a91800ba7407874eb4e092cc3f83"
+    },
+    {
+      "file": "_examples/limits/main.go",
+      "startLine": 51,
+      "endLine": 92,
+      "score": 0.03,
+      "sourceHash": "84ef47b0b8a8e73e0aa6f7b128305c07dd648f3676cee26cd4141dfbade357a7"
+    },
+    {
+      "file": "_examples/rest/go.mod",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.03,
+      "sourceHash": "0d1fad2e2695300c0bf9614aa82ce19b6e1a33ca488b10da106c78026d7955e8"
+    },
+    {
+      "file": "_examples/rest/routes.md",
+      "startLine": 147,
+      "endLine": 159,
+      "score": 0.03,
+      "sourceHash": "d1cf83fc338d6c0a8a3dfdd26c232f24bdf2a88c3bb98f5770c8647d6e35f635"
+    },
+    {
+      "file": "_examples/todos-resource/todos.go",
+      "startLine": 51,
+      "endLine": 53,
+      "score": 0.03,
+      "sourceHash": "0b70bc7988bc40331a584978d17c9e0215d11850f624ca1f92bd2499617c5459"
+    },
+    {
+      "file": "_examples/versions/main.go",
+      "startLine": 101,
+      "endLine": 141,
+      "score": 0.03,
+      "sourceHash": "d3371e39b915799ef99e079b078c241ee2c1619afd8b1afd59b93e4262ec6995"
+    },
+    {
+      "file": "_examples/versions/presenter/v3/article.go",
+      "startLine": 1,
+      "endLine": 39,
+      "score": 0.03,
+      "sourceHash": "d02d2bb3fa734af497192fd9b4ba5770560f9bc3779ec8e1ff63716388e7d8a8"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.03,
+      "sourceHash": "539cc45a3bdc4ea40224f86ea8e3381878e63714ebf6373d07a389ce8eebb86a"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 51,
+      "endLine": 95,
+      "score": 0.03,
+      "sourceHash": "bf71428ba17e23b046f34df3d51e0ad102af43f52547014dc524900794619723"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 96,
+      "endLine": 145,
+      "score": 0.03,
+      "sourceHash": "742e06370a4803d0e09cf65608859128254a6fed6aedd316986c9acd1d6e3593"
+    },
+    {
+      "file": "chi.go",
+      "startLine": 101,
+      "endLine": 138,
+      "score": 0.03,
+      "sourceHash": "4a09890774dd78fc6ba0ec5e983b6bbb518473615c3a0c2a0aede0d10c658c0d"
+    },
+    {
+      "file": "context.go",
+      "startLine": 42,
+      "endLine": 80,
+      "score": 0.03,
+      "sourceHash": "0f3494d62f38ce7ace55747e38a6226d49616d31c6ceca5e7ed5d4239a320632"
+    },
+    {
+      "file": "context.go",
+      "startLine": 156,
+      "endLine": 165,
+      "score": 0.03,
+      "sourceHash": "defb54686e8ae7ccdb08b0145a4e8833752c4fff023dfb61edc50cf1425c5367"
+    },
+    {
+      "file": "middleware/compress_test.go",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.03,
+      "sourceHash": "548079702e69f9d3a3e6907175f4431185d58f448163b524deed3053025c766e"
+    },
+    {
+      "file": "middleware/content_encoding_test.go",
+      "startLine": 51,
+      "endLine": 82,
+      "score": 0.03,
+      "sourceHash": "f4b89518d3cc4e8eef2df747ed0349a273caf16642197797579457586c89532c"
+    },
+    {
+      "file": "middleware/nocache.go",
+      "startLine": 1,
+      "endLine": 30,
+      "score": 0.03,
+      "sourceHash": "5c412c9e89523d2ee23a243bef677fae2437739cf24a3cc9a9242baa3c5852c4"
+    },
+    {
+      "file": "middleware/recoverer.go",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.03,
+      "sourceHash": "cb9d4efcc85b427803fdf01b163c24856d2b8c26fd17d89b4b39625322119637"
+    },
+    {
+      "file": "middleware/recoverer.go",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.03,
+      "sourceHash": "9804dd2c64792d059dda1f357ddf0a1c91400a465ea604ad74e1d901c0f17f4a"
+    },
+    {
+      "file": "middleware/request_id_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.03,
+      "sourceHash": "c91688a29351b5613c93fa2e44603733e7fe9545463426693134521480cc7ab5"
+    },
+    {
+      "file": "middleware/request_id.go",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.03,
+      "sourceHash": "58d4be6f9cf4a8cfdd3dbadebc1795a87ce8af077878d3f349afd868a10bfe35"
+    },
+    {
+      "file": "middleware/route_headers.go",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.03,
+      "sourceHash": "f6c026d7fe274dd96752dfc6a3f08ac2e3e60a5befc6d7e1a240e0ecbf490348"
+    },
+    {
+      "file": "middleware/route_headers.go",
+      "startLine": 48,
+      "endLine": 76,
+      "score": 0.03,
+      "sourceHash": "1d9f0cc14e6aa3cdf52cdda1dc975a03c97ffd1e687aeb4ab49bf14d1e4e339c"
+    },
+    {
+      "file": "middleware/route_headers.go",
+      "startLine": 115,
+      "endLine": 151,
+      "score": 0.03,
+      "sourceHash": "928b5092d36c76d4ee4616aad91e2a5d8abdb95708cee7fc6719925887792ae0"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.03,
+      "sourceHash": "8d1b15ec57e1e1544fddff4ed3659cbad349bada9bb115a2cfdd31ff046a7a40"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.03,
+      "sourceHash": "f3ee4d80f788b9e72b1d40127edab57c08925f5f2eb56ecd7ad2e1778637c841"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.03,
+      "sourceHash": "c40da3f2c812a5313f219e051fb3fe61cf890ba9ea9d48105d33f1ac2c6a97c0"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 151,
+      "endLine": 200,
+      "score": 0.03,
+      "sourceHash": "834eab5e9c47a00b1f0614fd5afc7561b8d48705f96664ad5f5d41b64c5e1da1"
+    },
+    {
+      "file": "middleware/sunset_test.go",
+      "startLine": 51,
+      "endLine": 85,
+      "score": 0.03,
+      "sourceHash": "ca322941fb2ba0d915062ccaaf5f26449b4915ae545a922e0d95c7f8977bd0b7"
+    },
+    {
+      "file": "middleware/sunset_test.go",
+      "startLine": 86,
+      "endLine": 104,
+      "score": 0.03,
+      "sourceHash": "998ba4150832e84565585bb3f60e7251d5a9a83f6499759b807da088f57500bd"
+    },
+    {
+      "file": "middleware/terminal.go",
+      "startLine": 1,
+      "endLine": 36,
+      "score": 0.03,
+      "sourceHash": "bac5568c3d8666ae40789eae7045b80b92d7dbfa4309e6f6f20b640e3ce133dc"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 51,
+      "endLine": 89,
+      "score": 0.03,
+      "sourceHash": "d9542353a416630229a57244983ae6b205f293795be389106fe67e2cb1a9389e"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 90,
+      "endLine": 139,
+      "score": 0.03,
+      "sourceHash": "5cb0ff7f55f85437a9160eb1392f3cb6a2f7255f3de2306c3ba812ba583da527"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 140,
+      "endLine": 189,
+      "score": 0.03,
+      "sourceHash": "39da464a1c3fa49b9c4e99f30342fda05f3e5b08b0506e15d12c7002ea832401"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 240,
+      "endLine": 289,
+      "score": 0.03,
+      "sourceHash": "3b369f270887dea65f05d930e278da08635d936d35ebec9f30d2c2ea7bd24de4"
+    },
+    {
+      "file": "middleware/url_format_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.03,
+      "sourceHash": "610db48854c0b9d13e0a4f474ea1b6da56b4e5853dd9ab87aaa127421dd116c5"
+    },
+    {
+      "file": "middleware/url_format_test.go",
+      "startLine": 51,
+      "endLine": 69,
+      "score": 0.03,
+      "sourceHash": "9ed0a0de165f86929a97ab31bced4d284ec5dc0e4bfb6d489929151b42b4839d"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 47,
+      "endLine": 96,
+      "score": 0.03,
+      "sourceHash": "27c2ba0c73d08696b4528a41e871d4aff39ed8b19abad1a7519ca51e51ef3821"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 97,
+      "endLine": 142,
+      "score": 0.03,
+      "sourceHash": "2812b26b3bca720b75ae664d0f7066333f2b347f7fa3aa1af4ade054c9553625"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 187,
+      "endLine": 235,
+      "score": 0.03,
+      "sourceHash": "c60484841eacd269ec4d7e779fc8ce8aeb7a66648dfc58a2add02ec3af2162c9"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 201,
+      "endLine": 245,
+      "score": 0.03,
+      "sourceHash": "677d729e921838359b1fea85db3f83bfdfd4d11d6407ea035240691eb84c89de"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 246,
+      "endLine": 283,
+      "score": 0.03,
+      "sourceHash": "86105255065025e692d9fa843751cc0a2ff8ffbb534c965d397993129ef5402d"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 317,
+      "endLine": 366,
+      "score": 0.03,
+      "sourceHash": "383bbc6fbf4914309d2c2af33c0f4bdd32eea45c0d32851e5e21428094778fd0"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 367,
+      "endLine": 394,
+      "score": 0.03,
+      "sourceHash": "738f27ed761c1d28f14bfadf690b9f2988019011eaf4a018a0542c337a43e25f"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 432,
+      "endLine": 481,
+      "score": 0.03,
+      "sourceHash": "08056286564a73525b08fd7424a60090838bc893dedcced42b4a7683abada7e3"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 582,
+      "endLine": 631,
+      "score": 0.03,
+      "sourceHash": "6c2e83d2b338b3d8ee7c4709ebecdcf1888397d826e4b17d2baa5ae231e866a1"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 682,
+      "endLine": 725,
+      "score": 0.03,
+      "sourceHash": "3d8c431ead532026433f0b38226fb426a16a229b1d87d65c446bfd29cc7fc7df"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 726,
+      "endLine": 775,
+      "score": 0.03,
+      "sourceHash": "420e6c5b9a5aeab4cf1d96aee2c112aa32d1637d0a96367d119b2a2e52887d1e"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 776,
+      "endLine": 820,
+      "score": 0.03,
+      "sourceHash": "dfdb3b4509dbb8810fac57ef02527aed1e9bbd749f3f4e0282bfa3f11797a966"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 821,
+      "endLine": 870,
+      "score": 0.03,
+      "sourceHash": "a12e6637469bfba796320cb78b99d6d4fe76240c66c2a32647fce113775f66e5"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 948,
+      "endLine": 997,
+      "score": 0.03,
+      "sourceHash": "161f719764d7653510395fa1fd9972e031394e66d2fc9bac24b81805ceab7b35"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1048,
+      "endLine": 1087,
+      "score": 0.03,
+      "sourceHash": "a75741e73315ed11c84954b3c438bf017f783a46a5d2c181cb7d09f0ba96aca4"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1088,
+      "endLine": 1137,
+      "score": 0.03,
+      "sourceHash": "c42484c4c126b1090eb88195021e6908a57224692175ac65d30bda2bd909aa02"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1138,
+      "endLine": 1168,
+      "score": 0.03,
+      "sourceHash": "9ed5257af7c343e3d6a0fe82d1d0cd575cfd8cf6f695476a525e7b0dd5a4bf04"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1169,
+      "endLine": 1218,
+      "score": 0.03,
+      "sourceHash": "0138b9d079e7023cea4745114e76e4d88a31815741c264a0d16242f75a4df1dd"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1219,
+      "endLine": 1268,
+      "score": 0.03,
+      "sourceHash": "efec3390b2b285700183b393d317a25bdb200cc6b383bf3e43052c4b1bcf4781"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1305,
+      "endLine": 1354,
+      "score": 0.03,
+      "sourceHash": "0932a51fffdb0ab959ea7ad30d605014d3c9d85a3adffa9545b2335c52918216"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1355,
+      "endLine": 1383,
+      "score": 0.03,
+      "sourceHash": "3a55a481292f28d82d1eadcceb0cd71174fc38dbc0543a5f4dd5a215022c360a"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1384,
+      "endLine": 1433,
+      "score": 0.03,
+      "sourceHash": "afccfc47a86ddb5658b1d2c201515ae7862b60d9275a1df801db6529142fc5e8"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1434,
+      "endLine": 1476,
+      "score": 0.03,
+      "sourceHash": "ae175b775af32ea0d30081db60803e52ffbf86323ded07d35a57049a854f6f1a"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1843,
+      "endLine": 1892,
+      "score": 0.03,
+      "sourceHash": "8585d08365a34db25a38dbf978ed880b1893a4227047165d7e9adf7d8637f8fd"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1993,
+      "endLine": 2042,
+      "score": 0.03,
+      "sourceHash": "4e78e78ea8dc07d3de3ba98cd521962025431ecda9bc27f2c0f8bab9466c3e07"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 50,
+      "endLine": 93,
+      "score": 0.03,
+      "sourceHash": "80614aed33957a72c6f56de5486fdfbe14f0cb395b755bfdd5f80b46fd058617"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 94,
+      "endLine": 140,
+      "score": 0.03,
+      "sourceHash": "749d077b110e168ffa37192f4c42337cbf712c5ee0bcc87d121df8158e8d4d36"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 141,
+      "endLine": 188,
+      "score": 0.03,
+      "sourceHash": "8300e2a0a0d4fd4648617e085a551b8d643b5e328a0586d77938605924c3e36e"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 221,
+      "endLine": 264,
+      "score": 0.03,
+      "sourceHash": "eb26ea516a633bbff8bb4b84988a4ce802d71b86c4598d8c00b9636e7cc8891b"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 265,
+      "endLine": 314,
+      "score": 0.03,
+      "sourceHash": "c77fbbf3399c79088a9aaaf96f5936a4a81f2022e39f22dee5b6586a30dd9157"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 315,
+      "endLine": 358,
+      "score": 0.03,
+      "sourceHash": "abf39a9eb3d9fe96797599f017313549b4347bb582514b560ab8b477ab0383ca"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 402,
+      "endLine": 444,
+      "score": 0.03,
+      "sourceHash": "8204728c635a49f7c174d8a9d41d0904cb7a105b3013ab4a1f9e8ac72238bda4"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 445,
+      "endLine": 489,
+      "score": 0.03,
+      "sourceHash": "e2a7df2d0a4d6fbac2371ad282c4c6774f62a4e39d84edfaf6a7f6dc3d1b9e0c"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 490,
+      "endLine": 529,
+      "score": 0.03,
+      "sourceHash": "90d8b1d60934a44bcec8027621cfca646315a4a54d4f6db74eee99ddf31f18f7"
+    },
+    {
+      "file": "path_value_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.03,
+      "sourceHash": "a03a976a999e4431789cd4952de1629def30edf44b65398460fb4ed8df05eaaf"
+    },
+    {
+      "file": "README.md",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.03,
+      "sourceHash": "a43b06dcaf11b9ce7d758f89d796fecc3fc38db0f8eeca44ad45829d646f7ef8"
+    },
+    {
+      "file": "README.md",
+      "startLine": 49,
+      "endLine": 82,
+      "score": 0.03,
+      "sourceHash": "775114fed04beca1700e25eb550052250b9386b8a81410acc92a4db4c53a4246"
+    },
+    {
+      "file": "README.md",
+      "startLine": 83,
+      "endLine": 126,
+      "score": 0.03,
+      "sourceHash": "be954b127317549aa2d06257074af9bfb83a04841c6fcd2b964a063bf7261cfa"
+    },
+    {
+      "file": "README.md",
+      "startLine": 175,
+      "endLine": 224,
+      "score": 0.03,
+      "sourceHash": "3ef1ee0167cc45583d6a80aa219df4232bb3274b8416431a94723e1d1810d5c9"
+    },
+    {
+      "file": "README.md",
+      "startLine": 407,
+      "endLine": 440,
+      "score": 0.03,
+      "sourceHash": "b8cb1e22e8a3f96359d78337488802c9698631d62789597e426e94204c052e19"
+    },
+    {
+      "file": "README.md",
+      "startLine": 441,
+      "endLine": 486,
+      "score": 0.03,
+      "sourceHash": "c024a4bf32add8fc6c038672834961458162cd0ab579725bb43e4c1417840276"
+    },
+    {
+      "file": "README.md",
+      "startLine": 487,
+      "endLine": 503,
+      "score": 0.03,
+      "sourceHash": "c3713c6044d3ef38915d08bd4fe6cfc53c8e4226c365d82f8b14a76c8ba6124b"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.03,
+      "sourceHash": "299cd8bb07f721d0a01679021aa3d3da56cfce5bd59f11558b08f0436b1f06cc"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.03,
+      "sourceHash": "d25716188eff6129c46e0298faf6e9e3a9b19e5f56baae63df4451ce547fe207"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 151,
+      "endLine": 200,
+      "score": 0.03,
+      "sourceHash": "801b6ac83a1952cee57ba0e6c239373658ef2cd461a81db94c625ab574a36cc5"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 201,
+      "endLine": 250,
+      "score": 0.03,
+      "sourceHash": "1cb774f0c5dbe45f7a4ee064bfdc91878bb92f1e8d13a4223a25f8dfbd536579"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 447,
+      "endLine": 486,
+      "score": 0.03,
+      "sourceHash": "3a5603297258ebaeb6f9e374864b819eeac1c292279e43058069baffc1240e9e"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.03,
+      "sourceHash": "9f2809e72c86f881f70f4635c726b490a0e027390e88c13781e933785b2cf95c"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 86,
+      "endLine": 127,
+      "score": 0.03,
+      "sourceHash": "56574a4f7571bfea740b61c5597a1c83287d93541cb93eea66a798f527682525"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 228,
+      "endLine": 277,
+      "score": 0.03,
+      "sourceHash": "4fe62f229c573903d70c2703bbb6dfb9c76d2677057d6e355b43e0a45abaa3f8"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 759,
+      "endLine": 803,
+      "score": 0.03,
+      "sourceHash": "9ffeddb9ce631462b8f8440fd483a581620cffc0b18321faaa4a6bc5afd4b637"
+    },
+    {
+      "file": "_examples/custom-handler/main.go",
+      "startLine": 1,
+      "endLine": 35,
+      "score": 0.02,
+      "sourceHash": "d699e6ce3a01267ae49cbb95aff872b9cd020f2ff32f4527d27d961d80722e3b"
+    },
+    {
+      "file": "_examples/custom-method/main.go",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.02,
+      "sourceHash": "463f480be56305b2345e34b0057076d11005aac2065359a4754a4773daa78fdf"
+    },
+    {
+      "file": "_examples/fileserver/data/notes.txt",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.02,
+      "sourceHash": "1b072a9b2a405b3112ee5030a5385eb2ae7ec91819c95a6fd96ef763be7bb512"
+    },
+    {
+      "file": "_examples/fileserver/main.go",
+      "startLine": 46,
+      "endLine": 65,
+      "score": 0.02,
+      "sourceHash": "878be885a6f650474099d01cfff76d0061c2fa841492f61c3b1a6e914debed68"
+    },
+    {
+      "file": "_examples/hello-world/main.go",
+      "startLine": 1,
+      "endLine": 21,
+      "score": 0.02,
+      "sourceHash": "a6864a284d2f46c71e63478c8eba403f0ef57265af9f9754a47e0d0228d9637c"
+    },
+    {
+      "file": "_examples/logging/main.go",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.02,
+      "sourceHash": "b6c2ae1c114f1d1b749676b0f6605428f616100fc8578fc005fdda742b2f5758"
+    },
+    {
+      "file": "_examples/README.md",
+      "startLine": 1,
+      "endLine": 24,
+      "score": 0.02,
+      "sourceHash": "24f7dab0201f93295827968e3faa130b42d294a871e218a62ddde97fe5b512de"
+    },
+    {
+      "file": "_examples/router-walk/main.go",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.02,
+      "sourceHash": "75e48d6c74b54ada509298039d1c6aadc4552bf6f7a0d03a7d37dcf7b61d1dcf"
+    },
+    {
+      "file": "_examples/todos-resource/todos.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "9f3ba5aa0b7b8f428b3774f8391e48ee26b11791b6692b38be73a335346975d1"
+    },
+    {
+      "file": "_examples/todos-resource/users.go",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.02,
+      "sourceHash": "53ded0ccfa086e572e9e738c5ec1fc7bacfaddcc51a5ca70c9f2abce00f085fc"
+    },
+    {
+      "file": "_examples/versions/data/article.go",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.02,
+      "sourceHash": "f1146644331f11362c91b0493f25c312fa5191bce59d549826ef0fcfc660eaa5"
+    },
+    {
+      "file": "_examples/versions/data/errors.go",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.02,
+      "sourceHash": "b65997f7350a6ac3c6210ede98414e1feed055ca4b1e979930a4e189dafb72ec"
+    },
+    {
+      "file": "_examples/versions/go.mod",
+      "startLine": 1,
+      "endLine": 10,
+      "score": 0.02,
+      "sourceHash": "a36b9e1ec47303ca4c01d7ad1bfc0f37b3574617d29d3f04a317c0adbc6a3bd8"
+    },
+    {
+      "file": "_examples/versions/presenter/v1/article.go",
+      "startLine": 1,
+      "endLine": 22,
+      "score": 0.02,
+      "sourceHash": "241f3fe6c0e40962932411682e867bc79061600f1a3847768daabea72b2e4544"
+    },
+    {
+      "file": "_examples/versions/presenter/v2/article.go",
+      "startLine": 1,
+      "endLine": 30,
+      "score": 0.02,
+      "sourceHash": "4b27241cf8890ff0c70f58cacf77eea5510a4cd068db8909180b856dce534068"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.02,
+      "sourceHash": "55f2ab39c5e30b6e592e940d49f3baab7cc67285cbf32d2be5f097aaea18a149"
+    },
+    {
+      "file": ".gitignore",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.02,
+      "sourceHash": "a77678de652843bb194c9de561f9d86c24a0db95b8a609aebd0d0e85b5c83842"
+    },
+    {
+      "file": "chain.go",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.02,
+      "sourceHash": "cfb15db4608ce6933b7adddd03b7e2a070448295c267ade14eeaf3390d34d784"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 146,
+      "endLine": 194,
+      "score": 0.02,
+      "sourceHash": "334faad0c87727157a877b2610ba974337f7f10ec8cf55d9cef43babe28da6e1"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 195,
+      "endLine": 243,
+      "score": 0.02,
+      "sourceHash": "24c3a7b442db72a9797b183abf96fa81fad7d84b89948356978dee0821c93a72"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 244,
+      "endLine": 276,
+      "score": 0.02,
+      "sourceHash": "c7e9ecc0248c4a93a729c20eb5a9734fc71f135be0f5798791334a07fd889dd1"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 277,
+      "endLine": 312,
+      "score": 0.02,
+      "sourceHash": "c9ae8f339febf94b82097435aef19eb1673b3d1880075fdc2038cb3d31e70540"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 313,
+      "endLine": 341,
+      "score": 0.02,
+      "sourceHash": "5138b71e8a522a0b3c79538db3fa9f7f0cd201299c851df8c2611777fa7754c2"
+    },
+    {
+      "file": "context_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "c0154e9e1579bf7591d45b5bd76a95f56daf06658a9b412c5fcdee9ad7ee45c5"
+    },
+    {
+      "file": "context_test.go",
+      "startLine": 51,
+      "endLine": 93,
+      "score": 0.02,
+      "sourceHash": "5d81b7a780a44813f5cb36d1f9b9e24cae225f0cd3bff8194d5d20354461b8ef"
+    },
+    {
+      "file": "context.go",
+      "startLine": 1,
+      "endLine": 41,
+      "score": 0.02,
+      "sourceHash": "03970a7427b916a21a42f3688c0b59cc2381142e06c2e46c3c4ebeadb75418a6"
+    },
+    {
+      "file": "context.go",
+      "startLine": 81,
+      "endLine": 108,
+      "score": 0.02,
+      "sourceHash": "71fc05a54ae1b56d7ff0042538f9213df526e29d32f7c4eaa206ca5d36e9f9cf"
+    },
+    {
+      "file": "context.go",
+      "startLine": 109,
+      "endLine": 155,
+      "score": 0.02,
+      "sourceHash": "fe1bf6ba28c636edb27a5536ef7def969b52121c110a99d46e756ad5b9d7c90a"
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "startLine": 1,
+      "endLine": 31,
+      "score": 0.02,
+      "sourceHash": "8e55ed415082f0d89b7b5b2c095022b9d1d97aa1b9c71e9d61cb642b0730dbba"
+    },
+    {
+      "file": "go.mod",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.02,
+      "sourceHash": "7f1ecb553c4ce44bfe6682908107be4c695601f8b773e2c456ddb7cf1631de85"
+    },
+    {
+      "file": "LICENSE",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.02,
+      "sourceHash": "f1a8e7b85bd75dd7af66d829fba1a39c2ddedf5480e7176b17f13ddf1494d4dd"
+    },
+    {
+      "file": "Makefile",
+      "startLine": 1,
+      "endLine": 22,
+      "score": 0.02,
+      "sourceHash": "386e1f0a0e54b5ac7027d2548eca145ab8bf2735af545627bfdae26d1fa7f148"
+    },
+    {
+      "file": "middleware/compress_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "64039c7355cd7548f5f9338d9cd9c42b58afc63047179a2cbf009e0a4a2fc2a3"
+    },
+    {
+      "file": "middleware/compress_test.go",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.02,
+      "sourceHash": "eb33c0fa5aa0b8b87bc66720fe31bd0bc032b690a5ed36423471f7b03fff7367"
+    },
+    {
+      "file": "middleware/compress_test.go",
+      "startLine": 151,
+      "endLine": 196,
+      "score": 0.02,
+      "sourceHash": "2c4b77dd98013cbfcbc792a243384b8ddc824f10288c39e1736355a26c22d4c9"
+    },
+    {
+      "file": "middleware/compress_test.go",
+      "startLine": 197,
+      "endLine": 219,
+      "score": 0.02,
+      "sourceHash": "1d9fe567efefccb9499d3f8944db27e70da14007677d762b19c0eb02830b2bec"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.02,
+      "sourceHash": "8f6d4561a447a0ae5e9be94408e9632d8b80df1a26869b5f162196293b04ecb9"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 46,
+      "endLine": 95,
+      "score": 0.02,
+      "sourceHash": "8a0782f548a33123b7ca865702810fd0c941c2c77b2efe0a92379c9ad68d28ae"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 96,
+      "endLine": 132,
+      "score": 0.02,
+      "sourceHash": "6187ff8650c44b9e5e14aa5b71a92a7ba1d1e61bb89964cf3ba6872b6b7d5bb7"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 133,
+      "endLine": 182,
+      "score": 0.02,
+      "sourceHash": "c0f59a132d529b2f0ea25ceec51981c1b307e0d06dc993f747560bd1cdc7bf29"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 183,
+      "endLine": 212,
+      "score": 0.02,
+      "sourceHash": "4cdb24c53c6f311c2f49ec14a374b4c68fa3a92144e598adc2dd49ce60afa790"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 258,
+      "endLine": 295,
+      "score": 0.02,
+      "sourceHash": "d8bbd7cf8b622c839fd4402c7842d94b450556e94d7232149265c670b9d5d503"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 296,
+      "endLine": 342,
+      "score": 0.02,
+      "sourceHash": "ec5cb81a067ed0a7696c545b65396a96feaaa198b94454384c2efbde89984ea7"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 343,
+      "endLine": 391,
+      "score": 0.02,
+      "sourceHash": "f16a7a771d1bcc90ec4d9049401a964d629cb9ba49c35c2f8497ea48c38ffabe"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 392,
+      "endLine": 398,
+      "score": 0.02,
+      "sourceHash": "24b850dd7e38f05248fd4bfa0ff8eb9f71ea770a7dd2f56961429e93bb51f2dd"
+    },
+    {
+      "file": "middleware/content_charset_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "672c64eea600920b1ab4e2b5c51d9ba0c7777e2bbccffe73b14ca0e3b1b9223f"
+    },
+    {
+      "file": "middleware/content_charset_test.go",
+      "startLine": 51,
+      "endLine": 93,
+      "score": 0.02,
+      "sourceHash": "2576aa29c798dda89dced21e7f668391e3d1dff35ae0e23a80679a35611b6034"
+    },
+    {
+      "file": "middleware/content_charset_test.go",
+      "startLine": 94,
+      "endLine": 127,
+      "score": 0.02,
+      "sourceHash": "09664bbcea1819ee97b6932550725023d99f98632d7bc0e89babab10dc93c7a4"
+    },
+    {
+      "file": "middleware/content_charset.go",
+      "startLine": 41,
+      "endLine": 51,
+      "score": 0.02,
+      "sourceHash": "fb0ac0c9c3fe45220316ad68ce2f69f39756ad152696a846d8774c51a467ea1c"
+    },
+    {
+      "file": "middleware/content_encoding_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "5de0aaf5f36089f8f87e9ac7711e89ce489419a7bd291c0e95970b3b323a85f6"
+    },
+    {
+      "file": "middleware/content_type_test.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "86709d2b0ed280d6084adf84ff66db864011c643866a3e403251b53f550e47b7"
+    },
+    {
+      "file": "middleware/content_type_test.go",
+      "startLine": 51,
+      "endLine": 82,
+      "score": 0.02,
+      "sourceHash": "7880d734277670b15fe91289d07d2224e4fb1dd896109e5f5cecf58c53629d52"
+    },
+    {
+      "file": "middleware/get_head.go",
+      "startLine": 1,
+      "endLine": 39,
+      "score": 0.02,
+      "sourceHash": "1d64cfdb146024529a9bfd947625da5eadc8fd1ec0d8b94341730d74d1fc8902"
+    },
+    {
+      "file": "middleware/heartbeat.go",
+      "startLine": 1,
+      "endLine": 26,
+      "score": 0.02,
+      "sourceHash": "07e8da7f21aca2b25900908dd5daec39f937c0ed7daeaa837ad4c93942ecd4e1"
+    },
+    {
+      "file": "middleware/logger_test.go",
+      "startLine": 1,
+      "endLine": 37,
+      "score": 0.02,
+      "sourceHash": "d713754be6633c2f2a37e8754934b69da0cdf87de51df25a17cac114e6293a51"
+    },
+    {
+      "file": "middleware/logger_test.go",
+      "startLine": 38,
+      "endLine": 51,
+      "score": 0.02,
+      "sourceHash": "0a18de652e7b740dc64942aae435916dc9c29394f214cc9402cdf5c996d03b48"
+    },
+    {
+      "file": "middleware/logger.go",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.02,
+      "sourceHash": "b678af789b826abe6cd57046a177e4cc9b63395b7c503bc05e70315c31900d1d"
+    },
+    {
+      "file": "middleware/logger.go",
+      "startLine": 43,
+      "endLine": 90,
+      "score": 0.02,
+      "sourceHash": "460f6ed4ed2e2d3560d3122c5ac338667a64742eca6ee8d844439a7b9b0ce0e1"
+    },
+    {
+      "file": "middleware/logger.go",
+      "startLine": 91,
+      "endLine": 133,
+      "score": 0.02,
+      "sourceHash": "76c03a9cbc7b0238aa1dd283baaf8f03427b23ea78851a6c10567c8642e30a8d"
+    },
+    {
+      "file": "middleware/logger.go",
+      "startLine": 134,
+      "endLine": 172,
+      "score": 0.02,
+      "sourceHash": "e1867c73b047001d4b3778d63beb1479ef89c3ab6e34ac0b9bc9b2c4083db72d"
+    },
+    {
+      "file": "middleware/maybe.go",
+      "startLine": 1,
+      "endLine": 18,
+      "score": 0.02,
+      "sourceHash": "230ef8fbf8ec5be4a16e6988cbda1c04f34f7fdb5af15370e40345cc70c96ee5"
+    },
+    {
+      "file": "middleware/middleware.go",
+      "startLine": 1,
+      "endLine": 23,
+      "score": 0.02,
+      "sourceHash": "9ca24321a05dc0a8951b0d35ff0dd9eb3726941728429f88eab7e716b972f1f7"
+    },
+    {
+      "file": "middleware/nocache.go",
+      "startLine": 31,
+      "endLine": 59,
+      "score": 0.02,
+      "sourceHash": "f048c6a27386a3b84cee5a9fd26514468f2fab250bdd3ee4765c600b5df8b41b"
+    },
+    {
+      "file": "middleware/page_route.go",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.02,
+      "sourceHash": "e1108a32c8cdc6a16b9f858881d5e638b3ccebbe775a0feb906787f2c05844d4"
+    },
+    {
+      "file": "middleware/profiler.go",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.02,
+      "sourceHash": "3de01f6bd2c4b2690bd7b933ea8947c32b66155f2556170067dc95b5f1ba9949"
+    },
+    {
+      "file": "middleware/realip_test.go",
+      "startLine": 1,
+      "endLine": 34,
+      "score": 0.02,
+      "sourceHash": "48a60ecc4c881e22a72d537f79dc5cca641cf7b0b39a4b856d761b8f08dd7304"
+    },
+    {
+      "file": "middleware/realip_test.go",
+      "startLine": 35,
+      "endLine": 67,
+      "score": 0.02,
+      "sourceHash": "2c3b080b5d146b29f7a23c1d379684cd0d3c5efdd2ce018dd5f7e625dae889b9"
+    },
+    {
+      "file": "middleware/realip_test.go",
+      "startLine": 68,
+      "endLine": 115,
+      "score": 0.02,
+      "sourceHash": "cc759f958b87c7d071aa7c220f533c3e662f6b77595e1b713bf0ddc84253f344"
+    },
+    {
+      "file": "middleware/realip.go",
+      "startLine": 1,
+      "endLine": 41,
+      "score": 0.02,
+      "sourceHash": "a2f462eb0524a12d81d6e12c63eaee2ba2b023e04c68dbbbb6e3ab1963fa19d8"
+    },
+    {
+      "file": "middleware/realip.go",
+      "startLine": 42,
+      "endLine": 60,
+      "score": 0.02,
+      "sourceHash": "63e3c8d62176e415e71438fb5889dc6f694b42d671a1c66f373566de06e334f0"
+    },
+    {
+      "file": "middleware/recoverer_test.go",
+      "startLine": 1,
+      "endLine": 43,
+      "score": 0.02,
+      "sourceHash": "cc107357367b0a3cc7e63a17f1dd65bbe0e6a10c0dcf9ac1b87dba546947b183"
+    },
+    {
+      "file": "middleware/recoverer_test.go",
+      "startLine": 44,
+      "endLine": 67,
+      "score": 0.02,
+      "sourceHash": "414a8d61544e8dff29a70d4693733c508db10a4c400b6d8a7b5ffda1831253dd"
+    },
+    {
+      "file": "middleware/recoverer.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "950cfeb535eab2dbc25bc7e3524ca6d34eb20c089c806237bf52717d4e5a1fc7"
+    },
+    {
+      "file": "middleware/recoverer.go",
+      "startLine": 151,
+      "endLine": 200,
+      "score": 0.02,
+      "sourceHash": "f03fddd66f6a03d919ba22ff193a64d457adb46df1d8bd4dbc479fbc47c4019a"
+    },
+    {
+      "file": "middleware/request_id_test.go",
+      "startLine": 51,
+      "endLine": 71,
+      "score": 0.02,
+      "sourceHash": "0564bc7e4285fcfb7cc48b1a6ecc6540c4597d138b9daf88e28b5ce35bcc6c99"
+    },
+    {
+      "file": "middleware/request_id.go",
+      "startLine": 46,
+      "endLine": 92,
+      "score": 0.02,
+      "sourceHash": "8ad1726bc0b57a35c06c2e46d9534e516b216df471d90ce94b7d801024449d5c"
+    },
+    {
+      "file": "middleware/request_id.go",
+      "startLine": 93,
+      "endLine": 96,
+      "score": 0.02,
+      "sourceHash": "aa75356e6e0f36837511cb3664085193ff1ea36fd8e2770417797eb75615aa7c"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 201,
+      "endLine": 240,
+      "score": 0.02,
+      "sourceHash": "220c900c5a91f6e794b6814a05dc26377d1cf344e34b43ce91230fac04f29cdc"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 241,
+      "endLine": 274,
+      "score": 0.02,
+      "sourceHash": "ca149b5d414255e3e1b89944017280d7131c37d41010a9c885fea975c567e7e5"
+    },
+    {
+      "file": "middleware/strip.go",
+      "startLine": 35,
+      "endLine": 70,
+      "score": 0.02,
+      "sourceHash": "7370a6a33eab318b794105e75c334186dd224f64ea9e6f3bb0e4b4ee2afe8683"
+    },
+    {
+      "file": "middleware/sunset.go",
+      "startLine": 1,
+      "endLine": 25,
+      "score": 0.02,
+      "sourceHash": "c12bbbe8f542f5b53ebbbdd6e2922b7293f8163cc1360e12cfe4911964052d71"
+    },
+    {
+      "file": "middleware/supress_notfound.go",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.02,
+      "sourceHash": "51e793163705d2c9d01ddb175ae7f6d1030c771f938a99d168d7b10603c02925"
+    },
+    {
+      "file": "middleware/terminal.go",
+      "startLine": 37,
+      "endLine": 63,
+      "score": 0.02,
+      "sourceHash": "0e2c1bfe5dc5d7f488011a58ed599fae02e26c54e11fc80be511a2e7ee51d2ac"
+    },
+    {
+      "file": "middleware/throttle.go",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.02,
+      "sourceHash": "3f26d4adeb007c04b90269f78d1b77e8464a4223c22451843a5d76f0580a0eab"
+    },
+    {
+      "file": "middleware/throttle.go",
+      "startLine": 43,
+      "endLine": 92,
+      "score": 0.02,
+      "sourceHash": "3995cb8eb3a573dc93c1e5554282ebb9cf8a4f656283e8aeca0fa359f6344a10"
+    },
+    {
+      "file": "middleware/throttle.go",
+      "startLine": 93,
+      "endLine": 140,
+      "score": 0.02,
+      "sourceHash": "a72ea6b504dc8f0792c3e17c4126be355434e02299616e1aa44f1166072c7345"
+    },
+    {
+      "file": "middleware/url_format.go",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.02,
+      "sourceHash": "b94eac6f5d98d3b5e248e0d564b8d525ee67cbd1dcaecaaabe9a536c18daca8a"
+    },
+    {
+      "file": "middleware/url_format.go",
+      "startLine": 51,
+      "endLine": 75,
+      "score": 0.02,
+      "sourceHash": "4e4abf1ba3f7951cdee89468772e9bd93b6e1a4b709ac840483a10ae9a021cfb"
+    },
+    {
+      "file": "middleware/value.go",
+      "startLine": 1,
+      "endLine": 17,
+      "score": 0.02,
+      "sourceHash": "18113220eff9ffe4b2e2710e86eaabb51bfb0f89d634cb756afed86401a1aaf7"
+    },
+    {
+      "file": "middleware/wrap_writer_test.go",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.02,
+      "sourceHash": "7093c820b24d62c803a0f98d96121906913d00f7f64d4a5e8b2b0bf99d04a7cf"
+    },
+    {
+      "file": "middleware/wrap_writer_test.go",
+      "startLine": 48,
+      "endLine": 86,
+      "score": 0.02,
+      "sourceHash": "f3af229f061ac9c705756b30aaae08c90b8d4fc11c42230d4cff85fa1e713931"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.02,
+      "sourceHash": "4782f075a94e674822dfdfbfd98669f74d42730d8ec9460b605c3efec660e41a"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 143,
+      "endLine": 186,
+      "score": 0.02,
+      "sourceHash": "10230b6310e69045536ebb0b79aaf1d03facc2ed7551ef0965d87ace878d804a"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 236,
+      "endLine": 242,
+      "score": 0.02,
+      "sourceHash": "8b3d7581c8b0417d6e75a3a0a733cef980c6f28c005f3b505b95aaae1adee960"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 284,
+      "endLine": 316,
+      "score": 0.02,
+      "sourceHash": "6f36127ba3a466cd690a3eb0a5bbe2d6b199ca262d4057caced9ba4cf88421a6"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 395,
+      "endLine": 431,
+      "score": 0.02,
+      "sourceHash": "73602e636d55fdae2813673c94220d07da1ca656a0e19d3b968e21985b75832b"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1269,
+      "endLine": 1304,
+      "score": 0.02,
+      "sourceHash": "0cfbecd140d809c4a64b6b5cf8ed2803a02d45a1a90ebb6c220328596353c495"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1477,
+      "endLine": 1523,
+      "score": 0.02,
+      "sourceHash": "9496476315ef4fc9e3c894ede09ec087c31a40abc303390dd341b07683e0df6a"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1524,
+      "endLine": 1571,
+      "score": 0.02,
+      "sourceHash": "70b6ac710ae38d2631cb57c901008b97ffd23fc53c94d4cc5057356a835b3519"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1572,
+      "endLine": 1603,
+      "score": 0.02,
+      "sourceHash": "f608d3c31d7a747aeca668cfbac52b8d9b98240c23999f6844da7dc3c6a3eaac"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1604,
+      "endLine": 1644,
+      "score": 0.02,
+      "sourceHash": "152716995c52dd3a32c2a8d87e8cb4c856767c31c6d7938f58b5826065cdba5c"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1645,
+      "endLine": 1676,
+      "score": 0.02,
+      "sourceHash": "2d87880387116c4442b350317085443f7da88392dd3aa176a434826cb61b562b"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1677,
+      "endLine": 1712,
+      "score": 0.02,
+      "sourceHash": "0478b7c3d16ecf85f0161294386a27c3da536aad0d5a3997f746409943dcc3d8"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1713,
+      "endLine": 1752,
+      "score": 0.02,
+      "sourceHash": "071f4a751e9d0d81cbe736a185d5848932256a39245a9cd7f47783be98bb1e43"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1753,
+      "endLine": 1778,
+      "score": 0.02,
+      "sourceHash": "ecaa23e3aed7dbda18e81afe07e853d82d061a5b5f02fc372953984467eff562"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1779,
+      "endLine": 1816,
+      "score": 0.02,
+      "sourceHash": "03286370205b46785fb0be3ddd437b95fcd8677cea9bcfc2fde21bb1b5235400"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1817,
+      "endLine": 1842,
+      "score": 0.02,
+      "sourceHash": "e6f7676b1f63a0503218a5aecc5757299a8c32078c11180aee3d60f5d15e8fcc"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1893,
+      "endLine": 1926,
+      "score": 0.02,
+      "sourceHash": "c8266c92bebb8733a6ebd46e292b9aca07228f096709fabc287574f16cdb068d"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1927,
+      "endLine": 1954,
+      "score": 0.02,
+      "sourceHash": "fc5b73563af4f3cbed6ca22bddd8593763156637eb51e7c17736236274ff94a3"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 189,
+      "endLine": 220,
+      "score": 0.02,
+      "sourceHash": "faa592c0759246c57c528afd0ef7ef8c0c407059da3fab422c6ba175e80d6a38"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 359,
+      "endLine": 401,
+      "score": 0.02,
+      "sourceHash": "ceb387349a7d2d7d6a0b6128e5320a2a7114b6c549ef17c5db71c80f361c5278"
+    },
+    {
+      "file": "path_value_fallback.go",
+      "startLine": 1,
+      "endLine": 19,
+      "score": 0.02,
+      "sourceHash": "e339e705eec285504794784912e4c0d2721dcade49327c4f621f808eee9e4083"
+    },
+    {
+      "file": "path_value_test.go",
+      "startLine": 51,
+      "endLine": 77,
+      "score": 0.02,
+      "sourceHash": "501a2ba56276613268d039483f585b0a69f0f7b2e4b5f091d9bb1817435eb9c8"
+    },
+    {
+      "file": "path_value.go",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.02,
+      "sourceHash": "96d2229fe35f87d5fdd9572058d6c9477b71116fad930552bc323bac5a07b88b"
+    },
+    {
+      "file": "README.md",
+      "startLine": 225,
+      "endLine": 265,
+      "score": 0.02,
+      "sourceHash": "614c5b67e923b3d8e7f15812fc28aa40ba6e27a96721fa44bc8c2b6e656a1814"
+    },
+    {
+      "file": "README.md",
+      "startLine": 266,
+      "endLine": 310,
+      "score": 0.02,
+      "sourceHash": "a3f6dc498d01b8a9b0478af7e26e42428ba9c94d927f27d533bff66694e187ef"
+    },
+    {
+      "file": "SECURITY.md",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.02,
+      "sourceHash": "f0a192c529b739ec85a1c37d43db93665cfb3705a1663f6c7a5569c503f37e8b"
+    },
+    {
+      "file": "testdata/cert.pem",
+      "startLine": 1,
+      "endLine": 19,
+      "score": 0.02,
+      "sourceHash": "8ad1e902cd27af9f9a90ddde1f6239f743c1e04d94204237e2a0f06af239b3df"
+    },
+    {
+      "file": "testdata/key.pem",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.02,
+      "sourceHash": "39ad00b698c0f75ecd7199e3cbc8466ca9dd0fd87253c3dcd566125c11b56f7a"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.02,
+      "sourceHash": "78f313ef52b6cfe002ef41532f2d355838baf25710c29d199bc052950f3bd719"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 251,
+      "endLine": 300,
+      "score": 0.02,
+      "sourceHash": "8bf956c1e901a323392d422f8a297f1f1b26b2a65ff104f8122c6bfc01cf4490"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 301,
+      "endLine": 335,
+      "score": 0.02,
+      "sourceHash": "8121dedb0ad950d7e1ac8fa3d31c89ab372ea1cc2bf4436b195c68e3ff001c46"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 336,
+      "endLine": 385,
+      "score": 0.02,
+      "sourceHash": "3a25dcd024566ae51ce153853e271451b107b4c3edf77c6bc5e69ae4551e3cb5"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 386,
+      "endLine": 416,
+      "score": 0.02,
+      "sourceHash": "3433ebba1a1b123cee570cf3cfe6cc3981d449383b786e83a1eeb0e1202e44aa"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 417,
+      "endLine": 446,
+      "score": 0.02,
+      "sourceHash": "a30ec0d4aa7df539b12fcf6d9c1cb823c872cbd3b19ed28998bf04ba48bc2b99"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 487,
+      "endLine": 523,
+      "score": 0.02,
+      "sourceHash": "9dd9caddb02a73e5ce8b849a4af0e0b2e7de8b3bbbfb991120b6397fee45a62d"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 46,
+      "endLine": 85,
+      "score": 0.02,
+      "sourceHash": "7d5ab43b1cfdce5ac76ff38a9dd784620c3c7fd10d78f04ac827e22bdb96f09d"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 128,
+      "endLine": 177,
+      "score": 0.02,
+      "sourceHash": "1d4bcfb6cc6b229cae7a1475035f96f0df6470d6b825eca13399ee268ccb2398"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 178,
+      "endLine": 227,
+      "score": 0.02,
+      "sourceHash": "06ca6a077d720fb98baf39651a7cf6997b36223f757274eaf813b26dc16df0eb"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 278,
+      "endLine": 316,
+      "score": 0.02,
+      "sourceHash": "95790cd49aac359e305d5659e5f4c5bb30873236b223d298af52e4d90f00a773"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 317,
+      "endLine": 366,
+      "score": 0.02,
+      "sourceHash": "54a599a62a5f0902e550efbf47ca9b3d4c24a013d28a9cdb97bb40c90830b148"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 367,
+      "endLine": 396,
+      "score": 0.02,
+      "sourceHash": "0166475898ed03284981b03eaaddf10cb6300db41706568cf91b458ca5e7bb00"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 397,
+      "endLine": 446,
+      "score": 0.02,
+      "sourceHash": "2413fa9a336e3cd69163eeb21fc721e1f567ce5414d61e78652bb42c1ae15bb0"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 447,
+      "endLine": 496,
+      "score": 0.02,
+      "sourceHash": "5270c7c2c34362426800e6e92aca61c050a586ce356ecfb04825d7de34b3c89a"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 497,
+      "endLine": 545,
+      "score": 0.02,
+      "sourceHash": "955a0a3508513d0a3926ef3ed9d4437d34af6d4495cc812c04dadc04cc649633"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 546,
+      "endLine": 577,
+      "score": 0.02,
+      "sourceHash": "40696374f2cc4981558b59951a5b1e4682aacd2ecd2e0de38c18c228f486da13"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 578,
+      "endLine": 619,
+      "score": 0.02,
+      "sourceHash": "3ff731069381b1d70284c14665ccd39853991912bbd2b113c4f19c2535324d9d"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 620,
+      "endLine": 669,
+      "score": 0.02,
+      "sourceHash": "0e1637e28e58facfdc4ef1b433ab5575f5507559f0a61a2b41e44e2a0ec09999"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 670,
+      "endLine": 719,
+      "score": 0.02,
+      "sourceHash": "f5e5076bd22c84857ddc548b38c6610f24fd51170f2a0855f8f6e9dca0b64b9f"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 720,
+      "endLine": 758,
+      "score": 0.02,
+      "sourceHash": "fd811366a4c00708e8f96929d1f2952605c999575efd5f7d4a8604e7b63b40d6"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 804,
+      "endLine": 851,
+      "score": 0.02,
+      "sourceHash": "7117893b936519d6b2e3a744f302fb4a02e9f1e3d73124ebcfd37da780ddfb4a"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 852,
+      "endLine": 892,
+      "score": 0.02,
+      "sourceHash": "e1042fcce7cf98b5fe82212b01aaa46954c08365616e4fcca972feece3c29388"
+    },
+    {
+      "file": "_examples/chi.svg",
+      "startLine": 1,
+      "endLine": 6,
+      "score": 0.01,
+      "sourceHash": "d60405931ba0bc4fd4173218728e09dfae0fc1e387235ff3c7f4ddfb852a6d9d"
+    },
+    {
+      "file": ".github/FUNDING.yml",
+      "startLine": 1,
+      "endLine": 12,
+      "score": 0.01,
+      "sourceHash": "ce02757292abbd1761f8b4e5fb439ceb7dd2d4f48ce0cf4fe93c1399bb13d89a"
+    },
+    {
+      "file": "middleware/clean_path.go",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.01,
+      "sourceHash": "c62678b23a9a28be1b5fe38aa6e54fdc9c8cf5a908dc5ed5a187f4b3c0b12db7"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 213,
+      "endLine": 257,
+      "score": 0.01,
+      "sourceHash": "8d0e0494b2fde420f8cce9d4de46d23658fbf6749fdbc2ecd8fbce644c2c3953"
+    },
+    {
+      "file": "middleware/content_charset.go",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.01,
+      "sourceHash": "b433a323e4457ffc42fc26dc73f65f7e117904afa4ce022158f5cb8819a1a20f"
+    },
+    {
+      "file": "middleware/content_encoding.go",
+      "startLine": 1,
+      "endLine": 34,
+      "score": 0.01,
+      "sourceHash": "6ee77b87ea436d0285c352afd68b3f6e474ced8ba31f69ff16d69e8ed760465f"
+    },
+    {
+      "file": "middleware/content_type.go",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.01,
+      "sourceHash": "2e6a39f9225faab7dc599439777196a03187efc7d072a40fca60b913c34a69fd"
+    },
+    {
+      "file": "middleware/path_rewrite.go",
+      "startLine": 1,
+      "endLine": 16,
+      "score": 0.01,
+      "sourceHash": "9fc7d8a47722b61d0dadcb9136724fedfb3284107d656348c4f8491fd81823ff"
+    },
+    {
+      "file": "middleware/request_size.go",
+      "startLine": 1,
+      "endLine": 18,
+      "score": 0.01,
+      "sourceHash": "e9e69dcecf90674b3f66c70adafbc8340bc6a37fd91c1440ef6051e88fc689ee"
+    },
+    {
+      "file": "middleware/strip.go",
+      "startLine": 1,
+      "endLine": 34,
+      "score": 0.01,
+      "sourceHash": "e5c4494649de4c8261ee42c19a481eba113f61292154e3e9793307bd6efa61d5"
+    },
+    {
+      "file": "middleware/timeout.go",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.01,
+      "sourceHash": "3ada420900b854ab71480d3d461fc8254fbf598bf22433a0ec2a011a7cc3fc31"
+    }
+  ]
+}

@@ -50,19 +50,22 @@ Examples:
 
 ## `hunch find`
 
-find the code a change would touch, anywhere in the repo, and print it
+search existing behavior or find context for a change across the repository
 
 | Argument | Required | Means |
 | --- | --- | --- |
-| `task` | yes | what you are about to do, in your own words |
+| `task` | yes | an intended change, or a yes/no question with --mode condition |
 | `paths...` | no | only search under these paths |
 
 | Flag | Default | Means |
 | --- | --- | --- |
+| `--mode <mode>` | `task` | task (change context) or condition (existing behavior) |
+| `--chunk-lines <n>` | `150` | maximum lines per source window, 1 to 2000 |
+| `--overlap-lines <n>` | `0` | repeat this many lines across source windows |
 | `--head <ref>` |  | search a branch or tag instead of the working tree |
 | `--facet <list>` |  | only ask these: edit, contract, caller, test, precedent |
 | `--min <score>` | `0.5` | drop matches below this score |
-| `--top <n>` | `12` | keep at most this many matches per facet |
+| `--top <n>` | `12` | keep at most this many matches per facet; 0 returns all |
 | `--lines <n>` | `40` | lines of each passage to print in the terminal |
 | `--no-code` | `code` on | print locations only |
 | `--concurrency <n>` | `8` | requests in flight, 1 to 32 |
@@ -79,9 +82,10 @@ Exits 2 when any chunk or the pull request list could not be searched.
 
 Examples:
   hunch find "add a rate limit to the upload endpoint"
+  hunch find "Does this code discard a failed write?" --mode condition --top 0
   hunch find "warn on the onchain receive QR" --prs
   hunch find "rework the feed cache" src/feed --facet test,precedent
-  hunch find "add a rate limit" > context.md      Markdown, to hand to a coding agent
+  hunch find "add a rate limit" > /tmp/hunch-context.md      Markdown, to hand to a coding agent
 ```
 
 ## `hunch compile`
