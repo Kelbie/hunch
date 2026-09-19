@@ -18,7 +18,7 @@
     "@types/bun": "latest",
     "@types/node": "22",
     "esbuild": "0.25.12",
-    "tsup": "8.5.0",
+    "tsup": "8.5.1",
     "typescript": "^5.9.0",
     "@kelbie/hunch": "workspace:*"
   },
