@@ -1,6 +1,6 @@
 ---
 name: hunch
-description: Set up, configure and run Hunch, the code reviewer that asks TypeSafe's Jev model plain-English and typed yes/no, choice and score questions about every change. Use when the user wants to review a branch or pull request against rules, write or tune a review rule in hunch.config.ts or hunch.toml ("add a rule that…", noul, choice, score), install Hunch on GitHub (the App or Actions), compile AGENTS.md or Agent Skills into hunch.lock, find the code a change will touch, work out why a PR got no Hunch review, or measure a rule's precision. Use it whenever the user says hunch or /hunch, or asks for semantic review rules that a linter can't express, even if they don't name Hunch.
+description: Set up, configure and run Hunch, the code reviewer that asks TypeSafe's Jev model plain-English and typed yes/no, choice and score questions about every change. Use when the user wants to review a branch or pull request against rules, write or tune a review rule in hunch.config.ts or hunch.toml ("add a rule that…", noul, choice, score), install Hunch on GitHub (the App or Actions), compile AGENTS.md or Agent Skills into hunch.lock, start work on an issue or PR (find the code a change will touch and any open PR already doing it), work out why a PR got no Hunch review, or measure a rule's precision. Use it whenever the user says hunch or /hunch, or asks for semantic review rules that a linter can't express, even if they don't name Hunch.
 argument-hint: "[install|config|rules|compile|check|find|doctor|eval|operator] [what you want]"
 allowed-tools: Bash(npx @kelbie/hunch *) Bash(npx hunch *) Bash(hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key only for check, find and eval.
@@ -61,11 +61,26 @@ against it.
 | a new or edited rule | to know it is valid and what it asks | `config`, then `config --explain <id>` |
 | a new rule | to try it cheaply | `check --only <id> --dry-run`, then without `--dry-run` |
 | AGENTS.md or skills | them enforced in review | `compile`, then commit `hunch.lock` |
-| a change to make | the code it touches | `find "<task>"`, plus `--prs` to check for duplicate work |
+| an issue to fix or a PR to make | to start work | the [workflow below](#from-an-issue-to-a-pr): `find "<task>" --prs`, then `check` |
+| a change to make | only the code it touches | `find "<task>"` |
 | a PR with no review | the reason | `doctor` |
 | a noisy rule | fewer false positives | [rules.md](references/rules.md#tuning), then `eval` |
 | a rule that must block merges | it enforced | `"error"` + `failOnError: true` + a required check: [rules.md](references/rules.md#blocking-merges) |
 | no `origin` remote | to review a branch | `check --base main` (the default base is `origin/main`) |
+
+## From an issue to a PR
+
+The user describes the change in their own words, e.g. "/hunch the onchain QR page should warn when
+the amount is outside what the mint supports". They shouldn't need to name flags. Do all of this:
+
+1. Turn their words into one task sentence that names the behaviour to change.
+2. `find "<task>" --prs --dry-run`, and say what it will cost.
+3. `find "<task>" --prs --reporter markdown`. Lead with any open PR judged a `duplicate` or
+   `overlap`, because they may not need to start at all. Then read the `edit`, `contract` and `test`
+   matches yourself before planning.
+4. Make the change.
+5. `check` against the branch's base (`--base main` when there is no `origin`), dry run first. Report
+   findings and completeness before they open the PR.
 
 ## Exit codes
 
