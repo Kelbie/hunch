@@ -2,7 +2,9 @@ import { expect, test } from "bun:test";
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync, statSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { askWizard, detectPreset, existingKey, hasGuidance, interactive, nextSteps, setRepoSecret, writeKey, type WizardIo } from "../src/setup/wizard.js";
+import { askWizard, detectPreset, existingKey, hasGuidance, installSkill, interactive, nextSteps, presetsFor, ruleIdFor, setRepoSecret, splitGlobs, writeKey, type WizardIo } from "../src/setup/wizard.js";
+import { applyPresets, evaluateConfigSource, parseConfig, tomlToConfig } from "../../core/src/index.js";
+import { defaultAnswers, renderConfig } from "../src/templates.js";
 
 function project(files: Record<string, string> = {}) {
   const dir = mkdtempSync(join(tmpdir(), "hunch-wizard-"));
@@ -24,6 +26,8 @@ function scripted(answers: unknown[]) {
     async select(opts) { asked.push(opts.message); return next() as string | null; },
     async confirm(opts) { asked.push(opts.message); return next() as boolean | null; },
     async password(opts) { asked.push(opts.message); return next() as string | null; },
+    async multiselect(opts) { asked.push(opts.message); return next() as string[] | null; },
+    async text(opts) { asked.push(opts.message); const v = next(); return v === undefined ? opts.initialValue ?? "" : v as string | null; },
     note: (body) => { notes.push(body); },
     outro: () => {},
   };
@@ -43,23 +47,61 @@ test("the project's own files choose the starter rules, and guidance is detected
   expect(hasGuidance(project({ "README.md": "" }))).toBe(false);
 });
 
+/** Answers for a new config, up to and including the target, in the order they are asked. */
+const newConfig = (target: string) => [["recommended", "typescript"], undefined, undefined, target];
+/** Retention, fail-on-error, PR context, no rule, then the skill question. */
+const policyDefaults = ["enforce", false, true, "", false];
+
 test("the App path never asks for a model key, because the hosted App holds its own", async () => {
-  const { io, asked } = scripted(["ts", "app"]);
-  expect(await askWizard(io, context())).toMatchObject({ preset: "ts", target: "app", key: { kind: "later" } });
+  const { io, asked } = scripted([...newConfig("app"), ...policyDefaults]);
+  expect(await askWizard(io, context())).toMatchObject({ config: { presets: ["recommended", "typescript"] }, target: "app", key: { kind: "later" } });
   expect(asked.some((q) => /key|provider/i.test(q))).toBe(false);
 });
 
+test("the wizard's defaults write exactly the file init writes with no questions", async () => {
+  const { io } = scripted([...newConfig("app"), ...policyDefaults]);
+  const answers = await askWizard(io, context());
+  expect(renderConfig(answers!.config!)).toEqual(renderConfig(defaultAnswers(presetsFor("ts"))));
+});
+
+test("every wizard answer lands in a config the loader accepts", async () => {
+  const { io } = scripted([["recommended", "rust", "typescript"], "src/**, **/*.{ts,rs}", "dist/**", "local", "later",
+    "allow", true, false, "Error responses keep their \"code\" field.", "api/errors", true, true]);
+  const answers = (await askWizard(io, context({ guidance: true })))!;
+  expect(answers).toMatchObject({ compile: true, installSkill: true });
+  const { file, text } = renderConfig(answers.config!);
+  expect(file).toBe("hunch.config.ts");
+  const config = applyPresets(parseConfig(evaluateConfigSource(text), file));
+  expect(config).toMatchObject({ extends: ["hunch:recommended", "hunch:typescript", "hunch:rust"], include: ["src/**", "**/*.{ts,rs}"], ignore: ["dist/**"], zeroDataRetention: false, failOnError: true, task: "none" });
+  expect(config.rules["api/errors"]!.question!.message).toBe('Error responses keep their "code" field.');
+  const toml = renderConfig({ ...answers.config!, presets: ["recommended", "rust"] });
+  expect(toml.file).toBe("hunch.toml");
+  expect(applyPresets(parseConfig(tomlToConfig(toml.text), toml.file))).toMatchObject({ zeroDataRetention: false, failOnError: true, task: "none", rules: { "api/errors": { level: "warn" } } });
+});
+
+test("globs split on commas, but not the commas inside braces", () => {
+  expect(splitGlobs("**/*.{ts,tsx}, src/**,,  ")).toEqual(["**/*.{ts,tsx}", "src/**"]);
+  expect(splitGlobs("")).toEqual([]);
+  expect(ruleIdFor("Error responses keep their code field!")).toBe("project/error-responses-keep-their");
+});
+
+test("presets name what a project is, and general means recommended alone", () => {
+  expect(presetsFor("ts")).toEqual(["recommended", "typescript"]);
+  expect(presetsFor("general")).toEqual(["recommended"]);
+  expect(() => presetsFor("python")).toThrow("Unknown preset python");
+});
+
 test("local setup asks for a key, and a blank answer defers instead of storing nothing", async () => {
-  const withKey = scripted(["general", "local", "gateway", "sk-live-value"]);
+  const withKey = scripted([...newConfig("local"), "gateway", "sk-live-value", ...policyDefaults]);
   expect(await askWizard(withKey.io, context())).toMatchObject({ target: "local", key: { kind: "gateway", value: "sk-live-value" } });
-  const blank = scripted(["general", "local", "gateway", "   "]);
+  const blank = scripted([...newConfig("local"), "gateway", "   ", ...policyDefaults]);
   expect(await askWizard(blank.io, context())).toMatchObject({ key: { kind: "later" } });
 });
 
 test("a key already reachable by check is not asked for again", async () => {
-  const { io, asked } = scripted(["ts", "local"]);
+  const { io, asked } = scripted([...newConfig("local"), ...policyDefaults]);
   expect(await askWizard(io, context({ keyPresent: true }))).toMatchObject({ key: { kind: "later" } });
-  expect(asked).toHaveLength(2);
+  expect(asked.some((q) => /key|provider/i.test(q))).toBe(false);
   expect(existingKey(project({ ".env.local": "AI_GATEWAY_API_KEY=x\n" }), {})).toBe("AI_GATEWAY_API_KEY");
   expect(existingKey(project({ ".env": "export TYPESAFE_API_KEY=y\n" }), {})).toBe("TYPESAFE_API_KEY");
   expect(existingKey(project({ ".env.local": "AI_GATEWAY_API_KEY=\n" }), {})).toBeNull();
@@ -67,16 +109,29 @@ test("a key already reachable by check is not asked for again", async () => {
 });
 
 test("cancelling any question abandons the whole setup, so nothing half-configured is written", async () => {
-  for (const answers of [[null], ["ts", null], ["ts", "local", null], ["ts", "local", "gateway", null], ["ts", "app", null]]) {
+  const full = [["recommended"], "", "", "local", "gateway", "sk", "enforce", false, true, "A rule.", "project/a", true, true];
+  for (let i = 0; i < full.length; i++) {
+    const answers = [...full.slice(0, i), null];
     expect(await askWizard(scripted(answers).io, context({ guidance: true }))).toBeNull();
   }
 });
 
-test("an existing config keeps its preset instead of offering to change it", async () => {
-  const { io, asked } = scripted(["actions", "later"]);
-  expect(await askWizard(io, context({ configExists: true, detected: "rust" }))).toMatchObject({ preset: "rust", target: "actions" });
+test("an existing config is never rewritten: the wizard only asks where reviews run", async () => {
+  const { io, asked } = scripted(["actions", "later", false]);
+  expect(await askWizard(io, context({ configExists: true, detected: "rust" }))).toMatchObject({ config: null, target: "actions" });
   expect(asked[0]).toContain("Where should Hunch review");
-  expect(asked.some((q) => /starter rules/i.test(q))).toBe(false);
+  expect(asked.some((q) => /starter rules|retention|rule of your own/i.test(q))).toBe(false);
+});
+
+test("the skill installer runs only through npx skills, with its output shown", () => {
+  const calls: { cmd: string; args: string[]; stdio: unknown }[] = [];
+  const run = ((cmd: string, args: string[], opts: { stdio: unknown }) => {
+    calls.push({ cmd, args, stdio: opts.stdio });
+    return { status: 0 };
+  }) as unknown as typeof import("node:child_process").spawnSync;
+  expect(installSkill("/tmp", run)).toBe(true);
+  expect(calls[0]).toEqual({ cmd: "npx", args: ["skills", "add", "Kelbie/hunch", "--skill", "hunch", "-y"], stdio: "inherit" });
+  expect(installSkill("/tmp", (() => ({ status: 1 })) as unknown as typeof run)).toBe(false);
 });
 
 test("the key is written owner-only to a git-ignored file, never to the committed config", () => {

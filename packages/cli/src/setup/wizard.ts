@@ -1,7 +1,8 @@
 import { spawnSync } from "node:child_process";
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { confirm, isCancel, note, outro, password, select } from "@clack/prompts";
+import { confirm, isCancel, multiselect, note, outro, password, select, text } from "@clack/prompts";
+import { defaultAnswers, PRESET_NAMES, type ConfigAnswers, type PresetName } from "../templates.js";
 
 /** Where reviews run. The App needs nothing in the repository beyond a committed config. */
 export type Target = "local" | "app" | "actions";
@@ -9,6 +10,19 @@ export type Preset = "ts" | "rust" | "general";
 export type KeyChoice = { kind: "gateway" | "typesafe"; value: string } | { kind: "later" };
 
 export const INSTALL_URL = "https://github.com/apps/hunch-review/installations/new";
+
+/** The agent skill that documents Hunch for coding agents, installed by the `skills` CLI. */
+export const SKILL_INSTALL = ["skills", "add", "Kelbie/hunch", "--skill", "hunch", "-y"] as const;
+
+/** What `--preset` and the detected project type mean in presets. `general` is recommended alone. */
+export function presetsFor(kind: string): PresetName[] {
+  switch (kind) {
+    case "ts": case "typescript": return ["recommended", "typescript"];
+    case "rust": return ["recommended", "rust"];
+    case "general": case "recommended": return ["recommended"];
+    default: throw new Error(`Unknown preset ${kind}; choose from ts, rust, general`);
+  }
+}
 
 /**
  * Everything the wizard touches outside itself, so the flow is exercised without a terminal,
@@ -18,6 +32,8 @@ export interface WizardIo {
   select: (opts: { message: string; options: { value: string; label: string; hint?: string }[]; initialValue?: string }) => Promise<string | null>;
   confirm: (opts: { message: string; initialValue?: boolean }) => Promise<boolean | null>;
   password: (opts: { message: string }) => Promise<string | null>;
+  multiselect: (opts: { message: string; options: { value: string; label: string; hint?: string }[]; initialValues?: string[] }) => Promise<string[] | null>;
+  text: (opts: { message: string; placeholder?: string; initialValue?: string; validate?: (value: string) => string | undefined }) => Promise<string | null>;
   note: (body: string, title?: string) => void;
   outro: (message: string) => void;
 }
@@ -26,6 +42,11 @@ export const clackIo = (): WizardIo => ({
   select: async (opts) => { const v = await select(opts); return isCancel(v) ? null : String(v); },
   confirm: async (opts) => { const v = await confirm(opts); return isCancel(v) ? null : v; },
   password: async (opts) => { const v = await password(opts); return isCancel(v) ? null : v; },
+  multiselect: async (opts) => { const v = await multiselect({ ...opts, required: false }); return isCancel(v) ? null : v.map(String); },
+  text: async (opts) => {
+    const v = await text({ ...opts, validate: opts.validate && ((value) => opts.validate!(value ?? "")) });
+    return isCancel(v) ? null : (v ?? "");
+  },
   note: (body, title) => note(body, title),
   outro: (message) => outro(message),
 });
@@ -47,17 +68,89 @@ export function hasGuidance(root: string): boolean {
   return ["AGENTS.md", "skills", ".agents/skills", ".claude/skills"].some((p) => existsSync(join(root, p)));
 }
 
-export async function askPreset(io: WizardIo, detected: Preset): Promise<Preset | null> {
-  const value = await io.select({
-    message: "Which starter rules?",
-    initialValue: detected,
+const PRESET_LABELS: Record<PresetName, { label: string; hint: string }> = {
+  recommended: { label: "Recommended", hint: "any language: hidden failures, edge cases, weakened tests, wrong comments" },
+  typescript: { label: "TypeScript / JavaScript", hint: "async ordering, lossy serialization" },
+  rust: { label: "Rust", hint: "panics on recoverable input, lost error context" },
+};
+
+export async function askPresets(io: WizardIo, detected: Preset): Promise<PresetName[] | null> {
+  const value = await io.multiselect({
+    message: "Which starter rules? (space to toggle, enter to confirm)",
+    initialValues: presetsFor(detected),
+    options: PRESET_NAMES.map((p) => ({ value: p, ...PRESET_LABELS[p] })),
+  });
+  return value === null ? null : PRESET_NAMES.filter((p) => value.includes(p));
+}
+
+/** Commas separate globs, except inside braces, where they are part of the glob: `**\/*.{ts,tsx}`. */
+export function splitGlobs(input: string): string[] {
+  const out: string[] = [];
+  let depth = 0, current = "";
+  for (const ch of input) {
+    if (ch === "{") depth++;
+    if (ch === "}") depth = Math.max(0, depth - 1);
+    if (ch === "," && depth === 0) { out.push(current); current = ""; } else current += ch;
+  }
+  out.push(current);
+  return out.map((g) => g.trim()).filter(Boolean);
+}
+
+export async function askScope(io: WizardIo, defaults: Pick<ConfigAnswers, "include" | "ignore">): Promise<Pick<ConfigAnswers, "include" | "ignore"> | null> {
+  const include = await io.text({
+    message: "Which files should Hunch review? Comma-separated globs; leave blank for every file.",
+    initialValue: defaults.include.join(", "),
+    placeholder: "every file",
+  });
+  if (include === null) return null;
+  const ignore = await io.text({
+    message: "Which files should it skip? Lockfiles, minified files and node_modules are always skipped.",
+    initialValue: defaults.ignore.join(", "),
+    placeholder: "nothing else",
+  });
+  if (ignore === null) return null;
+  return { include: splitGlobs(include), ignore: splitGlobs(ignore) };
+}
+
+export async function askPolicy(io: WizardIo): Promise<Pick<ConfigAnswers, "zeroDataRetention" | "failOnError" | "task"> | null> {
+  const retention = await io.select({
+    message: "Zero data retention for your code on Vercel AI Gateway?",
+    initialValue: "enforce",
     options: [
-      { value: "ts", label: "TypeScript / JavaScript", hint: detected === "ts" ? "detected package.json" : "hunch.config.ts" },
-      { value: "rust", label: "Rust", hint: detected === "rust" ? "detected Cargo.toml" : "hunch.toml" },
-      { value: "general", label: "Anything else", hint: "hunch.toml" },
+      { value: "enforce", label: "Enforce it", hint: "Vercel Pro or Enterprise; reviews fail rather than route elsewhere" },
+      { value: "allow", label: "Don't enforce it", hint: "required on Vercel Hobby, which cannot enforce it" },
     ],
   });
-  return value as Preset | null;
+  if (retention === null) return null;
+  const failOnError = await io.confirm({ message: "Fail the check when an error-level concern is found?", initialValue: false });
+  if (failOnError === null) return null;
+  const task = await io.confirm({ message: "Send the pull request title and description along with each question?", initialValue: true });
+  if (task === null) return null;
+  return { zeroDataRetention: retention === "enforce", failOnError, task: task ? "pr" : "none" };
+}
+
+export const RULE_ID = /^[\w.:/-]+$/;
+
+/** A readable id from the rule's first words, which the person can then change. */
+export function ruleIdFor(sentence: string): string {
+  const words = sentence.toLowerCase().replace(/[^a-z0-9\s-]/g, " ").split(/\s+/).filter(Boolean).slice(0, 4);
+  return `project/${words.join("-") || "rule"}`;
+}
+
+export async function askRule(io: WizardIo): Promise<Record<string, string> | null> {
+  const sentence = await io.text({
+    message: "Add a rule of your own? Describe, in one sentence, what a change must not break. Leave blank to skip.",
+    placeholder: "Error responses keep their code field, because clients branch on it.",
+  });
+  if (sentence === null) return null;
+  if (!sentence.trim()) return {};
+  const id = await io.text({
+    message: "Rule id",
+    initialValue: ruleIdFor(sentence),
+    validate: (v) => (RULE_ID.test(v.trim()) ? undefined : "Use letters, digits and . : / - _ only"),
+  });
+  if (id === null) return null;
+  return { [id.trim()]: sentence.trim() };
 }
 
 export async function askTarget(io: WizardIo): Promise<Target | null> {
@@ -140,10 +233,12 @@ export function setRepoSecret(name: string, value: string, run = spawnSync): voi
 }
 
 export interface WizardAnswers {
-  preset: Preset;
+  /** Null when a config already exists: the wizard only adds a path to it, never rewrites it. */
+  config: ConfigAnswers | null;
   target: Target;
   key: KeyChoice;
   compile: boolean;
+  installSkill: boolean;
 }
 
 /**
@@ -151,20 +246,41 @@ export interface WizardAnswers {
  * caller writes nothing: a half-configured repository is worse than an unconfigured one.
  */
 export async function askWizard(io: WizardIo, context: { root: string; detected: Preset; configExists: boolean; guidance: boolean; keyPresent: boolean }): Promise<WizardAnswers | null> {
-  const preset = context.configExists ? context.detected : await askPreset(io, context.detected);
-  if (preset === null) return null;
+  let config: ConfigAnswers | null = null;
+  if (!context.configExists) {
+    const presets = await askPresets(io, context.detected);
+    if (presets === null) return null;
+    const scope = await askScope(io, defaultAnswers(presets));
+    if (scope === null) return null;
+    config = { ...defaultAnswers(presets), ...scope };
+  }
   const target = await askTarget(io);
   if (target === null) return null;
   // The hosted App holds its own provider credentials; only local and Actions runs need a key here.
   const key = target === "app" || context.keyPresent ? { kind: "later" as const } : await askKey(io);
   if (key === null) return null;
+  if (config) {
+    const policy = await askPolicy(io);
+    if (policy === null) return null;
+    const rules = await askRule(io);
+    if (rules === null) return null;
+    config = { ...config, ...policy, rules };
+  }
   let compile = false;
   if (context.guidance) {
     const answer = await io.confirm({ message: "Compile AGENTS.md and skills into review questions now?", initialValue: true });
     if (answer === null) return null;
     compile = answer;
   }
-  return { preset, target, key, compile };
+  const installSkill = await io.confirm({ message: "Install the Hunch skill, so your coding agent can set up, write rules for and run Hunch?", initialValue: true });
+  if (installSkill === null) return null;
+  return { config, target, key, compile, installSkill };
+}
+
+/** Runs the `skills` installer in the foreground, so its own prompts and output reach the person. */
+export function installSkill(root: string, run = spawnSync): boolean {
+  const result = run("npx", [...SKILL_INSTALL], { cwd: root, stdio: "inherit", timeout: 300_000 });
+  return !result.error && result.status === 0;
 }
 
 /** What to do next, in order, for the path chosen. Mirrors the README so the two cannot drift. */

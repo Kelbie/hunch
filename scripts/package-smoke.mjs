@@ -45,6 +45,11 @@ try {
   const ts = join(temp, 'typescript'); mkdirSync(ts); run('git', ['init', '--quiet'], ts);
   run(process.execPath, [bin, 'init', '--preset', 'ts', '--github', '--cwd', ts]);
   if (!existsSync(join(ts, '.github/workflows/hunch.yml'))) throw new Error('GitHub workflow was not created');
+  // `config` validates what init wrote, from the packed build, without a key.
+  if (!JSON.parse(run(process.execPath, [bin, 'config', '--reporter', 'json', '--cwd', ts])).rules.some((r) => r.id === 'typescript/async-ordering')) throw new Error('config did not list the preset rules');
+  const defaults = join(temp, 'defaults'); mkdirSync(defaults); run('git', ['init', '--quiet'], defaults);
+  run(process.execPath, [bin, 'init', '--yes', '--cwd', defaults]);
+  if (!existsSync(join(defaults, 'hunch.toml'))) throw new Error('init --yes did not write the detected default');
   // A synthetic direct key is used with an empty diff; this executes no model requests.
   writeFileSync(join(ts, 'hunch.config.ts'), 'export default {provider:"typesafe",agentsMd:false,rules:{r:["warn","Preserve failure"]}};');
   writeFileSync(join(ts, 'empty.diff'), '');
