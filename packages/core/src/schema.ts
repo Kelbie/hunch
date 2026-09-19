@@ -180,7 +180,7 @@ export const configSchema = z.strictObject({
   budget: z
     .strictObject({
       maxHunks: z.number().int().min(1).max(10_000).default(100),
-      maxRulesPerHunk: z.number().int().min(1).max(64).default(24),
+      maxRulesPerHunk: z.number().int().min(1).max(128).default(24),
       concurrency: z.number().int().min(1).max(8).default(4),
       /** Jev requests per run (one per hunk and reference). */
       maxRequests: z.number().int().min(1).max(10_000).default(100),

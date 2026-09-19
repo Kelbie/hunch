@@ -283,7 +283,8 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null, only?
     if (src.kind === "agents-md" && src.id !== deepestAgent) continue;
     if (src.scope && !(file === src.scope || file.startsWith(`${src.scope}/`))) continue;
     for (const r of src.rules) {
-      if (r.appliesTo.length && !picomatch(r.appliesTo, { dot: true, matchBase: true })(file)) continue;
+      if (r.appliesTo.length && !r.appliesTo.some((pattern) =>
+        picomatch(pattern, { dot: true, matchBase: !pattern.includes("/") })(file))) continue;
       const level = compiledLevel(entries, r.id);
       if (level === "off" || entries.get(r.id)?.question) continue;
       jev.push({ id: r.id, level, compiled: true, source: src.id, question: compiledQuestion(r) });

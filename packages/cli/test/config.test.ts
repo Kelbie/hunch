@@ -161,3 +161,36 @@ test("a dry run says when the real review would be incomplete for want of a comp
     expect(r.err).toContain("hunch.lock is missing, so agents-md/root is not reviewed.");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("compiled path globs preserve directories while filename-only patterns match nested files", () => {
+  const definitions = [
+    { id: "doc/guide/app", appliesTo: ["app/**/*.tsx"] },
+    { id: "doc/guide/tests", appliesTo: ["*.test.tsx"] },
+  ];
+  const root = repo({
+    "hunch.config.ts": 'export default { agentsMd: false, skills: [], rules: {} };',
+    "hunch.lock": JSON.stringify({ version: 1, compiler: { model: "fixture" }, sources: [{
+      id: "doc/guide", kind: "doc", origin: "guide.md", path: "guide.md", scope: "", hash: "fixture",
+      rules: definitions.map(r => ({ ...r, section: "Guide", message: "Keep the contract.", instructions: "Does this break the contract?", criteria: { true: "Broken.", false: "Preserved." } })),
+    }] }),
+  });
+  try {
+    const ids = (file: string) => JSON.parse(hunch(root, "config", "--file", file, "--reporter", "json").out).rules.map((r: { id: string }) => r.id);
+    expect(ids("app/features/pay/Screen.tsx")).toEqual(["doc/guide/app"]);
+    expect(ids("app/features/pay/Screen.test.tsx")).toEqual(["doc/guide/app", "doc/guide/tests"]);
+    expect(ids("wallet/Screen.tsx")).toEqual([]);
+    expect(ids("wallet/Screen.test.tsx")).toEqual(["doc/guide/tests"]);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a project can budget a large compiled policy without truncating it at 64 questions", () => {
+  const root = repo({
+    "hunch.config.ts": `export default { agentsMd: false, skills: [], include: ["src/**"], budget: { maxRulesPerHunk: 128 }, rules: ${JSON.stringify(Object.fromEntries(Array.from({ length: 96 }, (_, i) => [`policy/r${i}`, ["warn", "Keep the contract."]])))} };`,
+    "src/a.ts": "export const a = 1;\n",
+  });
+  try {
+    const r = hunch(root, "check", "--all", "--dry-run");
+    expect(r.status).toBe(0);
+    expect(r.out).toContain("96 question(s) in 1 request(s)");
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
