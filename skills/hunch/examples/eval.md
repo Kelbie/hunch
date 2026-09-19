@@ -28,5 +28,5 @@ hunch: No .diff fixtures found
 npx @kelbie/hunch eval examples/presets --config "{"extends":["hunch:recommended","hunch:typescript","hunch:rust"],"zeroDataRetention":false}"
 ```
 
-Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.
+Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts/skill-examples.ts --live` where that is available.
 <!-- /case -->

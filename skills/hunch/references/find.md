@@ -30,7 +30,7 @@ test worth updating isn't crowded out by definitions. `--min` (default 0.5) drop
 | to know if someone's already on it | `find "…" --prs` (needs `gh` and a github.com `origin`) |
 | a narrower search | paths as arguments: `find "…" src/api` |
 | another branch | `--head <ref>` |
-| the cost first | `--dry-run`: chunks, requests and questions |
+| the cost first | `--dry-run`: chunks, requests and questions. With `--prs` it adds one request per open PR title, and up to `--pr-max` diff reads, which it can't count until the PRs are listed |
 
 `find` needs no rules and no config. With no config it searches every file except lockfiles,
 minified files and `node_modules`, and says so on stderr. With a config it uses `include`/`ignore`

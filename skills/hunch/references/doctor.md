@@ -14,6 +14,9 @@ using the `gh` login. Real output: [examples/doctor.md](../examples/doctor.md).
 | Actions workflow | no `.github/workflows/hunch.yml` (unknown; needed only for Actions) | `init --target actions` |
 | Actions secret | the workflow exists but `AI_GATEWAY_API_KEY` isn't a repository secret | `gh secret set AI_GATEWAY_API_KEY` |
 
+"Repository access" and "App owner" only appear when they are a problem; a healthy repository shows
+six lines.
+
 Anything doctor can't establish is `?` (unknown), never `✓`. A `?` for "App installed" usually means
 the `gh` token can't list installations, not that the App is missing. Say so to the user rather than
 treating it as a failure.

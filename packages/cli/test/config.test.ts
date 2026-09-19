@@ -140,3 +140,24 @@ test("init takes every wizard answer as a flag, so an agent without a terminal c
     expect(hunch(root, "init", "--target", "elsewhere").err).toContain("choose from app, actions, local");
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
+
+test("a repository with no origin is told which --base to pass, not git's 'Needed a single revision'", () => {
+  const root = repo({ "hunch.config.ts": CONFIG, "docs/contracts.md": "x" });
+  try {
+    git(root, ["-c", "user.name=T", "-c", "user.email=t@example.invalid", "commit", "--quiet", "-m", "base"]);
+    const r = hunch(root, "check", "--dry-run");
+    expect(r.status).toBe(2);
+    expect(r.err).toContain("This repository has no `origin` remote; pass --base with a local branch, such as --base main.");
+    expect(r.err).not.toContain("fatal:");
+    expect(hunch(root, "check", "--base", "main", "--dry-run").status).toBe(0);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+test("a dry run says when the real review would be incomplete for want of a compiled lock", () => {
+  const root = repo({ "hunch.config.ts": CONFIG.replace("agentsMd: false", "agentsMd: true"), "docs/contracts.md": "x", "AGENTS.md": "Keep error codes stable.\n", "src/a.ts": "export const a = 1;\n" });
+  try {
+    const r = hunch(root, "check", "--all", "--dry-run");
+    expect(r.status).toBe(0);
+    expect(r.err).toContain("hunch.lock is missing, so agents-md/root is not reviewed.");
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});

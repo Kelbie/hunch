@@ -4,6 +4,7 @@ import {
   policyRules,
   reportCondition,
   rulesFor,
+  staleNotice,
   staleSources,
   toWire,
   type Config,
@@ -95,7 +96,7 @@ export async function inspectConfig(loaded: { path: string; config: Config }, lo
   const references = [...new Set(all.map((r) => r.question.reference).filter((r): r is string => Boolean(r)))];
   for (const ref of references) if ((await repo.read(ref)) === null) problems.push(`reference ${ref} does not exist; rules using it would be skipped.`);
   const stale = await staleSources(lock, config, repo);
-  if (stale.length) problems.push(`hunch.lock is stale for: ${stale.join(", ")}. Run \`npx @kelbie/hunch compile\`.`);
+  if (stale.length) problems.push(staleNotice(lock, stale));
 
   let rules: RuleRow[];
   let fileInfo: ConfigReport["file"];
@@ -168,7 +169,7 @@ export function configText(report: ConfigReport): string {
     ["PR context", s.task === "pr" ? "title and description sent as task" : "not sent"],
     ["failOnError", String(s.failOnError)],
     ["budget", `${s.budget.maxHunks} hunks, ${s.budget.maxRequests} requests, ${s.budget.maxRulesPerHunk} rules per hunk, ${s.budget.timeoutSeconds}s`],
-    ["guidance", `${s.skills === undefined ? "every installed skill" : s.skills.length ? s.skills.map((k) => (typeof k === "string" ? k : k.repo)).join(", ") : "no skills"}${s.agentsMd ? ", AGENTS.md" : ""}${s.docs.length ? `, ${s.docs.join(", ")}` : ""}`],
+    ["guidance", `${s.skills === undefined ? "any skills installed in .agents/skills or .claude/skills" : s.skills.length ? s.skills.map((k) => (typeof k === "string" ? k : k.repo)).join(", ") : "no skills"}${s.agentsMd ? ", AGENTS.md" : ""}${s.docs.length ? `, ${s.docs.join(", ")}` : ""}`],
   ], 100));
   out.push("");
   if (report.file) {

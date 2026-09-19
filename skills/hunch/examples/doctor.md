@@ -31,5 +31,5 @@ Nothing is missing that Hunch can see from here.
 npx @kelbie/hunch doctor --reporter json
 ```
 
-Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.
+Not captured yet: this needs a `gh` login (no model key). Run `bun scripts/skill-examples.ts --live` where that is available.
 <!-- /case -->

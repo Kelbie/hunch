@@ -64,7 +64,7 @@ stdout:
 
 ```text
 hunch.config.ts has 1 problem:
-  ✗ hunch.lock is stale for: skill/api-style, agents-md/root. Run `npx @kelbie/hunch compile`.
+  ✗ hunch.lock is missing, so skill/api-style, agents-md/root are not reviewed. Run `npx @kelbie/hunch compile`.
 
   SETTING      VALUE
   provider     gateway (typesafe-ai/jev); zero data retention not enforced

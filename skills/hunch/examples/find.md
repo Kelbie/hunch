@@ -51,7 +51,7 @@ hunch: dry run, nothing sent. 7 file(s) as 7 chunk(s): 7 request(s), 35 question
 npx @kelbie/hunch find "make payment retries configurable" --reporter markdown
 ```
 
-Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.
+Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts/skill-examples.ts --live` where that is available.
 <!-- /case -->
 
 <!-- case: find-json -->
@@ -61,5 +61,5 @@ Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/sk
 npx @kelbie/hunch find "make payment retries configurable" --facet edit,test --reporter json --top 3
 ```
 
-Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.
+Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts/skill-examples.ts --live` where that is available.
 <!-- /case -->

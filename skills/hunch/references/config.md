@@ -120,6 +120,9 @@ further with their own `files`. These are never reviewed, whatever `include` say
 `*.min.js`, `*.min.css`, `*.map` and anything under `node_modules/`. Deleted files, binary files,
 renames and mode changes need human review and make the review partial.
 
+`hunch.config.ts` matches a TypeScript `include`, and its rule text contains the very words rules
+look for, so `init` puts it in `ignore`. Keep it there.
+
 Globs use picomatch syntax, with dotfiles matched: `src/**`, `**/*.{ts,tsx}`. Don't put a `!`
 negation in `include`. A negated pattern matches every other file, so it widens the scope. Use `ignore`.
 

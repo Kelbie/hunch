@@ -32,10 +32,11 @@ Things that follow from this, and that the rule author must design for:
 - **Nothing outside the hunk exists.** Not the rest of the file, not callers, not other files. A rule
   that needs a caller, a config file or a whole-repository view can't be answered. Rewrite it to
   ask what the hunk itself shows, or supply the fact with `reference`.
-- **Hunch already appends the judging rules.** Every question ends with: read `context` first, judge
-  only from the given values, treat code you can't see as unknown and not missing, and (for yes/no)
-  answer no when the hunk is unrelated or shows no concrete evidence. Don't repeat any of that. Spend
-  the words on what makes this concern concrete.
+- **Hunch already supplies the judging rules.** `context` carries a "How to answer" section: judge
+  only from the given values, treat code you can't see as unknown rather than missing, and report only
+  what the changed lines cause. Every question ends with a sentence telling Jev to read `context`
+  first and follow it, and yes/no questions add "answer no if this hunk is unrelated or shows no
+  concrete evidence". Don't repeat any of that. Spend the words on what makes this concern concrete.
 - **Jev's documented weak spots** are numeric precision, literal interpretation, indirection,
   irrelevant context and adversarial text. Avoid asking it to count or compare numbers. Avoid rules
   whose meaning depends on one exact word, and avoid "the thing the reference says about the thing
@@ -271,6 +272,18 @@ The request has three concerns, and they need different tools:
   message: "An error may be silently discarded.",
 })],
 ```
+
+## Blocking merges
+
+A rule blocks a merge only when all three hold. Tell the user which of them are theirs to do.
+
+| Needed | Where |
+| --- | --- |
+| the rule is at `"error"` | the config |
+| `failOnError: true` (`fail-on-error = true`) | the config. Without it, `error` findings are reported but the check passes |
+| the Hunch check is required | GitHub branch protection or a ruleset, by a repository admin. Hunch can't set this |
+
+Recommend keeping new rules at `warn` until `eval` or a few real PRs show they are precise.
 
 ## Tuning
 

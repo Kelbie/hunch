@@ -102,7 +102,7 @@ hunch: no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`, or 
 npx @kelbie/hunch check --base main
 ```
 
-Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.
+Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts/skill-examples.ts --live` where that is available.
 <!-- /case -->
 
 <!-- case: check-json -->
@@ -112,5 +112,5 @@ Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/sk
 npx @kelbie/hunch check --base main --only payments/retry-safety,tests/weakened --reporter json --code
 ```
 
-Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.
+Not captured yet: this needs a model key, because it calls Jev. Run `bun scripts/skill-examples.ts --live` where that is available.
 <!-- /case -->

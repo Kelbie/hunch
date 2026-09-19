@@ -178,6 +178,8 @@ interface Case {
   setup: () => string;
   /** Needs a model key, gh or a compiling agent. */
   live?: boolean;
+  /** What a live case needs, in words, for the placeholder shown until it is captured. */
+  needs?: string;
   /** Files to print after the run, from the repository it ran in. */
   show?: string[];
   env?: Record<string, string>;
@@ -281,7 +283,7 @@ const pages: Page[] = [
       { id: "compile-dry", title: "What would be compiled?", args: ["compile", "--dry-run"], setup: guidedShop },
       { id: "compile-noninteractive", title: "No terminal, no previous lock, no --with", note: "An agent must say which compiler to use.", args: ["compile"], setup: guidedShop },
       { id: "compile-nothing", title: "Nothing to compile", args: ["compile", "--dry-run"], setup: shop },
-      { id: "compile-claude", title: "Compile with Claude Code", live: true, args: ["compile", "--with", "claude", "--effort", "low"], setup: guidedShop, show: ["hunch.lock"] },
+      { id: "compile-claude", title: "Compile with Claude Code", live: true, needs: "Claude Code installed and logged in", args: ["compile", "--with", "claude", "--effort", "low"], setup: guidedShop, show: ["hunch.lock"] },
     ],
   },
   {
@@ -290,7 +292,7 @@ const pages: Page[] = [
     intro: "`doctor` answers \"why did my PR get no review?\" using your `gh` login. Captured against the Hunch repository itself.",
     cases: [
       { id: "doctor-local", title: "Not a GitHub repository", args: ["doctor"], setup: () => repo({ "package.json": "{}\n", "hunch.config.ts": "export default {};\n" }) },
-      { id: "doctor-hunch", title: "The Hunch repository", live: true, args: ["doctor", "--reporter", "json"], setup: () => { const d = mkdtempSync(join(tmpdir(), "hunch-example-")); cpSync(join(root, "hunch.config.ts"), join(d, "hunch.config.ts")); mkdirSync(join(d, ".github/workflows"), { recursive: true }); cpSync(join(root, ".github/workflows/hunch.yml"), join(d, ".github/workflows/hunch.yml")); git(d, "init", "--quiet"); git(d, "remote", "add", "origin", "https://github.com/Kelbie/hunch.git"); return d; } },
+      { id: "doctor-hunch", title: "The Hunch repository", live: true, needs: "a `gh` login (no model key)", args: ["doctor", "--reporter", "json"], setup: () => { const d = mkdtempSync(join(tmpdir(), "hunch-example-")); cpSync(join(root, "hunch.config.ts"), join(d, "hunch.config.ts")); mkdirSync(join(d, ".github/workflows"), { recursive: true }); cpSync(join(root, ".github/workflows/hunch.yml"), join(d, ".github/workflows/hunch.yml")); git(d, "init", "--quiet"); git(d, "remote", "add", "origin", "https://github.com/Kelbie/hunch.git"); return d; } },
     ],
   },
   {
@@ -319,7 +321,7 @@ function render(page: Page): string {
     if (c.live && !live) {
       return previous.get(c.id) ?? [
         `<!-- case: ${c.id} -->`, `### ${c.title}`, "", "```sh", `npx @kelbie/hunch ${c.args.map(quote).join(" ")}`, "```", "",
-        "Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.", "<!-- /case -->",
+        `Not captured yet: this needs ${c.needs ?? "a model key, because it calls Jev"}. Run \`bun scripts/skill-examples.ts --live\` where that is available.`, "<!-- /case -->",
       ].join("\n");
     }
     return run(c).block;

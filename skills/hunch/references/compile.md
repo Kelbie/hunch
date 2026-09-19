@@ -21,6 +21,9 @@ Nested `AGENTS.md` inherit their ancestors: each directory's guidance includes t
 nearer file winning. A file is governed only by the deepest applicable compiled AGENTS source. The
 combined text must fit 40 KB.
 
+`agentsMd` is on by default, so an `AGENTS.md` needs no config change. It is ignored until it is
+compiled. `hunch config` reports it as missing from `hunch.lock` until then.
+
 ## Running it
 
 | Situation | Command |

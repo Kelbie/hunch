@@ -21,6 +21,7 @@ import {
   repoHunks,
   serializeLock,
   selectionHash,
+  staleNotice,
   hashDoc,
   parseConfig,
   applyPresets,
@@ -42,7 +43,7 @@ import {
   type RepoReader,
 } from "../../core/src/index.js";
 import { spawnSync } from "node:child_process";
-import { branchDiff, localRepo, gitRepo, git } from "./local.js";
+import { branchDiff, commitOf, localRepo, gitRepo, git } from "./local.js";
 import { defaultAnswers, GITHUB_WORKFLOW, PRESET_NAMES, renderConfig, type ConfigAnswers, type PresetName } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
 import { resolveConfig } from "./inline.js";
@@ -85,7 +86,7 @@ export function buildProgram(): Command {
     .configureHelp({ showGlobalOptions: true });
 
   const root = () => (program.opts().cwd as string | undefined) ?? process.cwd();
-  const repoFor = (opts: Opts) => (opts.policyRef ? gitRepo(root(), opts.policyRef) : localRepo(root()));
+  const repoFor = (opts: Opts) => (opts.policyRef ? gitRepo(root(), opts.policyRef, "--policy-ref") : localRepo(root()));
 
   program
     .command("check")
@@ -435,8 +436,8 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   } else {
   if ([opts.diff, opts.staged, opts.head].filter(Boolean).length > 1) return fail("Choose only one of --diff, --staged or --head");
   if (opts.head) {
-    const base = git(root, ["rev-parse", "--verify", "--end-of-options", `${opts.base}^{commit}`]).trim();
-    const head = git(root, ["rev-parse", "--verify", "--end-of-options", `${opts.head}^{commit}`]).trim();
+    const base = commitOf(root, opts.base);
+    const head = commitOf(root, opts.head, "--head");
     diff = git(root, ["diff", "--no-color", "--no-ext-diff", "--no-textconv", `${base}...${head}`, "--"]);
   } else diff = opts.diff ? readFileSync(opts.diff, "utf8") : branchDiff(root, opts.base!, opts.staged);
   if (diff.length > 16_000_000) return fail("Diff exceeds 16 MB; review a smaller change");
@@ -463,6 +464,8 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
       questions += asked.length;
       requests += new Set(asked.map((r) => r.question.reference ?? "")).size;
     }
+    // The real run would be incomplete; a dry run is where someone decides whether to run it.
+    if (stale.length) console.error(`hunch: ${staleNotice(lock, stale)} A review now would be incomplete.`);
     console.log(`hunch: dry run, nothing sent. ${new Set(reviewed.map((h) => h.file)).size} file(s) as ${reviewed.length} hunk(s): ${questions} question(s) in ${Math.min(requests, config.budget.maxRequests)} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
     return;
   }
@@ -482,7 +485,7 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   if (stale.length) result.complete = false;
   const unreviewable = unreviewableFiles(diff).filter(inScope(config));
   if (unreviewable.length) { result.complete = false; result.notices.push(`Binary, rename-only or mode changes need human review: ${unreviewable.join(", ")}.`); }
-  if (stale.length) result.notices.push(`hunch.lock is stale for: ${stale.join(", ")}. Run \`npx @kelbie/hunch compile\`.`);
+  if (stale.length) result.notices.push(staleNotice(lock, stale));
 
   switch (opts.reporter) {
     case "markdown":
@@ -548,7 +551,10 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   if (skipped.length) console.error(`hunch: skipped ${skipped.length} unreadable, binary or oversized file(s)`);
   const files = new Set(hunks.map((h) => h.file)).size;
   if (opts.dryRun) {
-    console.log(`hunch: dry run, nothing sent. ${files} file(s) as ${hunks.length} chunk(s): ${hunks.length} request(s), ${(facets.length || FACETS.length) * hunks.length} question(s).`);
+    // Listing open pull requests is free, but judging them is not; how many there are is only
+    // known once listed, so say the rule rather than guess a number.
+    const prs = opts.prs ? ` With --prs, add one request per open pull request title, and up to ${opts.prMax ?? 10} more for the diffs whose titles match.` : "";
+    console.log(`hunch: dry run, nothing sent. ${files} file(s) as ${hunks.length} chunk(s): ${hunks.length} request(s), ${(facets.length || FACETS.length) * hunks.length} question(s).${prs}`);
     return;
   }
   if (!hunks.length) return fail("nothing in scope to search; check `include` and the paths you passed.");

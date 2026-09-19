@@ -22,7 +22,8 @@ const LANGUAGE_INCLUDE: Record<Exclude<PresetName, "recommended">, string> = {
   rust: "**/*.rs",
 };
 const LANGUAGE_IGNORE: Record<Exclude<PresetName, "recommended">, string[]> = {
-  typescript: ["dist/**", "node_modules/**", "**/*.generated.ts"],
+  // The config itself matches a TypeScript include, and its rule text would trip its own rules.
+  typescript: ["dist/**", "node_modules/**", "**/*.generated.ts", "hunch.config.ts"],
   rust: ["target/**"],
 };
 const GENERAL_IGNORE = ["node_modules/**", "dist/**", "target/**", ".git/**"];

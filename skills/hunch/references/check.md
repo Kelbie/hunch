@@ -24,7 +24,8 @@ applies. An inline config selects no skills or AGENTS.md unless it asks for them
 
 ## Before spending
 
-`--dry-run` prints files, hunks, questions and requests, and sends nothing:
+`--dry-run` prints files, hunks, questions and requests, and sends nothing. It also warns on stderr
+when `hunch.lock` is missing or stale, because the real run would then be incomplete:
 
 ```text
 hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 15 question(s) in 2 request(s). Budget: 100 hunks, 100 requests, 180s.
@@ -95,6 +96,7 @@ prints a notice and exits 0.
 | stderr | Fix |
 | --- | --- |
 | `no hunch.config.ts or hunch.toml found` | `init`, or pass `--rule`/`--config` |
+| `--base origin/main is not a commit in this repository` | no `origin` remote, or it isn't fetched: pass `--base main` (or the branch you started from), or `git fetch origin` |
 | `--only: no rule …` | `hunch config` lists the ids |
 | `hunch.lock is stale for: …` (a notice) | `compile`, then commit `hunch.lock` |
 | a provider error mentioning zero data retention | the account can't enforce ZDR; the user decides about `zeroDataRetention: false` |

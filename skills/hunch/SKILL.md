@@ -64,6 +64,8 @@ against it.
 | a change to make | the code it touches | `find "<task>"`, plus `--prs` to check for duplicate work |
 | a PR with no review | the reason | `doctor` |
 | a noisy rule | fewer false positives | [rules.md](references/rules.md#tuning), then `eval` |
+| a rule that must block merges | it enforced | `"error"` + `failOnError: true` + a required check: [rules.md](references/rules.md#blocking-merges) |
+| no `origin` remote | to review a branch | `check --base main` (the default base is `origin/main`) |
 
 ## Exit codes
 

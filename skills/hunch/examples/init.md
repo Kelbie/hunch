@@ -29,7 +29,7 @@ import { defineConfig } from "@kelbie/hunch";
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript"],
   include: ["**/*.{ts,tsx,mts,cts,js,jsx,mjs,cjs}"],
-  ignore: ["dist/**", "node_modules/**", "**/*.generated.ts"],
+  ignore: ["dist/**", "node_modules/**", "**/*.generated.ts", "hunch.config.ts"],
 });
 ```
 
@@ -99,7 +99,7 @@ import { defineConfig } from "@kelbie/hunch";
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript", "hunch:rust"],
   include: ["src/**"],
-  ignore: ["dist/**", "node_modules/**", "**/*.generated.ts", "target/**"],
+  ignore: ["dist/**", "node_modules/**", "**/*.generated.ts", "hunch.config.ts", "target/**"],
   failOnError: true,
   // Vercel Hobby cannot enforce zero data retention; see the Hunch skill's config reference.
   zeroDataRetention: false,

@@ -66,5 +66,5 @@ hunch: no skills, AGENTS.md or docs found to compile.
 npx @kelbie/hunch compile --with claude --effort low
 ```
 
-Not captured yet: this calls Jev, `gh` or a compiling agent. Run `bun scripts/skill-examples.ts --live` with a model key.
+Not captured yet: this needs Claude Code installed and logged in. Run `bun scripts/skill-examples.ts --live` where that is available.
 <!-- /case -->
