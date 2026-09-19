@@ -39,16 +39,35 @@ export function git(cwd: string, args: string[]): string {
   return execFileSync("git", args, { cwd, encoding: "utf8", maxBuffer: 16 * 1024 * 1024 });
 }
 
+/**
+ * A ref as a commit SHA, or an error that says what to pass instead. The default base is
+ * `origin/main`, which a fresh repository or one without a remote does not have, and git's own
+ * "fatal: Needed a single revision" does not tell anyone that.
+ */
+export function commitOf(root: string, ref: string, flag = "--base"): string {
+  try {
+    return execFileSync("git", ["rev-parse", "--verify", "--quiet", "--end-of-options", `${ref}^{commit}`], { cwd: root, encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim();
+  } catch {
+    const remote = /^([^/]+)\//.exec(ref)?.[1];
+    let remotes: string[] = [];
+    try { remotes = git(root, ["remote"]).split("\n").filter(Boolean); } catch {}
+    const hint = remote && !remotes.includes(remote)
+      ? ` This repository has no \`${remote}\` remote; pass ${flag} with a local branch, such as ${flag} main.`
+      : remote ? ` Run \`git fetch ${remote}\`, or pass ${flag} with a local branch.` : "";
+    throw new Error(`${flag} ${ref} is not a commit in this repository.${hint}`);
+  }
+}
+
 export function branchDiff(root: string, base: string, staged = false): string {
   if (staged) return git(root, ["diff", "--cached", "--no-color", "--no-ext-diff", "--no-textconv"]);
-  const sha = git(root, ["rev-parse", "--verify", "--end-of-options", `${base}^{commit}`]).trim();
+  const sha = commitOf(root, base);
   const mergeBase = git(root, ["merge-base", sha, "HEAD"]).trim();
   return git(root, ["diff", "--no-color", "--no-ext-diff", "--no-textconv", mergeBase, "--"]);
 }
 
 /** Trusted policy snapshot for Actions. Never copies files over a PR checkout. */
-export function gitRepo(root: string, ref: string): RepoReader {
-  const sha = git(root, ["rev-parse", "--verify", "--end-of-options", `${ref}^{commit}`]).trim();
+export function gitRepo(root: string, ref: string, flag = "--head"): RepoReader {
+  const sha = commitOf(root, ref, flag);
   const entries = git(root, ["ls-tree", "-rz", sha]).split("\0").filter(Boolean).map((line) => {
     const [meta, path] = line.split("\t");
     return { mode: meta!.split(" ")[0], path: path! };

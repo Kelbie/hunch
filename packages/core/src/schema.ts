@@ -49,6 +49,10 @@ export const choiceQuestionSchema = z.strictObject({
   /** Options that produce a finding when chosen. */
   report: z.array(z.string()).min(1),
   minConfidence: z.number().min(0).max(1).default(0),
+}).refine((q) => q.report.every((label) => Object.hasOwn(q.criteria, label)), {
+  // A label Jev is never offered can never be chosen, so the rule would stay silent forever.
+  message: "every report label must be one of the criteria",
+  path: ["report"],
 });
 
 export const scoreQuestionSchema = z
@@ -182,10 +186,29 @@ export type Config = Omit<z.output<typeof configSchema>, "rules"> & { rules: Rec
 export function parseConfig(raw: unknown, origin: string): Config {
   const res = configSchema.safeParse(raw);
   if (!res.success) {
-    const lines = res.error.issues.map((i) => `  ${i.path.join(".") || "(root)"}: ${i.message}`);
+    const lines = res.error.issues.flatMap((i) => specific(i)).map((i) => `  ${i.path.join(".") || "(root)"}: ${i.message}`);
     throw new ConfigError(`${origin} is invalid:\n${lines.join("\n")}`);
   }
   return res.data;
+}
+
+type Issue = { code: string; path: PropertyKey[]; message: string; errors?: Issue[][]; expected?: string };
+
+/**
+ * A rule can be written four ways, so a mistake in one fails a union, and zod reports only
+ * "Invalid input" for the whole rule. Reports the branch the author was evidently writing instead:
+ * the one that got furthest before failing, rather than the shapes it was never meant to be.
+ */
+function specific(issue: Issue, prefix: PropertyKey[] = []): { path: PropertyKey[]; message: string }[] {
+  const path = [...prefix, ...issue.path];
+  if (issue.code !== "invalid_union" || !issue.errors?.length) return [{ path, message: issue.message }];
+  // A wrong type at the top means "not this shape at all"; a wrong value of the right type (a
+  // misspelt level) is closer; anything that got inside the value is closest.
+  const rank = (i: Issue) => (i.path.length ? 1 + i.path.length : i.code === "invalid_type" ? 0 : i.code === "invalid_value" ? 0.5 : 1);
+  const depth = (branch: Issue[]) => Math.min(...branch.map(rank));
+  const best = issue.errors.reduce((a, b) => (depth(b) > depth(a) ? b : a));
+  if (depth(best) === 0) return [{ path, message: issue.message }];
+  return best.flatMap((i) => specific(i, path));
 }
 
 export class ConfigError extends Error {

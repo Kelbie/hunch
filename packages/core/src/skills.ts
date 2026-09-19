@@ -187,6 +187,13 @@ export const hashDoc = (d: SourceDoc) => sha256(`${d.kind}\n${d.origin}\n${d.com
  * commit, so only local skills, AGENTS.md and docs can drift. Returns ids that
  * are new, changed or gone.
  */
+/** The notice for guidance the lock doesn't cover: never compiled at all, or compiled from older text. */
+export function staleNotice(lock: Lock | null, stale: string[]): string {
+  return lock
+    ? `hunch.lock is stale for: ${stale.join(", ")}. Run \`npx @kelbie/hunch compile\`.`
+    : `hunch.lock is missing, so ${stale.join(", ")} ${stale.length === 1 ? "is" : "are"} not reviewed. Run \`npx @kelbie/hunch compile\`.`;
+}
+
 export async function staleSources(lock: Lock | null, config: Config, repo: RepoReader): Promise<string[]> {
   const localOnly = { ...config, skills: config.skills?.filter((s) => parseSkillSource(s).type === "local") };
   const docs = await collectSources(localOnly, repo, noRemote);

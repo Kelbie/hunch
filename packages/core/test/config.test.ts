@@ -113,3 +113,16 @@ files = ["tests/**"]
     expect(() => parseConfig(tomlToConfig(`[rules]\n"x" = ["loud", "y"]`), "hunch.toml")).toThrow(/hunch.toml is invalid/);
   });
 });
+
+test("a mistake inside a rule names the field, not just 'Invalid input'", () => {
+  const error = (toml: string) => { try { parseConfig(tomlToConfig(toml), "hunch.toml"); return "accepted"; } catch (e) { return (e as Error).message; } };
+  expect(error(`[rules."a/b"]\nlevel = "warn"\nnoul = "Q?"\nthreshold = 2\n`)).toContain("rules.a/b.threshold: Too big");
+  expect(error(`[rules."a/b"]\nlevel = "warn"\nscore = "How?"\ncriteria = ["a", "b"]\n`)).toContain("score rules need reportBelow or reportAbove");
+  expect(error(`[rules]\n"a/b" = "warning"\n`)).toContain('expected one of "off"|"warn"|"error"');
+  expect(error(`[rules."a/b"]\nlevel = "warn"\nnoul = "Q?"\ntreshold = 0.9\n`)).toContain('Unrecognized key: "treshold"');
+});
+
+test("a choice rule cannot report a label Jev is never offered, since it could never fire", () => {
+  expect(() => parseConfig(tomlToConfig(`[rules."a/b"]\nlevel = "warn"\nchoice = "What?"\ncriteria = { ok = "Fine.", bad = "Broken." }\nreport = ["broke"]\n`), "hunch.toml"))
+    .toThrow("every report label must be one of the criteria");
+});

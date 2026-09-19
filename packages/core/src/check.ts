@@ -3,8 +3,8 @@ import { hunkContext } from "./context.js";
 import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
 import { inScope as scopeFilter } from "./full.js";
 import type { Answer, JevClient, WireQuestion } from "./jev.js";
-import type { Lock } from "./lock.js";
-import type { Config, Level, Question } from "./schema.js";
+import type { CompiledRule, Lock } from "./lock.js";
+import type { Config, Level, Question, RuleEntry } from "./schema.js";
 
 export interface Finding {
   rule: string;
@@ -29,6 +29,8 @@ export interface CheckInput {
   /** Reads repo files for `reference:` (from the base ref). */
   readFile?: (path: string) => Promise<string | null>;
   onProgress?: (done: number, total: number) => void;
+  /** Ask only these rule ids, to try a rule without paying for the rest. */
+  only?: readonly string[];
 }
 
 export interface CheckResult {
@@ -98,7 +100,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   });
 
   async function checkHunk(hunk: Hunk) {
-    const rules = rulesFor(hunk.file, config, input.lock);
+    const rules = rulesFor(hunk.file, config, input.lock, input.only);
 
     let candidates = rules.jev.filter((r) => !r.question.when || new RegExp(r.question.when.source, r.question.when.flags).test(hunk.text));
     if (candidates.length > config.budget.maxRulesPerHunk) {
@@ -169,8 +171,8 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   return { findings: dedupe(findings), stats, notices: [...new Set(notices)], info, complete: !incomplete };
 }
 
-/** Effective rules for one file: config + presets + overrides + compiled skill rules. */
-export function rulesFor(file: string, config: Config, lock?: Lock | null) {
+/** Effective rules for one file: config + presets + overrides + compiled skill rules. `only` keeps just those ids. */
+export function rulesFor(file: string, config: Config, lock?: Lock | null, only?: readonly string[]) {
   const entries = new Map(Object.entries(config.rules));
   for (const o of config.overrides) {
     if (!picomatch(o.files, { dot: true })(file)) continue;
@@ -188,9 +190,6 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null) {
     else if (!id.includes("*") && !/^(skill|agents-md|doc)\//.test(id)) throw new Error(`rule "${id}" has no question`);
   }
 
-  // Compiled rules default to warn; config may re-level them by id or glob
-  // (e.g. "skill/seo/*": "off").
-  const levelPatterns = [...entries].filter(([id, e]) => !e.question && id.includes("*"));
   const applicableAgentSources = (lock?.sources ?? []).filter((s) => s.kind === "agents-md" && (!s.scope || file.startsWith(`${s.scope}/`)));
   const deepestAgent = applicableAgentSources.sort((a, b) => b.scope.length - a.scope.length)[0]?.id;
   for (const src of lock?.sources ?? []) {
@@ -198,27 +197,75 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null) {
     if (src.scope && !(file === src.scope || file.startsWith(`${src.scope}/`))) continue;
     for (const r of src.rules) {
       if (r.appliesTo.length && !picomatch(r.appliesTo, { dot: true, matchBase: true })(file)) continue;
-      let level: Level = "warn";
-      for (const [pat, e] of levelPatterns) if (picomatch.isMatch(r.id, pat)) level = e.level;
-      level = entries.get(r.id)?.level ?? level;
+      const level = compiledLevel(entries, r.id);
       if (level === "off" || entries.get(r.id)?.question) continue;
-      jev.push({
-        id: r.id,
-        level,
-        compiled: true,
-        source: src.id,
-        question: {
-          kind: "noul",
-          instructions: r.instructions,
-          criteria: r.criteria,
-          threshold: 0.75,
-          message: r.message,
-          ...(r.when ? { when: { source: r.when, flags: "" } } : {}),
-        },
-      });
+      jev.push({ id: r.id, level, compiled: true, source: src.id, question: compiledQuestion(r) });
     }
   }
-  return { jev };
+  return { jev: only ? jev.filter((r) => only.includes(r.id)) : jev };
+}
+
+/**
+ * Compiled rules default to warn; config may re-level them by id or glob (e.g. "skill/seo/*": "off").
+ */
+function compiledLevel(entries: Map<string, RuleEntry>, id: string): Level {
+  let level: Level = "warn";
+  for (const [pat, e] of entries) if (!e.question && pat.includes("*") && picomatch.isMatch(id, pat)) level = e.level;
+  return entries.get(id)?.level ?? level;
+}
+
+function compiledQuestion(r: CompiledRule): Question {
+  return {
+    kind: "noul",
+    instructions: r.instructions,
+    criteria: r.criteria,
+    threshold: 0.75,
+    message: r.message,
+    ...(r.when ? { when: { source: r.when, flags: "" } } : {}),
+  };
+}
+
+/** One rule as the policy defines it, before any file decides whether it applies. */
+export interface PolicyRule {
+  id: string;
+  level: Level;
+  question: Question;
+  source: string;
+  /** Compiled from guidance into hunch.lock, rather than written in config or a preset. */
+  compiled: boolean;
+  /** Compiled rules only: the directory their AGENTS.md or skill governs, and the globs they apply to. */
+  scope?: string;
+  appliesTo?: string[];
+}
+
+/**
+ * Every rule the policy defines, whichever files it applies to, at the level config gives it —
+ * including rules turned off, so a person can see what they switched off. Overrides are not applied:
+ * they depend on the file, and `rulesFor` answers that question.
+ */
+export function policyRules(config: Config, lock?: Lock | null): PolicyRule[] {
+  const entries = new Map(Object.entries(config.rules));
+  const rows: PolicyRule[] = [];
+  for (const [id, e] of entries) if (e.question) rows.push({ id, level: e.level, question: e.question, source: e.source ?? "config", compiled: false });
+  for (const src of lock?.sources ?? []) {
+    for (const r of src.rules) {
+      if (entries.get(r.id)?.question) continue;
+      rows.push({ id: r.id, level: compiledLevel(entries, r.id), question: compiledQuestion(r), source: src.id, compiled: true, scope: src.scope || undefined, appliesTo: r.appliesTo.length ? r.appliesTo : undefined });
+    }
+  }
+  return rows;
+}
+
+/** When a rule's answer becomes a finding, in words: the same test `judge` applies. */
+export function reportCondition(q: Question): string {
+  switch (q.kind) {
+    case "noul": return `p(yes) ≥ ${q.threshold}`;
+    case "choice": return `answer is ${q.report.join(" or ")}${q.minConfidence ? ` with confidence ≥ ${q.minConfidence}` : ""}`;
+    case "score": {
+      const bounds = [q.reportBelow !== undefined && `score < ${q.reportBelow}`, q.reportAbove !== undefined && `score > ${q.reportAbove}`].filter(Boolean).join(" or ");
+      return `${bounds || "never"} (0 = first criterion, 1 = last)${q.minConfidence ? ` with confidence ≥ ${q.minConfidence}` : ""}`;
+    }
+  }
 }
 
 /**

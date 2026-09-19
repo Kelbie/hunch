@@ -2,7 +2,10 @@ import { choice, defineConfig, noul, score } from "@kelbie/hunch";
 
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript", "hunch:rust"],
-  include: ["packages/**/src/**/*.ts", "apps/**/{api,lib}/**/*.ts", "examples/review-showcase/**/*.{ts,rs}"],
+  include: ["packages/**/src/**/*.ts", "apps/**/{api,lib}/**/*.ts", "examples/review-showcase/**/*.{ts,rs}", "skills/hunch/**/*.md", "README.md"],
+  // The skill is the user documentation. Generated pages are checked by tests; these are the
+  // hand-written ones, and only the docs rule below is asked about them.
+  ignore: ["skills/hunch/references/cli.md", "skills/hunch/examples/**"],
   skills: ["./.agents/skills/codebase-design"],
   agentsMd: true,
   // Explicit opt-out for this public repository on Vercel Hobby.
@@ -15,6 +18,17 @@ export default defineConfig({
     })],
     "security/trusted-policy": ["error", "PR content must not control the trusted policy used to judge that same PR."],
     "report/evidence": ["warn", "A report must distinguish a configured rule description from a model-generated explanation or an independently proven defect."],
+    "docs/skill-matches-cli": ["warn", noul({
+      files: ["skills/hunch/**/*.md", "README.md"],
+      instructions: "Does the documentation added or changed in `hunk` state a Hunch command, flag, default value, exit code or output that contradicts the generated CLI reference in `reference`? Require a concrete statement in `hunk` and the specific entry in `reference` it disagrees with.",
+      criteria: {
+        true: "A command, flag, default, exit code or output described in the changed lines disagrees with the reference.",
+        false: "Everything the changed lines say about the CLI matches the reference, or they describe something the reference does not cover.",
+      },
+      threshold: 0.8,
+      reference: "skills/hunch/references/cli.md",
+      message: "This documentation may contradict what the CLI actually accepts or does.",
+    })],
     "demo/tenant-access": ["error", noul({
       files: ["examples/review-showcase/typescript/authorization.ts"],
       instructions: "Does the changed invoice lookup in `hunk` let a signed-in actor read a different tenant's invoice by supplying that tenant's ID, without verifying that the actor belongs to it? Require visible evidence of both the input and the missing authorization check.",
@@ -46,4 +60,13 @@ export default defineConfig({
       message: "Callers may have to coordinate internal steps and intermediate state, making the required order easy to misuse.",
     })],
   },
+  // Code rules are not asked about documentation.
+  overrides: [{
+    files: ["skills/hunch/**/*.md", "README.md"],
+    rules: {
+      "failures/misleading-success": "off", "correctness/edge-case-regression": "off", "tests/weakened-test": "off",
+      "docs/contradictory-comment": "off", "review/honest-coverage": "off", "security/trusted-policy": "off",
+      "report/evidence": "off", "skill/*/*": "off", "agents-md/*/*": "off",
+    },
+  }],
 });
