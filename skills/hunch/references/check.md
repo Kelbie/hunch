@@ -22,19 +22,19 @@ Reviews changed lines, or whole files, against the rules. Real output:
 `--staged`. A `--config` replaces the repository's config file, and `--rule` adds to whichever config
 applies. An inline config selects no skills or AGENTS.md unless it asks for them.
 
-## Before spending
+## Dry runs
 
-`--dry-run` prints files, hunks, questions and requests, and sends nothing. It also warns on stderr
-when `hunch.lock` is missing or stale, because the real run would then be incomplete:
+Reviews are cheap (see [cost](../SKILL.md#cost)), so just run `check`. `--dry-run` is for when the
+user wants to see scope: it prints files, hunks, questions and requests, and sends nothing. It also
+warns on stderr when `hunch.lock` is missing or stale, because the real run would then be incomplete:
 
 ```text
 hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 15 question(s) in 2 request(s). Budget: 100 hunks, 100 requests, 180s.
 ```
 
-A request carries every question for one hunk, plus one more request per distinct `reference`.
-Jev charges by input tokens, so cost grows with hunk size × requests. On a large branch, compare
-the request count with `budget.maxRequests`, because anything past the budget is skipped and the
-review is marked partial. Ask before running a large review.
+A request carries every question for one hunk, plus one more request per distinct `reference`. What
+matters on a large branch is `budget.maxRequests`, not money: anything past the budget is skipped
+and the review is marked partial. Raise the budget rather than accept a partial review.
 
 A key is needed only when something is actually sent: `AI_GATEWAY_API_KEY`, `TYPESAFE_API_KEY`
 (with `provider: "typesafe"`), or Vercel OIDC.

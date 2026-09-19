@@ -59,7 +59,7 @@ against it.
 | a config | to review only what is staged | `check --staged` |
 | a config | to review whole files, not a diff | `check --all [path]` |
 | a new or edited rule | to know it is valid and what it asks | `config`, then `config --explain <id>` |
-| a new rule | to try it cheaply | `check --only <id> --dry-run`, then without `--dry-run` |
+| a new rule | to try it | `check --only <id>` |
 | AGENTS.md or skills | them enforced in review | `compile`, then commit `hunch.lock` |
 | an issue to fix or a PR to make | to start work | the [workflow below](#from-an-issue-to-a-pr): `find "<task>" --prs`, then `check` |
 | a change to make | only the code it touches | `find "<task>"` |
@@ -74,12 +74,13 @@ The user describes the change in their own words, e.g. "/hunch the onchain QR pa
 the amount is outside what the mint supports". They shouldn't need to name flags. Do all of this:
 
 1. Turn their words into one task sentence that names the behaviour to change.
-2. `find "<task>" --prs --dry-run`, and say what it will cost.
-3. `find "<task>" --prs --reporter markdown`. Lead with any open PR judged a `duplicate` or
+2. `find "<task>" --prs --reporter markdown` over the whole repository. Don't dry-run it, ask
+   first, or narrow the paths to save money (see [cost](#cost)). Add `--concurrency 32` when the
+   repository has more than a few hundred files, so it finishes sooner. Lead with any open PR judged a `duplicate` or
    `overlap`, because they may not need to start at all. Then read the `edit`, `contract` and `test`
    matches yourself before planning.
-4. Make the change.
-5. `check` against the branch's base (`--base main` when there is no `origin`), dry run first. Report
+3. Make the change.
+4. `check` against the branch's base (`--base main` when there is no `origin`). Report
    findings and completeness before they open the PR.
 
 ## Exit codes
@@ -94,8 +95,12 @@ The same on every command.
 
 ## Always
 
-- **Dry-run before spending.** `check`, `find` and `compile` take `--dry-run`, which prints what would be
-  sent. Check the count, and get the user's consent before a large run.
+- <a id="cost"></a>**Cost is not a reason to hold back.** Jev is priced at about $0.04 per million input
+  tokens, and a chunk is at most a few thousand tokens. A whole-repository `find` over a few thousand
+  chunks costs well under a dollar, and a branch `check` costs a fraction of a cent. Run what the task needs without asking
+  permission, dry-running or narrowing the scope to save money. Use `--dry-run` only when the user asks
+  what would be sent, or to check scope. Time is the real limit on a big repository, so raise
+  `find --concurrency`. A compile is different: it runs a coding agent, so confirm it first.
 - **Keys never go in config.** `AI_GATEWAY_API_KEY` or `TYPESAFE_API_KEY` belongs in the environment,
   `.env.local` (git-ignored) or a repository secret. Never echo a key, or put one in argv.
 - **Policy comes from the base branch.** The App and the Actions workflow read the config and
@@ -117,8 +122,7 @@ Edit `hunch.config.ts` or `hunch.toml` directly; `init` only creates it. After e
 1. `config`. Exit 0 means valid. Any listed problem is something `check` would fail on or skip.
 2. `config --explain <id>` for each rule you touched. Read the instructions and criteria exactly as
    Jev will receive them.
-3. `check --only <id> --dry-run` to count what the rule costs on this branch.
-4. With the user's go-ahead: `check --only <id>`, and `eval` if they have labelled fixtures.
+3. `check --only <id>` on this branch, and `eval` if the user has labelled fixtures.
 
 ## Files Hunch owns
 

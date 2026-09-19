@@ -128,10 +128,10 @@ For "/hunch rules add a rule for ensuring x, y, z":
 5. **Write** it into the config at `warn`, next to related rules, with a short comment if the reason
    isn't obvious.
 6. **Validate**: `hunch config` (exit 0), `hunch config --explain <id>`, then
-   `hunch check --only <id> --dry-run`.
+   `hunch check --only <id>`.
 7. **Report back** in a table: rule id, type, what it flags, what it deliberately doesn't, and what
-   you did instead for the parts that weren't Hunch rules. Offer a real run (`check --only <id>`),
-   and `eval` fixtures before anyone promotes it to `error`.
+   you did instead for the parts that weren't Hunch rules, and what `check --only <id>` found.
+   Suggest `eval` fixtures before anyone promotes a rule to `error`.
 
 ## Worked examples
 

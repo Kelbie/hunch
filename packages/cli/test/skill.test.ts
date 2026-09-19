@@ -163,6 +163,7 @@ test("every relative link in the skill and README lands on a file and heading th
       const anchors = new Set([
         ...[...body.matchAll(/^#{1,6} (.+)$/gm)].map((h) => slug(h[1]!)),
         ...[...body.matchAll(/<!-- case: ([\w-]+) -->/g)].map((c) => c[1]!),
+        ...[...body.matchAll(/<a id="([\w-]+)"><\/a>/g)].map((a) => a[1]!),
       ]);
       if (!anchors.has(anchor)) failures.push(`${relative(ROOT, file)}: ${m[1]} (no such heading)`);
     }
