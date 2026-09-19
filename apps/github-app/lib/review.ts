@@ -54,7 +54,7 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
   if ("value" in loaded && !loaded.value) return "skipped";
   const { id } = await api.startCheck(job.repo, headSha, `hunch:${job.pr}:${baseSha}:${headSha}:${job.deliveryId ?? "local"}`, deps.appId);
   try {
-    if ("error" in loaded) throw new PermanentError("The Hunch config on the base branch is invalid. Run `npx @kelbie/hunch check` locally to see why, fix it on the base branch, then comment /hunch recheck.");
+    if ("error" in loaded) throw new PermanentError("The Hunch config on the base branch is invalid. Run `npx @kelbie/hunch config` locally to see why, fix it on the base branch, then comment /hunch recheck.");
     const { config } = loaded.value!;
     if (pull.changed_files > 300) throw new PermanentError("This PR changes more than 300 files, GitHub's comparison limit. Split it to get a review.");
     const text = await base.read(LOCK_FILE);

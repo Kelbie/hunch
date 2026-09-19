@@ -105,6 +105,9 @@ export function buildProgram(): Command {
     .option("--only <ids>", "ask only these rules, comma-separated; to try a rule you just wrote")
     .option("--policy-ref <ref>", "read config and lock from this ref (the App uses the base commit)")
     .addHelpText("after", `
+Exits 0 when the review is complete, 1 when failOnError is set and an error-level concern was
+found, and 2 when the review is incomplete or could not run.
+
 Examples:
   hunch check                                 review this branch against origin/main
   hunch check --staged                        review what you are about to commit
@@ -136,6 +139,7 @@ Examples:
     .option("--config <json|file|->", "settings as JSON instead of a config file (include, ignore, provider); repeatable", collect, [])
     .addHelpText("after", `
 Works without a config: it then searches every file, minus lockfiles, minified files and node_modules.
+Exits 2 when any chunk or the pull request list could not be searched.
 
 Examples:
   hunch find "add a rate limit to the upload endpoint"
@@ -209,6 +213,13 @@ Examples:
     .description("say why this repository is not being reviewed")
     .option("--app <slug>", "the App to look for", "hunch-review")
     .option("--reporter <format>", "text or json", "text")
+    .addHelpText("after", `
+Checks the config on the default branch, the App installation, and the Actions workflow and secret,
+using your gh login. Exits 1 when a check fails; a fact it cannot establish is "unknown", never "ok".
+
+Examples:
+  hunch doctor
+  hunch doctor --app my-hunch-app --reporter json`)
     .action((opts: Opts) => runDoctor(opts, root()));
 
   program
@@ -442,8 +453,17 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   const task = opts.task ?? prTaskFromEvent();
   if (opts.dryRun) {
     const reviewed = hunks.filter((h) => h.status !== "deleted" && inScope(config)(h.file)).flatMap((h) => windowHunk(h)).slice(0, config.budget.maxHunks);
-    const questions = reviewed.reduce((n, h) => n + Math.min(rulesFor(h.file, config, lock, only).jev.length, config.budget.maxRulesPerHunk), 0);
-    console.log(`hunch: dry run, nothing sent. ${new Set(reviewed.map((h) => h.file)).size} file(s) as ${reviewed.length} hunk(s): up to ${questions} question(s) in ${Math.min(reviewed.length, config.budget.maxRequests)} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
+    // The same selection check makes: a hunk no rule asks about, after `files` and `when`, sends
+    // nothing, and each distinct `reference` among the rest is its own request.
+    let questions = 0, requests = 0;
+    for (const h of reviewed) {
+      const asked = rulesFor(h.file, config, lock, only).jev
+        .filter((r) => !r.question.when || new RegExp(r.question.when.source, r.question.when.flags).test(h.text))
+        .slice(0, config.budget.maxRulesPerHunk);
+      questions += asked.length;
+      requests += new Set(asked.map((r) => r.question.reference ?? "")).size;
+    }
+    console.log(`hunch: dry run, nothing sent. ${new Set(reviewed.map((h) => h.file)).size} file(s) as ${reviewed.length} hunk(s): ${questions} question(s) in ${Math.min(requests, config.budget.maxRequests)} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
     return;
   }
   // Created on first request, so a diff with nothing to review needs no API key.
@@ -703,6 +723,7 @@ async function runInit(opts: Opts, root: string, explicit: boolean) {
 }
 
 async function runDoctor(opts: Opts, root: string) {
+  if (!["text", "json"].includes(opts.reporter)) return fail("Unknown --reporter for doctor; use text or json");
   const checks = await diagnose({
     gh: ghApi,
     local: (p) => { try { return readFileSync(join(root, p), "utf8"); } catch { return null; } },

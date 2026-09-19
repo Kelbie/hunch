@@ -1,6 +1,6 @@
 {
   "name": "@kelbie/hunch",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "description": "Gut-check every pull request against plain-English rules and your agent skills, using TypeSafe's Jev.",
   "type": "module",
   "bin": {
@@ -49,7 +49,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node ../../scripts/sync-readme.mjs && tsup --config tsup.config.ts",
+    "build": "node ../../scripts/sync-readme.mjs && bun ../../scripts/sync-skill.ts && tsup --config tsup.config.ts",
     "prepack": "bun run build"
   }
 }

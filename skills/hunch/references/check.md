@@ -1,0 +1,101 @@
+# hunch check
+
+Reviews changed lines, or whole files, against the rules. Real output:
+[examples/check.md](../examples/check.md). Every flag: [cli.md](cli.md#hunch-check).
+
+## What to review
+
+| The user wants | Command |
+| --- | --- |
+| this branch against `origin/main` | `check` |
+| against another base | `check --base main` (a local branch) or `--base origin/develop` |
+| only what is staged | `check --staged` |
+| one branch against another, without checking it out | `check --base main --head feature/x` |
+| a saved diff | `check --diff change.diff` |
+| whole files, not a diff | `check --all [paths…]`, or `--all --head <ref>` for a branch |
+| only some paths | add them as arguments: `check src/payments` |
+| one or two rules | `--only payments/retry-safety,tests/weakened` |
+| rules without a config file | `--rule id="sentence"` (repeatable), or `--config rules.json` / `--config '{…}'` / `--config -` |
+| context for the questions | `--task "what the change is for"`. In Actions it comes from the PR automatically |
+
+`--diff`, `--staged` and `--head` are mutually exclusive. `--all` refuses `--base`, `--diff` and
+`--staged`. A `--config` replaces the repository's config file, and `--rule` adds to whichever config
+applies. An inline config selects no skills or AGENTS.md unless it asks for them.
+
+## Before spending
+
+`--dry-run` prints files, hunks, questions and requests, and sends nothing:
+
+```text
+hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 15 question(s) in 2 request(s). Budget: 100 hunks, 100 requests, 180s.
+```
+
+A request carries every question for one hunk, plus one more request per distinct `reference`.
+Jev charges by input tokens, so cost grows with hunk size × requests. On a large branch, compare
+the request count with `budget.maxRequests`, because anything past the budget is skipped and the
+review is marked partial. Ask before running a large review.
+
+A key is needed only when something is actually sent: `AI_GATEWAY_API_KEY`, `TYPESAFE_API_KEY`
+(with `provider: "typesafe"`), or Vercel OIDC.
+
+## Reading the result
+
+| `--reporter` | For | Notes |
+| --- | --- | --- |
+| `text` (default) | a person at a terminal | findings grouped by file, each with its rule, level, lines and score; `--code` adds the changed lines |
+| `json` | you | the full result; parse this rather than the text |
+| `markdown` | a PR comment or a file | the same summary the App posts |
+| `sarif` | code-scanning upload | findings only |
+| `github` | Actions | workflow annotations and a job summary; the default when `GITHUB_ACTIONS` is set |
+
+JSON shape (`CheckResult` in `packages/core/src/check.ts`):
+
+```ts
+{
+  findings: {
+    rule: string;             // e.g. "payments/retry-safety"
+    level: "warn" | "error";
+    file: string; line: number; endLine: number;
+    message: string;          // the rule's message
+    evidence: string;         // why it fired: "p(yes)=0.91 ≥ 0.8", "choice=duplicate-charge (confidence 0.82)", "score 0.33 < 0.5: …"
+    source: string;           // "config", "hunch:recommended", "skill/<name>", "agents-md/<scope>"
+    diff?: string;            // with --code
+  }[];
+  stats: { hunks: number; skippedHunks: number; requests: number; questions: number; inputTokens: number; modelIds: string[] };
+  notices: string[];          // gaps in this review: anything here means something wasn't checked
+  info: string[];             // standing facts about the policy, e.g. guidance the lock can't check
+  complete: boolean;
+}
+```
+
+How to report it to the user:
+
+1. Lead with completeness. If `complete` is false or the exit code is 2, say what was skipped: read
+   every notice.
+2. Group findings by file. For each, give the message, the rule id, the level and the evidence. Call
+   it a flag or a concern, not a bug.
+3. For each finding you are asked to act on, open the lines and judge for yourself before changing
+   anything.
+4. If a rule seems wrong for this code, suggest tuning it ([rules.md](rules.md#tuning)) rather than
+   rewriting the code to satisfy it.
+
+## Exit codes
+
+| Code | When |
+| --- | --- |
+| 0 | the review completed, whether or not there are findings |
+| 1 | `failOnError` is true and an `error`-level finding was reported |
+| 2 | no config and no `--rule`/`--config`; an invalid config; an unknown `--only` id; or the review is incomplete (budget reached, provider failure, stale `hunch.lock`, deleted, binary or rename-only files) |
+
+On the PR that adds Hunch, run in Actions with `--policy-ref`, there is no base config yet, so check
+prints a notice and exits 0.
+
+## Common errors
+
+| stderr | Fix |
+| --- | --- |
+| `no hunch.config.ts or hunch.toml found` | `init`, or pass `--rule`/`--config` |
+| `--only: no rule …` | `hunch config` lists the ids |
+| `hunch.lock is stale for: …` (a notice) | `compile`, then commit `hunch.lock` |
+| a provider error mentioning zero data retention | the account can't enforce ZDR; the user decides about `zeroDataRetention: false` |
+| `Review request/time budget reached` | raise `budget` or narrow the paths |

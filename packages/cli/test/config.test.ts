@@ -108,7 +108,7 @@ test("check --only asks just the named rules, and refuses an id no rule has", ()
   try {
     const all = hunch(root, "check", "--all", "--dry-run");
     const one = hunch(root, "check", "--all", "--dry-run", "--only", "api/errors");
-    const questions = (out: string) => Number(/up to (\d+) question/.exec(out)?.[1]);
+    const questions = (out: string) => Number(/(\d+) question/.exec(out)?.[1]);
     // Three files in scope: one question each for the plain rule, many more with every rule.
     expect(questions(one.out)).toBe(3);
     expect(questions(all.out)).toBeGreaterThan(3);

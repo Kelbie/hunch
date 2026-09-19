@@ -1,7 +1,11 @@
 # Run your own deployment of the GitHub App
 
-This is the **operator** path: you host the backend and own the App. Most people do not need it — to
-use the hosted App, or Actions, or just your own machine, follow [Install](../README.md#install).
+This is the **operator** path: you host the backend and own the App. Most people do not need it. To
+use the hosted App, or Actions, or just your own machine, follow [install.md](install.md).
+
+Everything here runs from a checkout of the Hunch repository, and several steps need the user in a
+browser (GitHub App registration, repository installation, Vercel terms). Run the commands, and stop
+at each browser step to hand the link to the user.
 
 Run this when you want your own deployment: an App owned by your account or organisation, your own
 Vercel project, and your own AI Gateway credits.
@@ -71,7 +75,7 @@ the organisation is not even offered on its install page. Pick one:
 
 `--public` does not list the App on the Marketplace; it only lets other accounts install it. Every
 review a public App runs is billed to **your** provider account, so set
-`HUNCH_DAILY_REVIEWS_PER_INSTALL` on the deployment first ([deploy](deploy.md#2-register-and-install-a-github-app)).
+`HUNCH_DAILY_REVIEWS_PER_INSTALL` on the deployment first ([deploy](https://github.com/Kelbie/hunch/blob/main/docs/deploy.md#2-register-and-install-a-github-app)).
 An existing App's visibility is changed under **Advanced** in its settings.
 
 ```sh
@@ -93,11 +97,11 @@ From the repository you want reviewed:
 
 ```sh
 npm install -D @kelbie/hunch
-npx @kelbie/hunch init
+npx @kelbie/hunch init --target app
 # If using skills or AGENTS.md: npx @kelbie/hunch compile (uses your local Claude Code or Codex)
 ```
 
-Use `--preset rust`, `--preset ts` or `--preset general` to choose explicitly. Commit the config and any reviewed `hunch.lock` to the PR base branch. You don't need `--github` or an Actions model secret when using the App.
+Use `--preset rust`, `--preset ts`, `--preset ts,rust` or `--preset general` to choose explicitly. Commit the config and any reviewed `hunch.lock` to the PR base branch. You don't need `--target actions` or an Actions model secret when using the App.
 
 **Choose your data policy before the first review.** Enforced zero data retention is on by default and requires an eligible Vercel plan. For Hobby, explicitly set `zeroDataRetention: false` in TypeScript or `zero-data-retention = false` in TOML only if that matches your policy. Hunch never silently opts out.
 
@@ -107,8 +111,8 @@ Open a non-draft PR. The App adds a `hunch` check and a conversation report. To 
 gh pr comment PR_NUMBER --body '/hunch recheck'
 ```
 
-If no report arrives, check App installation/repository selection, event subscriptions, Recent deliveries, then Vercel function logs and Gateway quota. A delivery is accepted only after durable enqueue; GitHub does not automatically retry rejected deliveries. [Operations and recovery](deploy.md#recovery-and-verification).
+If no report arrives, check App installation/repository selection, event subscriptions, Recent deliveries, then Vercel function logs and Gateway quota. A delivery is accepted only after durable enqueue; GitHub does not automatically retry rejected deliveries. [Operations and recovery](https://github.com/Kelbie/hunch/blob/main/docs/deploy.md#recovery-and-verification).
 
-The `app connect` path was exercised against the Hunch deployment. New-App registration is tested through the local callback flow with a simulated GitHub exchange; that is not a claim of a second live App registration. See [verified status](status.md) for the end-to-end evidence.
+The `app connect` path was exercised against the Hunch deployment. New-App registration is tested through the local callback flow with a simulated GitHub exchange; that is not a claim of a second live App registration. See [verified status](https://github.com/Kelbie/hunch/blob/main/docs/status.md) for the end-to-end evidence.
 
 Primary references: [GitHub manifest flow](https://docs.github.com/en/apps/sharing-github-apps/registering-a-github-app-from-a-manifest), [Vercel CLI integrations](https://vercel.com/docs/cli/integration), [Vercel project settings API](https://vercel.com/docs/rest-api/projects/update-an-existing-project).

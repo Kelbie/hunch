@@ -1,6 +1,6 @@
 # Deploy the GitHub App
 
-**Start with [CLI setup](cli-setup.md)** for the repeatable installation path. The reference below explains runtime requirements and manual recovery.
+**Start with [the operator guide](../skills/hunch/references/operator.md)** for the repeatable installation path. The reference below explains runtime requirements and manual recovery.
 
 Project consumers need only a committed config and an installed Hunch App. Operators do this setup once. The CLI requires none of this infrastructure.
 

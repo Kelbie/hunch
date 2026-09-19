@@ -18,7 +18,7 @@ under ~/.config/hunch/apps with private permissions. Run it on your local comput
 Connect uploads production secrets using the authenticated Vercel CLI and updates
 the GitHub webhook. It can resume after a partial failure. Existing Apps need a PEM
 file on their first connection. Redeploy Vercel afterward, then install the App.
-See https://github.com/Kelbie/hunch/blob/main/docs/cli-setup.md`;
+See https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/operator.md`;
 
 export async function runAppCommand(args: string[]) {
   if (!args.length || ["help", "--help", "-h"].includes(args[0]!)) { console.log(HELP); return; }
