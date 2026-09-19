@@ -23,6 +23,9 @@ const BIN = join(root, "packages/cli/src/bin.ts");
 const OUT = join(root, "skills/hunch/examples");
 const live = process.argv.includes("--live");
 const checking = process.argv.includes("--check");
+const pageArg = process.argv.indexOf("--page");
+const onlyPage = pageArg === -1 ? undefined : process.argv[pageArg + 1];
+if (pageArg !== -1 && !onlyPage) throw new Error("--page requires a page name, such as find");
 
 // ---------------------------------------------------------------------------------------------
 // A small shop repository: the same one every example runs against, so outputs agree.
@@ -194,7 +197,9 @@ function run(c: Case): { block: string } {
   try {
     const env: Record<string, string> = { PATH: process.env.PATH!, HOME: process.env.HOME!, NO_COLOR: "1", ...c.env };
     if (c.live) for (const k of ["AI_GATEWAY_API_KEY", "TYPESAFE_API_KEY", "GH_TOKEN", "GITHUB_TOKEN", "VERCEL_OIDC_TOKEN"]) if (process.env[k]) env[k] = process.env[k]!;
-    const r = spawnSync("bun", [BIN, ...c.args], { cwd: dir, encoding: "utf8", env, timeout: 600_000 });
+    // Live calls may use the developer's linked Vercel project for OIDC. Source and policy
+    // still come exclusively from the synthetic fixture selected by --cwd.
+    const r = spawnSync("bun", [BIN, ...c.args, ...(c.live ? ["--cwd", dir] : [])], { cwd: c.live ? root : dir, encoding: "utf8", env, timeout: 600_000 });
     const clean = (s: string) => s.replaceAll(dir, ".").replace(/\r?[^\n]*\r/g, "").replace(/\x1b\[[0-9;]*m/g, "").trimEnd();
     const stdout = clean(r.stdout ?? "");
     const stderr = clean(r.stderr ?? "");
@@ -269,6 +274,8 @@ const pages: Page[] = [
     title: "hunch find: examples",
     intro: "`find` scores every chunk of the repository against a task. It needs no rules, and no config at all.",
     cases: [
+      { id: "find-condition-dry", title: "Plan a condition sweep with overlapping windows", args: ["find", "Does this code retry a payment with a new idempotency key?", "--mode", "condition", "--chunk-lines", "80", "--overlap-lines", "10", "--top", "0", "--dry-run"], setup: shop },
+      { id: "find-condition", title: "An existing-behavior condition, with complete candidate output", live: true, args: ["find", "Does this code retry a payment with a new idempotency key?", "--mode", "condition", "--top", "0", "--reporter", "json"], setup: shop },
       { id: "find-dry", title: "What would a search cost?", args: ["find", "make payment retries configurable", "--dry-run"], setup: shop },
       { id: "find-noconfig-dry", title: "No config", args: ["find", "make payment retries configurable", "--dry-run"], setup: () => repo(SHOP_BASE) },
       { id: "find-markdown", title: "A real search, as Markdown for an agent", live: true, args: ["find", "make payment retries configurable", "--reporter", "markdown"], setup: shop },
@@ -344,7 +351,8 @@ const offline = (text: string) => text.replace(/<!-- case: [\w-]+ -->[\s\S]*?<!-
 
 mkdirSync(OUT, { recursive: true });
 let stale: string[] = [];
-for (const page of pages) {
+if (onlyPage && !pages.some(page => page.file === `${onlyPage}.md`)) throw new Error(`Unknown page: ${onlyPage}`);
+for (const page of pages.filter(page => !onlyPage || page.file === `${onlyPage}.md`)) {
   const text = render(page);
   const path = join(OUT, page.file);
   if (checking) {

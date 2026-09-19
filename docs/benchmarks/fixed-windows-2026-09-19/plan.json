@@ -1,0 +1,117 @@
+{
+  "identity": "48bc7daad8d655ca0b5b677f65636444b0edfb3dad4a8f2d5a0b0ac173725ade",
+  "runnerHash": "29ffdc70fb486b70dcd24c0a04a2cc26559203bd7fa8f3059d539775be653f3e",
+  "implementationHash": "b2b1f016be62c19d61f2ca86cd35b8918981f05d9ad2c7624db230dbfba9f11d",
+  "corpusHash": "59e5e8acc452ed5a3ca700a57e8b235fc24ff9eace848c19cf5b42651eb381d7",
+  "provider": "gateway",
+  "zeroDataRetention": false,
+  "concurrency": 8,
+  "annotation": "Agent-authored source evidence, frozen before Jev runs; sparse positive labels, not exhaustive relevance judgments or human-adjudicated ground truth.",
+  "plan": [
+    {
+      "repository": "p-retry",
+      "commit": "0a288cc203d657eb20e317163ae21834b86ba1bb",
+      "files": 13,
+      "variants": [
+        {
+          "id": "lines-50",
+          "chunkLines": 50,
+          "overlapLines": 0,
+          "chunks": 28,
+          "requests": 140
+        },
+        {
+          "id": "lines-150",
+          "chunkLines": 150,
+          "overlapLines": 0,
+          "chunks": 16,
+          "requests": 80
+        },
+        {
+          "id": "lines-300",
+          "chunkLines": 300,
+          "overlapLines": 0,
+          "chunks": 14,
+          "requests": 70
+        },
+        {
+          "id": "lines-150-overlap-30",
+          "chunkLines": 150,
+          "overlapLines": 30,
+          "chunks": 16,
+          "requests": 80
+        }
+      ]
+    },
+    {
+      "repository": "flask",
+      "commit": "ab8149664182b662453a563161aa89013c806dc9",
+      "files": 240,
+      "variants": [
+        {
+          "id": "lines-50",
+          "chunkLines": 50,
+          "overlapLines": 0,
+          "chunks": 900,
+          "requests": 4500
+        },
+        {
+          "id": "lines-150",
+          "chunkLines": 150,
+          "overlapLines": 0,
+          "chunks": 401,
+          "requests": 2005
+        },
+        {
+          "id": "lines-300",
+          "chunkLines": 300,
+          "overlapLines": 0,
+          "chunks": 296,
+          "requests": 1480
+        },
+        {
+          "id": "lines-150-overlap-30",
+          "chunkLines": 150,
+          "overlapLines": 30,
+          "chunks": 431,
+          "requests": 2155
+        }
+      ]
+    },
+    {
+      "repository": "chi",
+      "commit": "71307f9b7e4e9527638bc951c42b782cd1560331",
+      "files": 92,
+      "variants": [
+        {
+          "id": "lines-50",
+          "chunkLines": 50,
+          "overlapLines": 0,
+          "chunks": 299,
+          "requests": 1495
+        },
+        {
+          "id": "lines-150",
+          "chunkLines": 150,
+          "overlapLines": 0,
+          "chunks": 143,
+          "requests": 715
+        },
+        {
+          "id": "lines-300",
+          "chunkLines": 300,
+          "overlapLines": 0,
+          "chunks": 109,
+          "requests": 545
+        },
+        {
+          "id": "lines-150-overlap-30",
+          "chunkLines": 150,
+          "overlapLines": 30,
+          "chunks": 155,
+          "requests": 775
+        }
+      ]
+    }
+  ]
+}

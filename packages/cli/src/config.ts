@@ -39,7 +39,7 @@ export interface RuleRow {
 export interface ConfigReport {
   path: string;
   valid: boolean;
-  settings: Pick<Config, "provider" | "model" | "zeroDataRetention" | "extends" | "include" | "ignore" | "task" | "failOnError" | "budget" | "skills" | "agentsMd" | "docs">;
+  settings: Pick<Config, "provider" | "model" | "zeroDataRetention" | "extends" | "include" | "ignore" | "task" | "failOnError" | "budget" | "review" | "skills" | "agentsMd" | "docs">;
   /** With `--file`: the rules asked about that file, overrides applied. Otherwise every rule. */
   rules: RuleRow[];
   overrides: { files: string[]; rules: Record<string, Level> }[];
@@ -108,11 +108,11 @@ export async function inspectConfig(loaded: { path: string; config: Config }, lo
     rules = all.map((r) => row(r.id, r.level, r.question, r.source));
   }
 
-  const { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, skills, agentsMd, docs } = config;
+  const { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, skills, agentsMd, docs } = config;
   return {
     path: loaded.path,
     valid: problems.length === 0,
-    settings: { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, skills, agentsMd, docs },
+    settings: { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, skills, agentsMd, docs },
     rules,
     overrides: config.overrides.map((o) => ({ files: o.files, rules: Object.fromEntries(Object.entries(o.rules).map(([id, e]) => [id, e.level])) })),
     ...(fileInfo ? { file: fileInfo } : {}),
@@ -131,6 +131,8 @@ export function explainRule(config: Config, lock: Lock | null, id: string): Expl
     { name: "context", contents: "what the chunk is (diff or whole file), its path, language and role, the lines under review, the other files the change touches, and how to answer" },
     { name: "file", contents: "the repository-relative path" },
     { name: "hunk", contents: "the code, as a unified diff" },
+    ...(config.review.contextLines ? [{ name: "surrounding", contents: "bounded source around the window from the reviewed head, index or working tree, when available; never fetched for an arbitrary saved diff" }] : []),
+    ...(config.review.localize ? [{ name: "focus", contents: "target changed-line range during optional localization; the full parent context remains visible" }] : []),
     ...(config.task === "pr" ? [{ name: "task", contents: "the pull request title and description, up to 8,000 characters (check --task locally)" }] : []),
     ...(q.reference ? [{ name: "reference", contents: `${q.reference}, read from the base branch` }] : []),
   ];
@@ -168,6 +170,7 @@ export function configText(report: ConfigReport): string {
     ["ignore", s.ignore.join(", ") || "nothing beyond lockfiles, minified files and node_modules"],
     ["PR context", s.task === "pr" ? "title and description sent as task" : "not sent"],
     ["failOnError", String(s.failOnError)],
+    ["review", `${s.review.chunkLines} lines, ${s.review.overlapLines} whole-file overlap, ${s.review.contextLines} context; localization ${s.review.localize ? "on" : "off"}`],
     ["budget", `${s.budget.maxHunks} hunks, ${s.budget.maxRequests} requests, ${s.budget.maxRulesPerHunk} rules per hunk, ${s.budget.timeoutSeconds}s`],
     ["guidance", `${s.skills === undefined ? "any skills installed in .agents/skills or .claude/skills" : s.skills.length ? s.skills.map((k) => (typeof k === "string" ? k : k.repo)).join(", ") : "no skills"}${s.agentsMd ? ", AGENTS.md" : ""}${s.docs.length ? `, ${s.docs.join(", ")}` : ""}`],
   ], 100));

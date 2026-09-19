@@ -185,7 +185,8 @@ test("the config reference documents every option the schema accepts", () => {
   const reference = readFileSync(join(SKILL, "references/config.md"), "utf8");
   const kebab = (k: string) => k.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
   const budget = (configSchema.shape.budget as unknown as { unwrap(): { shape: Record<string, unknown> } }).unwrap().shape;
-  for (const key of [...Object.keys(configSchema.shape), ...Object.keys(budget)]) {
+  const review = configSchema.shape.review.unwrap().shape;
+  for (const key of [...Object.keys(configSchema.shape), ...Object.keys(budget), ...Object.keys(review)]) {
     expect(reference).toContain(`\`${key}\``);
     if (kebab(key) !== key) expect(reference).toContain(kebab(key));
   }

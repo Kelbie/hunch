@@ -1,0 +1,38 @@
+{
+  "startedAt": "2026-09-19T19:53:23.618Z",
+  "caseId": "tail-failure",
+  "variant": {
+    "id": "small-with-context",
+    "chunkLines": 8,
+    "contextLines": 40,
+    "localize": false
+  },
+  "elapsedMs": 580.769125,
+  "result": {
+    "findings": [
+      {
+        "rule": "failure",
+        "level": "warn",
+        "file": "pay.ts",
+        "line": 25,
+        "endLine": 32,
+        "message": "A caught payment failure is converted into success.",
+        "evidence": "p(yes)=0.95 ≥ 0.7",
+        "source": "config"
+      }
+    ],
+    "stats": {
+      "hunks": 4,
+      "skippedHunks": 0,
+      "requests": 4,
+      "questions": 4,
+      "inputTokens": 4623,
+      "modelIds": [
+        "typesafe-ai/jev"
+      ]
+    },
+    "notices": [],
+    "info": [],
+    "complete": true
+  }
+}

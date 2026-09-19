@@ -61,6 +61,7 @@ fail-on-error = true
 | `docs` | `docs` | `[]` | extra Markdown files to compile, e.g. a style guide |
 | `compileModel` | `compile-model` | `"anthropic/claude-sonnet-5"` | model for `compile --with gateway` only |
 | `budget` | `[budget]` | see [budget](#budget) | per-run limits |
+| `review` | `[review]` | see [review context](#review-context) | chunk size, source context and optional localization |
 | `unit` | `unit` | `"hunk"` | reserved; only `"hunk"` exists |
 
 Unknown keys are errors, not warnings, so a misspelt option fails `hunch config` immediately.
@@ -133,15 +134,41 @@ negation in `include`. A negated pattern matches every other file, so it widens 
 | `maxHunks` / `max-hunks` | 100 | 10,000 | hunks reviewed per run; the rest make the review partial |
 | `maxRulesPerHunk` / `max-rules-per-hunk` | 24 | 64 | questions asked about one hunk |
 | `concurrency` | 4 | 8 | requests in flight |
-| `maxRequests` / `max-requests` | 100 | 10,000 | Jev requests per run: one per hunk, plus one per extra `reference` |
-| `timeoutSeconds` / `timeout-seconds` | 180 | 7,200 | no new requests start after this |
+| `maxRequests` / `max-requests` | 100 | 10,000 | Jev requests per run: one per hunk, plus one per extra `reference` and optional localization |
+| `timeoutSeconds` / `timeout-seconds` | 180 | 7,200 | deadline shared by requests and localization |
 
 The hosted App always caps a run at 3,000 hunks, 3,000 requests and 240 seconds. On a large PR the
 time limit usually ends the review first, and the report says the review is partial. Raise the budget for
 `check --all` on a big repository. `find` ignores the budget; it has its own `--concurrency`.
 
-Long hunks are windowed, and Jev can't reason across windows. `check --all` splits files into
-chunks of up to 150 lines, and repeats each file's imports in later chunks.
+## Review context
+
+These settings apply to local checks, Actions and the GitHub App. They do not change `find`,
+which has its own window flags. Policy and `reference` files come from the trusted base revision;
+surrounding source comes from the reviewed head, index or working tree. Saved `--diff` input has
+no verified source revision, so it receives no automatic surrounding source.
+
+| Key (TS / TOML) | Default | Meaning |
+| --- | --- | --- |
+| `contextLines` / `context-lines` | 40 | Up to 200 lines before and after each diff window; 0 disables it. A missing, mismatched or oversized requested source makes coverage incomplete. |
+| `chunkLines` / `chunk-lines` | 150 | Maximum diff-body rows or whole-file source lines per window, also subject to token limits. Range 1–2000. |
+| `overlapLines` / `overlap-lines` | 0 | Repeated source lines between `check --all` windows; smaller than chunkLines. Diff windows use surrounding context instead. |
+| `localize` | false | Experimental: after all baseline checks, refine positive findings into smaller changed-line ranges. |
+| `localizationLines` / `localization-lines` | 10 | Target range size for localization, 1–100. Not a guarantee: ambiguous findings keep their broader range. |
+| `maxLocalizationRequests` / `max-localization-requests` | 32 | Additional refinement requests, 0–1000, also inside the overall request/time budget. |
+
+Localization evaluates both halves with the full parent, surrounding source, task and reference
+still visible. It never skips a baseline window because a parent or neighboring window scored
+low. A concern spanning both halves retains its parent if neither child supports it. Provider,
+confidence, abstention or budget failures retain the original finding and mark coverage partial.
+Deletion-only findings use a surviving-line anchor. Adjacent positive ranges remain independent;
+a high score is not transferred to a neighboring chunk.
+
+The [controlled live probe](https://github.com/Kelbie/hunch/blob/main/docs/benchmarks/review-localization-2026-09-19/README.md)
+recovered its planted targets with shorter ranges but also added unsupported ranges. Keep
+localization opt-in and inspect every candidate. Whole-file windows repeat imports; arbitrary
+callers, tests and contracts are not automatically retrieved. Use task-mode `find` to investigate
+those relationships, or supply a concise `reference` contract when authoring recurring rules.
 
 ## Providers and data retention
 

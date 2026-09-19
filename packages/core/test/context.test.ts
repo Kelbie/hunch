@@ -72,7 +72,7 @@ test("every hunk carries the answering rules, stated once rather than per questi
   for (const text of [hunkContext(diff(MODIFIED)), hunkContext(fileHunks("a.py", "x = 1")[0]!)]) {
     expect(text).toContain("How to answer:");
     expect(text).toContain("absent code is not evidence");
-    expect(text).toContain("not its callers");
+    expect(text).toContain("Anything not supplied remains unseen");
     expect(text).toContain("an unrelated hunk is a no, not a maybe");
   }
 });
@@ -95,7 +95,7 @@ test("the judging contract reaches the wire on every question kind, and a bare n
   expect(noul.instructions).toContain("Answer no if this hunk is unrelated");
   expect(noul.type === "noul" && noul.criteria?.false).toContain("not enough visible evidence");
 
-  const choice = toWire({ kind: "choice", instructions: "Which layer?", criteria: { ui: "UI", data: "Data" }, report: ["ui"], minConfidence: 0 });
+  const choice = toWire({ kind: "choice", instructions: "Which layer?", criteria: { ui: "UI", data: "Data" }, report: ["ui"], abstain: [], minConfidence: 0 });
   expect(choice.instructions).toContain("Read `context` first");
   // "answer no" is meaningless for a choice, so the no-evidence clause stays off it.
   expect(choice.instructions).not.toContain("Answer no");

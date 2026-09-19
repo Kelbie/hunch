@@ -1,0 +1,1115 @@
+{
+  "identity": "48bc7daad8d655ca0b5b677f65636444b0edfb3dad4a8f2d5a0b0ac173725ade",
+  "caseId": "chi-panic-abort",
+  "repository": "chi",
+  "commit": "71307f9b7e4e9527638bc951c42b782cd1560331",
+  "variant": {
+    "id": "lines-150-overlap-30",
+    "chunkLines": 150,
+    "overlapLines": 30
+  },
+  "query": "Does this code rethrow the special server-abort panic instead of converting it into an internal-server-error response?",
+  "provider": "gateway",
+  "requestedModel": "jev-1.13.0",
+  "zeroDataRetention": false,
+  "startedAt": "2026-09-19T19:38:20.920Z",
+  "elapsedMs": 8940.759250000003,
+  "complete": true,
+  "notices": [],
+  "stats": {
+    "chunks": 155,
+    "scored": 155,
+    "requests": 155,
+    "inputTokens": 226266,
+    "modelIds": [
+      "typesafe-ai/jev"
+    ]
+  },
+  "matches": [
+    {
+      "file": "middleware/recoverer.go",
+      "startLine": 1,
+      "endLine": 125,
+      "score": 0.97,
+      "sourceHash": "f10e2f08ecf99cfa7bde8e2d8d5e1ebfea27c477ac7bed57bec9338e20554f0e"
+    },
+    {
+      "file": "middleware/recoverer_test.go",
+      "startLine": 1,
+      "endLine": 67,
+      "score": 0.67,
+      "sourceHash": "254b98dd7ae51ee85d64e2a9467fc8abd4072ced6b05b9839a44ebca9a2e0386"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 119,
+      "endLine": 266,
+      "score": 0.24,
+      "sourceHash": "484089ee8fad9e961ff351b7f03fe38694baef533f2bb68f6b4fbd210a0398e2"
+    },
+    {
+      "file": "_examples/hello-world/main.go",
+      "startLine": 1,
+      "endLine": 21,
+      "score": 0.18,
+      "sourceHash": "a6864a284d2f46c71e63478c8eba403f0ef57265af9f9754a47e0d0228d9637c"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 1,
+      "endLine": 146,
+      "score": 0.18,
+      "sourceHash": "0faf3755b2a0a52fe4d4a35a7e75c9574b5f1ee804e3cce11a2ef4bf03384557"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 117,
+      "endLine": 255,
+      "score": 0.17,
+      "sourceHash": "554ec2e34a76e02d4afa43aa30021898d9058730df01f1c1e84c3c22c42e3c25"
+    },
+    {
+      "file": "_examples/todos-resource/main.go",
+      "startLine": 1,
+      "endLine": 30,
+      "score": 0.17,
+      "sourceHash": "92c239b29dbaf77985a1d3991a5fc7fe97ba6cbd9016429c4d227e154febdee8"
+    },
+    {
+      "file": "middleware/logger.go",
+      "startLine": 104,
+      "endLine": 172,
+      "score": 0.17,
+      "sourceHash": "b96fa00d22001f6dd5a12119cd7ea7060b375828f4b988c3d838c7f44118e131"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 1,
+      "endLine": 146,
+      "score": 0.16,
+      "sourceHash": "3591ad112f4a9773887cd63ed27ae47a3af718a35810351c4d9b9451b3c79a6e"
+    },
+    {
+      "file": "middleware/request_size.go",
+      "startLine": 1,
+      "endLine": 18,
+      "score": 0.16,
+      "sourceHash": "e9e69dcecf90674b3f66c70adafbc8340bc6a37fd91c1440ef6051e88fc689ee"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 235,
+      "endLine": 368,
+      "score": 0.16,
+      "sourceHash": "22e85899ef6db460f0f96a746b9c0008f293986b196227fb773d4b90aaa653d3"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 103,
+      "endLine": 251,
+      "score": 0.15,
+      "sourceHash": "7e921e1d07c3661e8aeb6297d110be8e7b7c61071de7cb5eb9ccd9e21ffbf3d6"
+    },
+    {
+      "file": "_examples/limits/main.go",
+      "startLine": 1,
+      "endLine": 92,
+      "score": 0.14,
+      "sourceHash": "6fffe50854f53ed8f7a6d19fa3fe1d61ffbb3722845e25113116ade5d3251741"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 121,
+      "endLine": 260,
+      "score": 0.14,
+      "sourceHash": "918111c1491a981e5cfaf223b171f409a3ec776f47a603c4ead70bdeeea5a180"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 118,
+      "endLine": 242,
+      "score": 0.14,
+      "sourceHash": "b5672b9bcb6412e0ccc0998949b5c7c8e774aaffd2d95fb5bdb50587daf71ac3"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 415,
+      "endLine": 529,
+      "score": 0.14,
+      "sourceHash": "8d96d7bd539aca0dab24fb5fc47420562253db4eb2ea6fd6e72a12f29a1766a6"
+    },
+    {
+      "file": "_examples/rest/routes.json",
+      "startLine": 1,
+      "endLine": 150,
+      "score": 0.13,
+      "sourceHash": "cb84c5f8bc394a51aa9640a43bbd5e5541dc931d18774b3e5d4756583413fd5a"
+    },
+    {
+      "file": "middleware/logger.go",
+      "startLine": 1,
+      "endLine": 133,
+      "score": 0.13,
+      "sourceHash": "004e608ac880875aa84ef567bd53890c672b5cd519891853e20bc43e6c4d055c"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1474,
+      "endLine": 1603,
+      "score": 0.13,
+      "sourceHash": "f064165c97bb0e2de7f6db6413a28798fbe29ae2164885a98e37d65bbba00783"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 339,
+      "endLine": 444,
+      "score": 0.13,
+      "sourceHash": "6d107b408a2cd18feafb78444e92d6dbecb64d4e765a1ad1d7e0c8b64f88f259"
+    },
+    {
+      "file": "_examples/fileserver/main.go",
+      "startLine": 1,
+      "endLine": 65,
+      "score": 0.12,
+      "sourceHash": "d596abf7f3ed3c0aab3fb2cdeb289252722030356f40bf4deaf9e5680918cc23"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 342,
+      "endLine": 483,
+      "score": 0.12,
+      "sourceHash": "ff953071d2617cc1c57c22ac8a83c1922afa68c349adfc69d6b2bb9a9bc7bbd3"
+    },
+    {
+      "file": "chain.go",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.12,
+      "sourceHash": "cfb15db4608ce6933b7adddd03b7e2a070448295c267ade14eeaf3390d34d784"
+    },
+    {
+      "file": "middleware/compress_test.go",
+      "startLine": 84,
+      "endLine": 219,
+      "score": 0.12,
+      "sourceHash": "74da9bbe738d44e52499812d54ff98caa1a10e33556930cd30418dfecb1b8404"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 1,
+      "endLine": 132,
+      "score": 0.12,
+      "sourceHash": "5d451cd0aee9635e5e6866f6c9775ee0642c9f12dd3039a9bcdab724ff1a6262"
+    },
+    {
+      "file": "middleware/page_route.go",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.12,
+      "sourceHash": "e1108a32c8cdc6a16b9f858881d5e638b3ccebbe775a0feb906787f2c05844d4"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 613,
+      "endLine": 745,
+      "score": 0.12,
+      "sourceHash": "523678a822ac51455c2bfc08adab02f7899be36068561e692e3e1f67adb14dc7"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1354,
+      "endLine": 1503,
+      "score": 0.12,
+      "sourceHash": "67d699beb83d2db248983bf2ef7f7f1980d1ac761a05ac226d9046f3e3c6cee5"
+    },
+    {
+      "file": "mux.go",
+      "startLine": 117,
+      "endLine": 264,
+      "score": 0.12,
+      "sourceHash": "af55f141c9a951bc05dee334b97fa0696bdfac85e5cc71f83262f87089aee8f8"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 199,
+      "endLine": 341,
+      "score": 0.12,
+      "sourceHash": "3a4a21704766aa6cfa1738f807c4a02f50c6d5523012afae8a022e4ad425e0cf"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 487,
+      "endLine": 619,
+      "score": 0.12,
+      "sourceHash": "22ccd8d9f8b625bd2774835a60f2996b74e7c761b560e0cb74c492d206aa80ad"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 454,
+      "endLine": 520,
+      "score": 0.11,
+      "sourceHash": "87d038a88fa104921c42e1a0b380d18adb133a1f9c7beb8b7c9e24762de75c93"
+    },
+    {
+      "file": "_examples/rest/routes.md",
+      "startLine": 1,
+      "endLine": 146,
+      "score": 0.11,
+      "sourceHash": "9aa942ec1d7deb63f8d42932a568f11a68115262d7e4d8a9116aa95bba61c04a"
+    },
+    {
+      "file": "_examples/versions/main.go",
+      "startLine": 1,
+      "endLine": 141,
+      "score": 0.11,
+      "sourceHash": "c19e55efa9516afb08b9f40fb13fdf34a902ad44ccd7ee66cb0f8fe096870496"
+    },
+    {
+      "file": "middleware/recoverer.go",
+      "startLine": 96,
+      "endLine": 203,
+      "score": 0.11,
+      "sourceHash": "0782f986b14992968810b664fb753415a4fa6a329bdbb63e49bda40cba98c707"
+    },
+    {
+      "file": "middleware/wrap_writer.go",
+      "startLine": 1,
+      "endLine": 147,
+      "score": 0.11,
+      "sourceHash": "e61cff4d21b4e23ffe6504f2e934798c227b723ccab42821c8a667f6af79196f"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 716,
+      "endLine": 820,
+      "score": 0.11,
+      "sourceHash": "752b563e41278cf06025dfc1d2892b08ae1940741a185ebdeed4f8abc1375673"
+    },
+    {
+      "file": "_examples/rest/main.go",
+      "startLine": 226,
+      "endLine": 371,
+      "score": 0.1,
+      "sourceHash": "0e8ba31259b8a5aa4c4ade393ed686b4a94781990204c7e3c7e099d0bb690a14"
+    },
+    {
+      "file": "_examples/rest/routes.md",
+      "startLine": 117,
+      "endLine": 159,
+      "score": 0.1,
+      "sourceHash": "d7bee0d9d002835f28342ac24c61d8827989ded826bb569f15092a7b7e6283b5"
+    },
+    {
+      "file": "chi.go",
+      "startLine": 1,
+      "endLine": 138,
+      "score": 0.1,
+      "sourceHash": "b07443238bca0939a16e3e9ccb9e6f9f351d627223ccb06b06134c741800ae2e"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 222,
+      "endLine": 365,
+      "score": 0.1,
+      "sourceHash": "1fc8d9818d04801255c11e7b548d8074f9f5522e035e17b22e038f3c0d04759b"
+    },
+    {
+      "file": "middleware/get_head_test.go",
+      "startLine": 1,
+      "endLine": 66,
+      "score": 0.1,
+      "sourceHash": "eaec919f53ee908a99adeef44fda478b7527c4c1d575090fa9104e5bd4d02fdf"
+    },
+    {
+      "file": "middleware/middleware_test.go",
+      "startLine": 1,
+      "endLine": 149,
+      "score": 0.1,
+      "sourceHash": "934247b7ae273b26847c9bfd656fd68a10d802ca281a2c4087d839f8f15d1376"
+    },
+    {
+      "file": "middleware/sunset_test.go",
+      "startLine": 1,
+      "endLine": 104,
+      "score": 0.1,
+      "sourceHash": "b2bd3fc0a1b0defd16b1988fff78c9782dc06ac7f3e63fcae9200e8375350258"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 1,
+      "endLine": 143,
+      "score": 0.1,
+      "sourceHash": "0b7be57dcaee762db68ced7da793886d875fe6b155c25f42beb399f16047f2d2"
+    },
+    {
+      "file": "middleware/url_format_test.go",
+      "startLine": 1,
+      "endLine": 69,
+      "score": 0.1,
+      "sourceHash": "01ee111a3e1c53a9467087a629b0a5d326fb8b742f87558b3fe92aa3589ce972"
+    },
+    {
+      "file": "middleware/wrap_writer_test.go",
+      "startLine": 1,
+      "endLine": 86,
+      "score": 0.1,
+      "sourceHash": "e142762e6930390c655a1621b87e0057c85892f86e788e31d46b34c2e9600f37"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1,
+      "endLine": 150,
+      "score": 0.1,
+      "sourceHash": "ce84bbc484ab0fbf21b959d340e6cb91bf6d7a741b37a0ecc5fcacf84839beaf"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 121,
+      "endLine": 266,
+      "score": 0.1,
+      "sourceHash": "0fe638423cf6653f23b50605cd33be1d3a0fc129a469afe07b908e9b6657b41a"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 791,
+      "endLine": 876,
+      "score": 0.1,
+      "sourceHash": "09b65e312c7fb1c071ca8f8cf13b06f549f277071f7eaee7d53974ecf61c013a"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 847,
+      "endLine": 947,
+      "score": 0.1,
+      "sourceHash": "23e6bc99f0fbbc450c748f1c02796b62a024d8c5c15340d46fbc70f34776fa88"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 918,
+      "endLine": 1067,
+      "score": 0.1,
+      "sourceHash": "f6333067eb845793fc3bc736e2ae1071438b68c9827811ab672ec0b9482ef9ef"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1683,
+      "endLine": 1831,
+      "score": 0.1,
+      "sourceHash": "47dcb157f666f3ae1c51a6d9b36d4639a2dadc000a7febdf7297f2adbf4eaf17"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1897,
+      "endLine": 2043,
+      "score": 0.1,
+      "sourceHash": "6681bc44252e9db59ba43f01a10dbfe2e75850d7d06b4bd689ca31a03664853a"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 312,
+      "endLine": 396,
+      "score": 0.1,
+      "sourceHash": "d4f85bb6bd5cc6ebbea35ef3e5e006e90c308d0566cae9ac0dbb27efce44dedc"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 657,
+      "endLine": 803,
+      "score": 0.1,
+      "sourceHash": "688c86467af36d281e013baf415a464a9c7de877b37c65cbcd973ca61c9cfa46"
+    },
+    {
+      "file": "_examples/versions/main.go",
+      "startLine": 112,
+      "endLine": 154,
+      "score": 0.09,
+      "sourceHash": "21f45efe2fdab93f61c2f44485d6b40d5e9135f720ef1a92ca83adde94a024b8"
+    },
+    {
+      "file": "middleware/compress.go",
+      "startLine": 336,
+      "endLine": 398,
+      "score": 0.09,
+      "sourceHash": "7bdfca2bbc1a64d0845a34004d4922cb7735dcbe0379a049641a3e39931ec512"
+    },
+    {
+      "file": "middleware/logger_test.go",
+      "startLine": 1,
+      "endLine": 51,
+      "score": 0.09,
+      "sourceHash": "daa9ae31d0908a653a5fbe6c015f1ce0198f37aad956707fef5abfea6ddf1c0f"
+    },
+    {
+      "file": "middleware/maybe.go",
+      "startLine": 1,
+      "endLine": 18,
+      "score": 0.09,
+      "sourceHash": "230ef8fbf8ec5be4a16e6988cbda1c04f34f7fdb5af15370e40345cc70c96ee5"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 72,
+      "endLine": 200,
+      "score": 0.09,
+      "sourceHash": "2128d350c240c4a7d6c9c967f17919800a781f72aa8878902100c71f5ef7fd80"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 171,
+      "endLine": 274,
+      "score": 0.09,
+      "sourceHash": "9f915e50ff25619d01725dcc5fa747d639dd27a4bffb8a87abad85cc86698443"
+    },
+    {
+      "file": "middleware/supress_notfound.go",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.09,
+      "sourceHash": "51e793163705d2c9d01ddb175ae7f6d1030c771f938a99d168d7b10603c02925"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 237,
+      "endLine": 316,
+      "score": 0.09,
+      "sourceHash": "e2029480d0a1f4558744895486900f874fda9dbba060e8e3d7c6d2b48ade7de1"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 287,
+      "endLine": 431,
+      "score": 0.09,
+      "sourceHash": "8296b5e678ea762c69df788e2af26d389481404717fe3a4af5e2cfdc6c594c79"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 560,
+      "endLine": 642,
+      "score": 0.09,
+      "sourceHash": "cccc167fa758b693914a788ebedf867d001f645311edf385f74e1cf46cc003ca"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1038,
+      "endLine": 1168,
+      "score": 0.09,
+      "sourceHash": "6c9886e00872cf285a80f74da4876733c33ef6e08d6745d4568cc904e1e093e2"
+    },
+    {
+      "file": "README.md",
+      "startLine": 236,
+      "endLine": 363,
+      "score": 0.09,
+      "sourceHash": "4a5b1796c0a3a356466532d2188ab00ef5a991d2c339ef98ccf8676ca1a9d300"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 1,
+      "endLine": 136,
+      "score": 0.09,
+      "sourceHash": "1a729cab2ea4755d8e3a9b7962021ded05a724509957ac8f1ebfa3e0eb4ebb1e"
+    },
+    {
+      "file": "_examples/graceful/main.go",
+      "startLine": 1,
+      "endLine": 82,
+      "score": 0.08,
+      "sourceHash": "54c50e2f60ee0d9b7f399ef1ce59fbce89a9a855ae6d4a954a7fe8c4abc2d591"
+    },
+    {
+      "file": "_examples/router-walk/main.go",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.08,
+      "sourceHash": "75e48d6c74b54ada509298039d1c6aadc4552bf6f7a0d03a7d37dcf7b61d1dcf"
+    },
+    {
+      "file": "middleware/compress_test.go",
+      "startLine": 1,
+      "endLine": 113,
+      "score": 0.08,
+      "sourceHash": "e03ebe7dd9eecd2a08ffb03654555d8ca65aac67c6f2771d21229f063357fa1d"
+    },
+    {
+      "file": "middleware/content_charset_test.go",
+      "startLine": 1,
+      "endLine": 127,
+      "score": 0.08,
+      "sourceHash": "0117ab931941fb13f8deb29d7216fcf419f4801e6c7ebef62ea87c15e9e4908e"
+    },
+    {
+      "file": "middleware/content_encoding_test.go",
+      "startLine": 1,
+      "endLine": 82,
+      "score": 0.08,
+      "sourceHash": "a835d37c1ce12e4a62b4152f825acbb9320c9223123427466076d8b6f917a5b1"
+    },
+    {
+      "file": "middleware/content_type_test.go",
+      "startLine": 1,
+      "endLine": 82,
+      "score": 0.08,
+      "sourceHash": "756e4ebe50455bff50e1e45a00b88d371987cb8cea5931af2478744f355c851e"
+    },
+    {
+      "file": "middleware/heartbeat.go",
+      "startLine": 1,
+      "endLine": 26,
+      "score": 0.08,
+      "sourceHash": "07e8da7f21aca2b25900908dd5daec39f937c0ed7daeaa837ad4c93942ecd4e1"
+    },
+    {
+      "file": "middleware/middleware_test.go",
+      "startLine": 120,
+      "endLine": 155,
+      "score": 0.08,
+      "sourceHash": "84c606098041348217be6aac36c26c34d33a8a16adbc5ae206d17321a5859011"
+    },
+    {
+      "file": "middleware/middleware.go",
+      "startLine": 1,
+      "endLine": 23,
+      "score": 0.08,
+      "sourceHash": "9ca24321a05dc0a8951b0d35ff0dd9eb3726941728429f88eab7e716b972f1f7"
+    },
+    {
+      "file": "middleware/nocache.go",
+      "startLine": 1,
+      "endLine": 59,
+      "score": 0.08,
+      "sourceHash": "fe5993f07f8cba23b118ea26eceed2d5d34b08060efe2be43e5a1a8b9da6d9fa"
+    },
+    {
+      "file": "middleware/path_rewrite.go",
+      "startLine": 1,
+      "endLine": 16,
+      "score": 0.08,
+      "sourceHash": "9fc7d8a47722b61d0dadcb9136724fedfb3284107d656348c4f8491fd81823ff"
+    },
+    {
+      "file": "middleware/realip_test.go",
+      "startLine": 1,
+      "endLine": 115,
+      "score": 0.08,
+      "sourceHash": "bfee7c3915cd27f9388a10681e27d56f215471a8ff96b647fd11d59f30b9bdd6"
+    },
+    {
+      "file": "middleware/request_id_test.go",
+      "startLine": 1,
+      "endLine": 71,
+      "score": 0.08,
+      "sourceHash": "152df5d326505b9c8995945f2b338529805cd994cdeac474e7a6836b5a5a004c"
+    },
+    {
+      "file": "middleware/strip_test.go",
+      "startLine": 1,
+      "endLine": 101,
+      "score": 0.08,
+      "sourceHash": "31234965f349899aa3237c489c631810e4914d716b7914c07a34ba5e66d8f337"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 114,
+      "endLine": 251,
+      "score": 0.08,
+      "sourceHash": "4c93b8724f069bcdea57a084dcf31f2ff257eab57e73f99d0e2741e36d3d194a"
+    },
+    {
+      "file": "middleware/throttle_test.go",
+      "startLine": 222,
+      "endLine": 301,
+      "score": 0.08,
+      "sourceHash": "6aa81f192fc2e6e981c4be5d6e20b716430f70aee4b322c2c3ac9ec34ae299d0"
+    },
+    {
+      "file": "middleware/throttle.go",
+      "startLine": 1,
+      "endLine": 140,
+      "score": 0.08,
+      "sourceHash": "5b8429e7984f79eeb900278d886c22d4e47da38f785e518dd93104b45d781bd1"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 402,
+      "endLine": 497,
+      "score": 0.08,
+      "sourceHash": "286f8aa28e6188c665c5c1c6c06b2b27b1c1c3d474d10779366df3a48f812033"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 468,
+      "endLine": 589,
+      "score": 0.08,
+      "sourceHash": "634c0e9f9ccabeedc5bbaf6c1f2275e871ad40d80c7f38a78bb8fdd604a2135c"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1139,
+      "endLine": 1283,
+      "score": 0.08,
+      "sourceHash": "45d955c1d04c513733a7485a1072139b55bf1d54a1f1b99a50a24f4cb39e07bd"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1254,
+      "endLine": 1383,
+      "score": 0.08,
+      "sourceHash": "8eab6d1788db1a09b33692656e4cd5ad377c69726de30fa1dfe787f336a4937c"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1574,
+      "endLine": 1712,
+      "score": 0.08,
+      "sourceHash": "f20949af4664cb209aac3f822197ac6f6306b0bfd604e7d4236fcc24861deebc"
+    },
+    {
+      "file": "path_value_test.go",
+      "startLine": 1,
+      "endLine": 77,
+      "score": 0.08,
+      "sourceHash": "c8775c0b483e73b5e8dc27147e79a60da2c64fcb75759bf8f14001909a8abb27"
+    },
+    {
+      "file": "README.md",
+      "startLine": 1,
+      "endLine": 149,
+      "score": 0.08,
+      "sourceHash": "b47497579162c60c103ed2d05578cd34bd83771789679e299657efc5fe9800db"
+    },
+    {
+      "file": "README.md",
+      "startLine": 334,
+      "endLine": 481,
+      "score": 0.08,
+      "sourceHash": "7994a730a848692e7df3a337d564cb63f08d8558efb05721b9810db84a7c1a20"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 590,
+      "endLine": 686,
+      "score": 0.08,
+      "sourceHash": "6ddab67353234651e8db17933488d3894783ed1a2cc08bfd0b29747d16603bb1"
+    },
+    {
+      "file": "_examples/custom-method/main.go",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.07,
+      "sourceHash": "463f480be56305b2345e34b0057076d11005aac2065359a4754a4773daa78fdf"
+    },
+    {
+      "file": "middleware/get_head.go",
+      "startLine": 1,
+      "endLine": 39,
+      "score": 0.07,
+      "sourceHash": "1d64cfdb146024529a9bfd947625da5eadc8fd1ec0d8b94341730d74d1fc8902"
+    },
+    {
+      "file": "middleware/profiler.go",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.07,
+      "sourceHash": "3de01f6bd2c4b2690bd7b933ea8947c32b66155f2556170067dc95b5f1ba9949"
+    },
+    {
+      "file": "middleware/route_headers.go",
+      "startLine": 1,
+      "endLine": 145,
+      "score": 0.07,
+      "sourceHash": "c21ca556a6be33a5066d27423dc0e431c9b3f9197f46adf368c9065ea7423edd"
+    },
+    {
+      "file": "middleware/route_headers.go",
+      "startLine": 116,
+      "endLine": 151,
+      "score": 0.07,
+      "sourceHash": "7955dfe32e09b58a1d8c2d10f4fb13625f93bb87f9e5f272311ec14ba9db4847"
+    },
+    {
+      "file": "middleware/url_format.go",
+      "startLine": 1,
+      "endLine": 75,
+      "score": 0.07,
+      "sourceHash": "a90e4d56ce13d9690ce435bce310d3b4ac32a420f74af65baec98f6fdae9b61e"
+    },
+    {
+      "file": "middleware/value.go",
+      "startLine": 1,
+      "endLine": 17,
+      "score": 0.07,
+      "sourceHash": "18113220eff9ffe4b2e2710e86eaabb51bfb0f89d634cb756afed86401a1aaf7"
+    },
+    {
+      "file": "mux_test.go",
+      "startLine": 1802,
+      "endLine": 1926,
+      "score": 0.07,
+      "sourceHash": "e824617957e23b7e0eb845c3422c58425e1092bbf3eadd3f1cdccd2df8e83085"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 121,
+      "endLine": 269,
+      "score": 0.07,
+      "sourceHash": "b380020c64adfc889613542c6c4d2eb828e8aa6159a0e7aa649aacf65d938f4f"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 367,
+      "endLine": 516,
+      "score": 0.07,
+      "sourceHash": "7f8971dbc80faea9a3d7bd77391eeb64b3e709e22196d2a2bc3d998687fc8635"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 774,
+      "endLine": 892,
+      "score": 0.07,
+      "sourceHash": "da94ff20e0b6f9e107acfda38d852dc6eb9fdbbb08e53fc6b1fc275348c5b41d"
+    },
+    {
+      "file": "_examples/fileserver/data/notes.txt",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.06,
+      "sourceHash": "1b072a9b2a405b3112ee5030a5385eb2ae7ec91819c95a6fd96ef763be7bb512"
+    },
+    {
+      "file": "_examples/README.md",
+      "startLine": 1,
+      "endLine": 24,
+      "score": 0.06,
+      "sourceHash": "24f7dab0201f93295827968e3faa130b42d294a871e218a62ddde97fe5b512de"
+    },
+    {
+      "file": "_examples/todos-resource/todos.go",
+      "startLine": 1,
+      "endLine": 53,
+      "score": 0.06,
+      "sourceHash": "d625f8b29660e6e34e8e3bc853599526128f7abb3ca4df39578e63d50e2fc09b"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 1,
+      "endLine": 148,
+      "score": 0.06,
+      "sourceHash": "dd62401f121e8cb988d082c247b40340f1ce743e339954f710af2882e73e7cfe"
+    },
+    {
+      "file": "CHANGELOG.md",
+      "startLine": 237,
+      "endLine": 341,
+      "score": 0.06,
+      "sourceHash": "5cbfa14e63eca6145e23c8d42f9b3b4603e3fa2f0fbf182cbf9d224888aa4751"
+    },
+    {
+      "file": "context.go",
+      "startLine": 1,
+      "endLine": 149,
+      "score": 0.06,
+      "sourceHash": "f2005cdfd6c95fda3b63832726ca962bd8bd8cb4009a6c2779936f21238cdaa0"
+    },
+    {
+      "file": "context.go",
+      "startLine": 120,
+      "endLine": 165,
+      "score": 0.06,
+      "sourceHash": "5cacf9459946bcfbd31e4fb46ccb70a29147d3a3a05e1c5d4ee054098e377d5a"
+    },
+    {
+      "file": "middleware/basic_auth.go",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.06,
+      "sourceHash": "911efdbc9a606b7534d82a6905812c49ebb581db1da2f42cc41e57f5dc67ff43"
+    },
+    {
+      "file": "middleware/clean_path.go",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.06,
+      "sourceHash": "c62678b23a9a28be1b5fe38aa6e54fdc9c8cf5a908dc5ed5a187f4b3c0b12db7"
+    },
+    {
+      "file": "middleware/content_type.go",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.06,
+      "sourceHash": "2e6a39f9225faab7dc599439777196a03187efc7d072a40fca60b913c34a69fd"
+    },
+    {
+      "file": "middleware/realip.go",
+      "startLine": 1,
+      "endLine": 60,
+      "score": 0.06,
+      "sourceHash": "0d7d4a3c12ff0d079b08dc620fd4716bf1f3466353f664b8595ef3636453ecdd"
+    },
+    {
+      "file": "middleware/strip.go",
+      "startLine": 1,
+      "endLine": 70,
+      "score": 0.06,
+      "sourceHash": "09d77c0e463fcca85617932b5bb39cc41bc149a848b083368d688490ccf31ad9"
+    },
+    {
+      "file": "README.md",
+      "startLine": 120,
+      "endLine": 265,
+      "score": 0.06,
+      "sourceHash": "e591ad71c8a201fcaa43e6db00862d8751dabc4a22951855e5403b6c4434ff86"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 1,
+      "endLine": 150,
+      "score": 0.06,
+      "sourceHash": "e881e48aa824785e0d0e34a9ba48154ec39aed1dbb58a1bc85b0917205e75081"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 357,
+      "endLine": 486,
+      "score": 0.06,
+      "sourceHash": "c86b86293de966741bf1c514f67a7d80ab46141848c0825235d26cff87bd22a8"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 457,
+      "endLine": 523,
+      "score": 0.06,
+      "sourceHash": "7532269856639d72658a204fb4e4622cb28ec28a9fd7272e66f67059dc3b1b90"
+    },
+    {
+      "file": "tree.go",
+      "startLine": 107,
+      "endLine": 228,
+      "score": 0.06,
+      "sourceHash": "5752fd52d3cf0839c850d815619a35359108c567a2dd72968abd36608457a5be"
+    },
+    {
+      "file": "_examples/custom-handler/main.go",
+      "startLine": 1,
+      "endLine": 35,
+      "score": 0.05,
+      "sourceHash": "d699e6ce3a01267ae49cbb95aff872b9cd020f2ff32f4527d27d961d80722e3b"
+    },
+    {
+      "file": "_examples/logging/main.go",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.05,
+      "sourceHash": "b6c2ae1c114f1d1b749676b0f6605428f616100fc8578fc005fdda742b2f5758"
+    },
+    {
+      "file": "_examples/todos-resource/users.go",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.05,
+      "sourceHash": "53ded0ccfa086e572e9e738c5ec1fc7bacfaddcc51a5ca70c9f2abce00f085fc"
+    },
+    {
+      "file": "_examples/versions/data/errors.go",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.05,
+      "sourceHash": "b65997f7350a6ac3c6210ede98414e1feed055ca4b1e979930a4e189dafb72ec"
+    },
+    {
+      "file": "_examples/versions/presenter/v1/article.go",
+      "startLine": 1,
+      "endLine": 22,
+      "score": 0.05,
+      "sourceHash": "241f3fe6c0e40962932411682e867bc79061600f1a3847768daabea72b2e4544"
+    },
+    {
+      "file": "_examples/versions/presenter/v2/article.go",
+      "startLine": 1,
+      "endLine": 30,
+      "score": 0.05,
+      "sourceHash": "4b27241cf8890ff0c70f58cacf77eea5510a4cd068db8909180b856dce534068"
+    },
+    {
+      "file": "_examples/versions/presenter/v3/article.go",
+      "startLine": 1,
+      "endLine": 39,
+      "score": 0.05,
+      "sourceHash": "d02d2bb3fa734af497192fd9b4ba5770560f9bc3779ec8e1ff63716388e7d8a8"
+    },
+    {
+      "file": "context_test.go",
+      "startLine": 1,
+      "endLine": 93,
+      "score": 0.05,
+      "sourceHash": "b228bddc8763c9ac25db390b789b0fb57dc10d0bc963c6245da887646f315807"
+    },
+    {
+      "file": "middleware/content_charset.go",
+      "startLine": 1,
+      "endLine": 51,
+      "score": 0.05,
+      "sourceHash": "aa3b3f90a24a80b6b0076d1f756d75b44e6819d0eb53f90827838eb0c3d73a26"
+    },
+    {
+      "file": "middleware/content_encoding.go",
+      "startLine": 1,
+      "endLine": 34,
+      "score": 0.05,
+      "sourceHash": "6ee77b87ea436d0285c352afd68b3f6e474ced8ba31f69ff16d69e8ed760465f"
+    },
+    {
+      "file": "middleware/terminal.go",
+      "startLine": 1,
+      "endLine": 63,
+      "score": 0.05,
+      "sourceHash": "f51e7ceedd2c67490d3935b45858b698d83b68ca33351bae8022524cbb6c4b81"
+    },
+    {
+      "file": "middleware/timeout.go",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.05,
+      "sourceHash": "3ada420900b854ab71480d3d461fc8254fbf598bf22433a0ec2a011a7cc3fc31"
+    },
+    {
+      "file": "path_value.go",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.05,
+      "sourceHash": "96d2229fe35f87d5fdd9572058d6c9477b71116fad930552bc323bac5a07b88b"
+    },
+    {
+      "file": "README.md",
+      "startLine": 452,
+      "endLine": 503,
+      "score": 0.05,
+      "sourceHash": "40a9d3e4f3a7c44231a54ebf6d98298ef0a09c035741c16fb4136abb37d26298"
+    },
+    {
+      "file": "tree_test.go",
+      "startLine": 240,
+      "endLine": 386,
+      "score": 0.05,
+      "sourceHash": "437879b15ec8512c5e1eba20da9b664e3fc959223aed8ee161b14a23d744aba2"
+    },
+    {
+      "file": "_examples/rest/go.mod",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.04,
+      "sourceHash": "0d1fad2e2695300c0bf9614aa82ce19b6e1a33ca488b10da106c78026d7955e8"
+    },
+    {
+      "file": "_examples/versions/data/article.go",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.04,
+      "sourceHash": "f1146644331f11362c91b0493f25c312fa5191bce59d549826ef0fcfc660eaa5"
+    },
+    {
+      "file": "_examples/versions/go.mod",
+      "startLine": 1,
+      "endLine": 10,
+      "score": 0.04,
+      "sourceHash": "a36b9e1ec47303ca4c01d7ad1bfc0f37b3574617d29d3f04a317c0adbc6a3bd8"
+    },
+    {
+      "file": ".gitignore",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.04,
+      "sourceHash": "a77678de652843bb194c9de561f9d86c24a0db95b8a609aebd0d0e85b5c83842"
+    },
+    {
+      "file": "CONTRIBUTING.md",
+      "startLine": 1,
+      "endLine": 31,
+      "score": 0.04,
+      "sourceHash": "8e55ed415082f0d89b7b5b2c095022b9d1d97aa1b9c71e9d61cb642b0730dbba"
+    },
+    {
+      "file": "go.mod",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.04,
+      "sourceHash": "7f1ecb553c4ce44bfe6682908107be4c695601f8b773e2c456ddb7cf1631de85"
+    },
+    {
+      "file": "LICENSE",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.04,
+      "sourceHash": "f1a8e7b85bd75dd7af66d829fba1a39c2ddedf5480e7176b17f13ddf1494d4dd"
+    },
+    {
+      "file": "middleware/request_id.go",
+      "startLine": 1,
+      "endLine": 96,
+      "score": 0.04,
+      "sourceHash": "19128e03a04336cb1e1e27ebb9cdb273778cca5237fabddb91c34170b48ceb9d"
+    },
+    {
+      "file": "middleware/sunset.go",
+      "startLine": 1,
+      "endLine": 25,
+      "score": 0.04,
+      "sourceHash": "c12bbbe8f542f5b53ebbbdd6e2922b7293f8163cc1360e12cfe4911964052d71"
+    },
+    {
+      "file": "path_value_fallback.go",
+      "startLine": 1,
+      "endLine": 19,
+      "score": 0.04,
+      "sourceHash": "e339e705eec285504794784912e4c0d2721dcade49327c4f621f808eee9e4083"
+    },
+    {
+      "file": "testdata/cert.pem",
+      "startLine": 1,
+      "endLine": 19,
+      "score": 0.04,
+      "sourceHash": "8ad1e902cd27af9f9a90ddde1f6239f743c1e04d94204237e2a0f06af239b3df"
+    },
+    {
+      "file": "testdata/key.pem",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.04,
+      "sourceHash": "39ad00b698c0f75ecd7199e3cbc8466ca9dd0fd87253c3dcd566125c11b56f7a"
+    },
+    {
+      "file": "_examples/chi.svg",
+      "startLine": 1,
+      "endLine": 6,
+      "score": 0.03,
+      "sourceHash": "d60405931ba0bc4fd4173218728e09dfae0fc1e387235ff3c7f4ddfb852a6d9d"
+    },
+    {
+      "file": ".github/FUNDING.yml",
+      "startLine": 1,
+      "endLine": 12,
+      "score": 0.03,
+      "sourceHash": "ce02757292abbd1761f8b4e5fb439ceb7dd2d4f48ce0cf4fe93c1399bb13d89a"
+    },
+    {
+      "file": ".github/workflows/ci.yml",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.03,
+      "sourceHash": "55f2ab39c5e30b6e592e940d49f3baab7cc67285cbf32d2be5f097aaea18a149"
+    },
+    {
+      "file": "Makefile",
+      "startLine": 1,
+      "endLine": 22,
+      "score": 0.03,
+      "sourceHash": "386e1f0a0e54b5ac7027d2548eca145ab8bf2735af545627bfdae26d1fa7f148"
+    },
+    {
+      "file": "SECURITY.md",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.03,
+      "sourceHash": "f0a192c529b739ec85a1c37d43db93665cfb3705a1663f6c7a5569c503f37e8b"
+    }
+  ]
+}

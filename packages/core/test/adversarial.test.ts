@@ -14,7 +14,7 @@ describe("adversarial review contracts", () => {
     expect(() => evaluateConfigSource('import { defineConfig } from "evil"; export default defineConfig({})')).toThrow();
   });
   test("missing answers fail instead of passing", async () => {
-    await expect(check({ config: parseConfig({ rules: { r: ["warn", "Preserve failure"] } }, "t"), hunks: parseHunks(DIFF).slice(0, 1), client: { evaluate: async () => ({ answers: {}, usage: { inputTokens: 1 }, modelId: "fake" }) } })).rejects.toThrow("missing");
+    await expect(check({ config: parseConfig({ rules: { r: ["warn", "Preserve failure"] } }, "t"), hunks: parseHunks(DIFF).slice(0, 1), client: { evaluate: async () => ({ answers: {}, usage: { inputTokens: 1 }, modelId: "fake" }) } })).rejects.toThrow("incomplete answer set");
   });
   test("missing references and exhausted budgets are explicit partial reviews", async () => {
     const client = fakeJev(() => ({ type: "noul", p: 0 })).client;

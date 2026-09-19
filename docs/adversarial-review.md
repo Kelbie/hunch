@@ -37,3 +37,20 @@ Independent Standards and Spec reviews covered the changes since `8fbfd12`. Stan
 Standards and Spec reviews of `4cb9e0c...6004e70` found no actionable defects. Tests verify that comments lead with concerns, preserve distinct messages, consolidate only identical concerns at identical ranges, retain every contributing rule, and keep incomplete coverage visible. Provenance follows preset questions through severity changes and switches to config when a question is replaced. The showcase's extra questions apply only to their named examples.
 
 A live eight-hunk review encountered Gateway free-tier HTTP 429 responses. The Gateway adapter now permits five SDK retries within a shared 90-second timeout. Independent source review confirmed the SDK propagates that timeout through requests and retry sleeps. It also corrected the timing documentation: 62 seconds is the default backoff total, and GitHub setup/publication overhead means completion within the 300-second worker limit is not guaranteed.
+
+## Semantic search and review context (2026-09-19)
+
+Review baseline: `9c8dc6a16b6cc43e64afe4a781e53cb45fe09a16`. Independent Standards and Spec
+passes covered condition search, source coverage, context, localization, CLI/Action/App reporting,
+benchmarks and the skill. Findings corrected before merge: location-specific thread reuse and
+resolution, consistent window headers, deadline-bounded source reads, one pinned head for source
+and links, matching dry-run windows, and preserving the parent after uncertain child attribution.
+The only remaining Standards observation is duplicated deterministic selection in dry-run and
+execution; both paths have public-interface regression coverage.
+
+The regenerated guidance lock was reviewed. Its inferred `new` lexical gate was removed because
+service factories can construct dependencies without that keyword. All model-derived findings
+remain advisory. Full tests, typecheck, build and the packed Node artifact pass; the optional
+credentialed smoke test is skipped in the ordinary suite. Separate live evidence is retained in
+the fixed-window and controlled-localization benchmark directories. This is not a claim that
+new hosted delivery/deployment or downstream coding-agent task success was validated.

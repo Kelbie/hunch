@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 
 const root = process.cwd();
+const version = JSON.parse(readFileSync(join(root, "packages/cli/package.json"), "utf8")).version;
 const temp = mkdtempSync(join(tmpdir(), 'hunch-package-'));
 const run = (bin, args, cwd = temp) => execFileSync(bin, args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 try {
@@ -11,7 +12,7 @@ try {
   run('npm', ['init', '-y']);
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(temp, packed[0].filename)]);
   const bin = join(temp, 'node_modules/@kelbie/hunch/dist/bin.js');
-  if (!run(process.execPath, [bin, '--version']).includes('0.12.0')) throw new Error('Version command failed');
+  if (!run(process.execPath, [bin, '--version']).includes(version)) throw new Error('Version command failed');
   const appHelp = run(process.execPath, [bin, 'app', '--help']);
   if (!appHelp.includes('register') || !appHelp.includes('connect')) throw new Error('App setup subcommands missing');
   // A flag the command does not take must be refused, not silently ignored.
@@ -20,10 +21,10 @@ try {
   catch (e) { rejected = `${e.stdout ?? ''}${e.stderr ?? ''}`; }
   if (!rejected.includes("unknown option '--facet'")) throw new Error('Per-command options are not enforced');
   writeFileSync(join(temp, 'package.json'), '{"type":"module"}');
-  writeFileSync(join(temp, 'consumer.ts'), 'import {defineConfig,noul} from "@kelbie/hunch"; export default defineConfig({rules:{r:["warn",noul({instructions:"Does `hunk` hide a failure?",when:/catch/})]}});');
+  writeFileSync(join(temp, 'consumer.ts'), 'import {defineConfig,noul,choice} from "@kelbie/hunch"; export default defineConfig({review:{localize:true,chunkLines:80,contextLines:40},rules:{unknown:["warn",choice({instructions:"Assess",criteria:{bad:"Visible problem",unknown:"Needs context"},report:["bad"],abstain:["unknown"]})],r:["warn",noul({instructions:"Does `hunk` hide a failure?",when:/catch/})]}});');
   run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--module', 'nodenext', '--target', 'es2024', 'consumer.ts']);
   const rust = join(temp, 'rust'); mkdirSync(rust); writeFileSync(join(rust, 'Cargo.toml'), '[package]\nname="fixture"\nversion="0.1.0"');
-  writeFileSync(join(rust, 'package.json'), '{"devDependencies":{"@kelbie/hunch":"0.12.0"}}');
+  writeFileSync(join(rust, 'package.json'), JSON.stringify({devDependencies:{"@kelbie/hunch":version}}));
   run('git', ['init', '--quiet'], rust);
   run(process.execPath, [bin, 'init', '--cwd', rust]);
   if (!existsSync(join(rust, 'hunch.toml'))) throw new Error('Cargo project did not receive TOML config');

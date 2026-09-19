@@ -2,7 +2,8 @@ import picomatch from "picomatch";
 import { hunkContext } from "./context.js";
 import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
 import { inScope as scopeFilter } from "./full.js";
-import type { Answer, JevClient, WireQuestion } from "./jev.js";
+import { validateAnswers, type Answer, type JevClient, type WireQuestion } from "./jev.js";
+import { localizeFinding } from "./localize.js";
 import type { CompiledRule, Lock } from "./lock.js";
 import type { Config, Level, Question, RuleEntry } from "./schema.js";
 
@@ -28,6 +29,8 @@ export interface CheckInput {
   client: JevClient;
   /** Reads repo files for `reference:` (from the base ref). */
   readFile?: (path: string) => Promise<string | null>;
+  /** Source at the reviewed head/index/working tree, never policy from the head. */
+  readChangedFile?: (path: string) => Promise<string | null>;
   onProgress?: (done: number, total: number) => void;
   /** Ask only these rule ids, to try a rule without paying for the rest. */
   only?: readonly string[];
@@ -63,11 +66,13 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   const info: string[] = [];
   const stats: CheckResult["stats"] = { hunks: 0, skippedHunks: 0, requests: 0, questions: 0, inputTokens: 0, modelIds: [] };
   const findings: Finding[] = [];
+  const localization: { finding: Finding; hunk: Hunk; question: Question; state: Record<string, unknown> }[] = [];
 
   const deleted = input.hunks.filter((h) => h.status === "deleted" && reviewed(h.file));
   if (deleted.length) notices.push(`${deleted.length} deleted-file hunks require human review.`);
   const inScope = input.hunks.filter((h) => reviewed(h.file) && h.status !== "deleted");
-  let hunks = inScope.flatMap((h) => windowHunk(h));
+  // Whole-file windows were already prepared by repoHunks, including repeated imports.
+  let hunks = inScope.flatMap((h) => h.kind === "file" ? [h] : windowHunk(h, 6000, config.review.chunkLines));
   if (hunks.length > config.budget.maxHunks) {
     notices.push(`Only ${config.budget.maxHunks.toLocaleString("en-US")} of ${hunks.length.toLocaleString("en-US")} hunks were checked; raise budget.maxHunks or narrow the paths.`);
     stats.skippedHunks = hunks.length - config.budget.maxHunks;
@@ -79,6 +84,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   const siblings = [...new Set(inScope.filter((h) => h.kind !== "file").map((h) => h.file))];
 
   const referenceCache = new Map<string, Promise<string | null>>();
+  const sourceCache = new Map<string, Promise<string | null>>();
   const readReference = (path: string) => {
     if (!referenceCache.has(path)) referenceCache.set(path, input.readFile?.(path) ?? Promise.resolve(null));
     return referenceCache.get(path)!;
@@ -92,12 +98,54 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   }
   let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length));
   const deadline = Date.now() + config.budget.timeoutSeconds * 1000;
+  // Bound reader waits as well as provider calls. A slow optional reader must not consume
+  // the worker's publication time after the review deadline.
+  async function readWithinDeadline(read: () => Promise<string | null>): Promise<string | null> {
+    if (Date.now() >= deadline) return null;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      return await Promise.race([read(), new Promise<null>(resolve => {
+        timer = setTimeout(() => resolve(null), Math.max(1, deadline - Date.now()));
+      })]);
+    } finally { if (timer) clearTimeout(timer); }
+  }
   let reservedRequests = 0;
   let done = 0;
   await pool(hunks, config.budget.concurrency, async (hunk) => {
     await checkHunk(hunk);
     input.onProgress?.(++done, hunks.length);
   });
+
+  // Baseline coverage always gets first use of the budget. Refinement never prunes baseline inputs.
+  let localizationRequests = 0;
+  for (const item of localization) {
+    try {
+      const narrowed = await localizeFinding({ ...item, maxLines: config.review.localizationLines,
+        async evaluate(startLine, endLine) {
+          if (localizationRequests >= config.review.maxLocalizationRequests || reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) throw new Error("Localization budget reached");
+          localizationRequests++; reservedRequests++; stats.requests++; stats.questions++;
+          const focus = { startLine, endLine, lines: item.hunk.added.filter(line => line.line >= startLine && line.line <= endLine) };
+          const request = { model: config.model, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())), state: { ...item.state, focus }, questions: {
+            q0: { ...toWire(item.question), instructions: toWire(item.question).instructions + ` Attribution: answer for the changed target lines ${startLine}–${endLine} in focus. The complete original hunk and all supplied context remain visible. Report only when these target lines participate in the concern, considering guards and counterevidence anywhere in the supplied context. Related callers, tests or vocabulary alone are not a violation. If evidence cannot be attributed to these target lines, answer no for a boolean, otherwise choose the non-reporting criterion.` },
+          } };
+          const res = await client.evaluate(request);
+          validateAnswers(request, res.answers);
+          const answer = res.answers.q0!;
+          if (item.question.kind === "choice" && answer.type === "choice" && item.question.abstain.includes(answer.choice)) throw new Error("Localization needs more context");
+          if (item.question.kind !== "noul" && answer.type !== "noul" && item.question.minConfidence > 0 && Object.keys(answer.probabilities).length < 2) throw new Error("Localization probabilities unavailable");
+          if (item.question.kind !== "noul" && answer.type !== "noul" && answer.confidence < item.question.minConfidence) throw new Error("Localization confidence too low");
+          stats.inputTokens += res.usage.inputTokens;
+          if (!stats.modelIds.includes(res.modelId)) stats.modelIds.push(res.modelId);
+          return judge(item.question, answer);
+        },
+      });
+      findings.splice(findings.indexOf(item.finding), 1, ...narrowed);
+    } catch {
+      incomplete = true;
+      item.finding.evidence += "; original range retained (localization incomplete)";
+      notices.push("Baseline findings retained: requested localization could not finish within the provider, request or time budget.");
+    }
+  }
 
   async function checkHunk(hunk: Hunk) {
     const rules = rulesFor(hunk.file, config, input.lock, input.only);
@@ -109,6 +157,30 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       candidates = candidates.slice(0, config.budget.maxRulesPerHunk);
     }
     if (!candidates.length) return;
+    if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
+      incomplete = true;
+      notices.push("Review request/time budget reached; remaining rules were skipped.");
+      return;
+    }
+
+    let surrounding: { file: string; startLine: number; endLine: number; text: string } | undefined;
+    if (input.readChangedFile && config.review.contextLines > 0) {
+      try {
+        if (!sourceCache.has(hunk.file)) sourceCache.set(hunk.file, readWithinDeadline(() => input.readChangedFile!(hunk.file)));
+        const text = await sourceCache.get(hunk.file)!;
+        if (text == null || text.includes("\0") || text.length > 1_000_000) throw new Error("Unavailable source");
+        const lines = text.replace(/\n$/, "").split("\n");
+        if (hunk.added.some(line => lines[line.line - 1] !== line.content)) throw new Error("Source does not match patch");
+        const startLine = Math.max(1, hunk.newStart - config.review.contextLines);
+        const endLine = Math.min(lines.length, hunk.newStart + Math.max(1, hunk.newLines) - 1 + config.review.contextLines);
+        const context = lines.slice(startLine - 1, endLine).join("\n");
+        if (!context || estimateTokens(context) > 8000) throw new Error("Context unavailable or too large");
+        surrounding = { file: hunk.file, startLine, endLine, text: context };
+      } catch {
+        incomplete = true;
+        notices.push(`${hunk.file}:${hunk.newStart}: requested source context unavailable, mismatched or oversized; evaluated visible patch only.`);
+      }
+    }
 
     // One request per distinct `reference` (usually just one: none).
     const byRef = Map.groupBy(candidates, (r) => r.question.reference ?? "");
@@ -120,9 +192,10 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       }
       reservedRequests++;
       const state: Record<string, unknown> = { context: hunkContext(hunk, { siblings }), file: hunk.file, hunk: hunk.text };
+      if (surrounding) state.surrounding = surrounding;
       if (config.task === "pr" && input.task) state.task = input.task.slice(0, 8000);
       if (ref) {
-        const text = await readReference(ref);
+        const text = await readWithinDeadline(() => readReference(ref)).catch(() => null);
         if (text == null) {
           incomplete = true;
           notices.push(`reference file ${ref} not found; rules using it were skipped.`);
@@ -141,7 +214,14 @@ export async function check(input: CheckInput): Promise<CheckResult> {
         notices.push(`${hunk.file}:${hunk.newStart}: request exceeds conservative context budget; rules skipped.`);
         continue;
       }
-      const res = await client.evaluate({ model: config.model, state, questions });
+      if (Date.now() >= deadline) {
+        incomplete = true;
+        notices.push("Review request/time budget reached; remaining rules were skipped.");
+        continue;
+      }
+      const request = { model: config.model, state, questions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) };
+      const res = await client.evaluate(request);
+      validateAnswers(request, res.answers);
       stats.requests++;
       stats.questions += group.length;
       stats.inputTokens += res.usage.inputTokens;
@@ -149,12 +229,17 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       group.forEach((rule, i) => {
         const answer = res.answers[`q${i}`];
         if (!answer || answer.type !== rule.question.kind) throw new Error("Jev returned missing or mismatched answers");
+        if (rule.question.kind === "choice" && answer.type === "choice" && rule.question.abstain.includes(answer.choice)) {
+          incomplete = true;
+          notices.push(`${hunk.file}:${hunk.newStart}: ${rule.id} returned insufficient context (${answer.choice}); inspect the relevant contract or caller.`);
+          return;
+        }
         if (rule.question.kind !== "noul" && answer.type !== "noul" && rule.question.minConfidence > 0 && Object.keys(answer.probabilities).length < 2) throw new Error("Provider omitted probabilities required by minConfidence");
         const verdict = judge(rule.question, answer);
         if (!verdict) return;
         const firstAdded = hunk.added[0]?.line ?? hunk.newStart;
         const lastAdded = hunk.added.at(-1)?.line ?? firstAdded;
-        findings.push({
+        const finding: Finding = {
           rule: rule.id,
           level: rule.level,
           file: hunk.file,
@@ -163,7 +248,9 @@ export async function check(input: CheckInput): Promise<CheckResult> {
           message: rule.question.message ?? rule.question.instructions,
           evidence: verdict,
           source: rule.source,
-        });
+        };
+        findings.push(finding);
+        if (config.review.localize) localization.push({ finding, hunk, question: rule.question, state });
       });
     }
   }

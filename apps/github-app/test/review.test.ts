@@ -10,10 +10,10 @@ const DIFF = "diff --git a/src/lib.ts b/src/lib.ts\n--- a/src/lib.ts\n+++ b/src/
 const job: ReviewJob = { installationId: 1, repo: "o/r", pr: 7, headSha: HEAD, deliveryId: "delivery-1" };
 const changes: { method: string; path: string; body: any }[] = [];
 let currentHead: string, permission: string, failJev: boolean, moveDuringReview: boolean, duplicate: boolean, rejectLines: boolean, badConfig: boolean, flaky: Record<string, number>, rateLimit = false;
-let threads: { id: string; isResolved: boolean; resolvedBy: { login: string } | null; comments: { nodes: { body: string; url: string; viewerDidAuthor: boolean }[] } }[];
+let threads: { id: string; line: number; isResolved: boolean; resolvedBy: { login: string } | null; comments: { nodes: { body: string; url: string; viewerDidAuthor: boolean }[] } }[];
 const KEY = `failure ${encodeURIComponent("src/lib.ts")}`;
 const thread = (id: string, key: string, over: Partial<(typeof threads)[number]> = {}, mine = true) =>
-  ({ id, isResolved: false, resolvedBy: null, comments: { nodes: [{ body: `<!-- hunch:finding ${key} -->\nconcern`, url: `https://github.com/o/r/pull/7#discussion_${id}`, viewerDidAuthor: mine }] }, ...over });
+  ({ id, line: 2, isResolved: false, resolvedBy: null, comments: { nodes: [{ body: `<!-- hunch:finding ${key} -->\nconcern`, url: `https://github.com/o/r/pull/7#discussion_${id}`, viewerDidAuthor: mine }] }, ...over });
 let server: ReturnType<typeof Bun.serve>;
 const jev: JevClient = { async evaluate(req) {
   if (failJev) throw new Error("secret-provider-response");
@@ -43,6 +43,11 @@ beforeAll(() => {
     if (path.endsWith("/pulls/7/comments")) return new Response("Unprocessable", { status: 422 });
     if (path.endsWith("/pulls/7")) return Response.json(pull());
     if (path.endsWith(`/git/trees/${BASE}`)) return Response.json({ tree: [{ path: "hunch.toml", type: "blob", mode: "100644" }] });
+    if (path.endsWith(`/git/trees/${HEAD}`)) return Response.json({ tree: [{ path: "src/lib.ts", type: "blob", mode: "100644" }] });
+    if (path.endsWith("/contents/src/lib.ts")) {
+      expect(url.searchParams.get("ref")).toBe(HEAD);
+      return new Response("export const x = 1;\nconst recover = () => { try { pay(); } catch { return { ok: true }; } };\n");
+    }
     if (path.endsWith("/contents/hunch.toml")) {
       expect(url.searchParams.get("ref")).toBe(BASE);
       return new Response(badConfig ? "[rules\nbroken" : '[rules]\n"failure" = ["error", "A failed payment must not return success."]');

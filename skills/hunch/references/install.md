@@ -1,5 +1,10 @@
 # Installing Hunch
 
+Match the CLI, skill and Action versions. Main may contain unreleased features. A locally packed
+development CLI can be used immediately, but `init --target actions` pins its version tag: confirm
+that tag exists before committing the generated workflow. Until release, use a reviewed commit SHA
+for `Kelbie/hunch` rather than a nonexistent version tag.
+
 Contents: [choose a path](#choose-a-path) · [init](#init) · [GitHub App](#github-app) ·
 [GitHub Actions](#github-actions) · [local](#local) · [on pull requests](#on-pull-requests) ·
 [what went wrong before](#what-went-wrong-before)

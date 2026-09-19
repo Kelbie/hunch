@@ -1,0 +1,95 @@
+{
+  "cases": [
+    {
+      "id": "tail-failure",
+      "source": "const padding0 = 0;\nconst padding1 = 1;\nconst padding2 = 2;\nconst padding3 = 3;\nconst padding4 = 4;\nconst padding5 = 5;\nconst padding6 = 6;\nconst padding7 = 7;\nconst padding8 = 8;\nconst padding9 = 9;\nconst padding10 = 10;\nconst padding11 = 11;\nconst padding12 = 12;\nconst padding13 = 13;\nconst padding14 = 14;\nconst padding15 = 15;\nconst padding16 = 16;\nconst padding17 = 17;\nconst padding18 = 18;\nconst padding19 = 19;\nconst padding20 = 20;\nconst padding21 = 21;\nconst padding22 = 22;\nconst padding23 = 23;\nexport async function pay() {\n  try { await charge(); }\n  catch (error) {\n    return { ok: true };\n  }\n  return { ok: true };\n}\nconst padding31 = 31;",
+      "diff": "--- /dev/null\n+++ b/pay.ts\n@@ -0,0 +1,32 @@\n+const padding0 = 0;\n+const padding1 = 1;\n+const padding2 = 2;\n+const padding3 = 3;\n+const padding4 = 4;\n+const padding5 = 5;\n+const padding6 = 6;\n+const padding7 = 7;\n+const padding8 = 8;\n+const padding9 = 9;\n+const padding10 = 10;\n+const padding11 = 11;\n+const padding12 = 12;\n+const padding13 = 13;\n+const padding14 = 14;\n+const padding15 = 15;\n+const padding16 = 16;\n+const padding17 = 17;\n+const padding18 = 18;\n+const padding19 = 19;\n+const padding20 = 20;\n+const padding21 = 21;\n+const padding22 = 22;\n+const padding23 = 23;\n+export async function pay() {\n+  try { await charge(); }\n+  catch (error) {\n+    return { ok: true };\n+  }\n+  return { ok: true };\n+}\n+const padding31 = 31;\n",
+      "targets": [
+        28
+      ]
+    },
+    {
+      "id": "two-failures",
+      "source": "const padding0 = 0;\nconst padding1 = 1;\nconst padding2 = 2;\nexport async function refund() {\n  try { await refundCharge(); }\n  catch (error) {\n    return { ok: true };\n  }\n  return { ok: true };\n}\nconst padding10 = 10;\nconst padding11 = 11;\nconst padding12 = 12;\nconst padding13 = 13;\nconst padding14 = 14;\nconst padding15 = 15;\nconst padding16 = 16;\nconst padding17 = 17;\nconst padding18 = 18;\nconst padding19 = 19;\nconst padding20 = 20;\nconst padding21 = 21;\nconst padding22 = 22;\nconst padding23 = 23;\nexport async function pay() {\n  try { await charge(); }\n  catch (error) {\n    return { ok: true };\n  }\n  return { ok: true };\n}\nconst padding31 = 31;",
+      "diff": "--- /dev/null\n+++ b/pay.ts\n@@ -0,0 +1,32 @@\n+const padding0 = 0;\n+const padding1 = 1;\n+const padding2 = 2;\n+export async function refund() {\n+  try { await refundCharge(); }\n+  catch (error) {\n+    return { ok: true };\n+  }\n+  return { ok: true };\n+}\n+const padding10 = 10;\n+const padding11 = 11;\n+const padding12 = 12;\n+const padding13 = 13;\n+const padding14 = 14;\n+const padding15 = 15;\n+const padding16 = 16;\n+const padding17 = 17;\n+const padding18 = 18;\n+const padding19 = 19;\n+const padding20 = 20;\n+const padding21 = 21;\n+const padding22 = 22;\n+const padding23 = 23;\n+export async function pay() {\n+  try { await charge(); }\n+  catch (error) {\n+    return { ok: true };\n+  }\n+  return { ok: true };\n+}\n+const padding31 = 31;\n",
+      "targets": [
+        7,
+        28
+      ]
+    },
+    {
+      "id": "preserved-error",
+      "source": "const padding0 = 0;\nconst padding1 = 1;\nconst padding2 = 2;\nconst padding3 = 3;\nconst padding4 = 4;\nconst padding5 = 5;\nconst padding6 = 6;\nconst padding7 = 7;\nconst padding8 = 8;\nconst padding9 = 9;\nconst padding10 = 10;\nconst padding11 = 11;\nconst padding12 = 12;\nconst padding13 = 13;\nconst padding14 = 14;\nconst padding15 = 15;\nconst padding16 = 16;\nconst padding17 = 17;\nconst padding18 = 18;\nconst padding19 = 19;\nconst padding20 = 20;\nconst padding21 = 21;\nconst padding22 = 22;\nconst padding23 = 23;\nexport async function pay() {\n  try { await charge(); }\n  catch (error) {\n    return { ok: false, error };\n  }\n  return { ok: true };\n}\nconst padding31 = 31;",
+      "diff": "--- /dev/null\n+++ b/pay.ts\n@@ -0,0 +1,32 @@\n+const padding0 = 0;\n+const padding1 = 1;\n+const padding2 = 2;\n+const padding3 = 3;\n+const padding4 = 4;\n+const padding5 = 5;\n+const padding6 = 6;\n+const padding7 = 7;\n+const padding8 = 8;\n+const padding9 = 9;\n+const padding10 = 10;\n+const padding11 = 11;\n+const padding12 = 12;\n+const padding13 = 13;\n+const padding14 = 14;\n+const padding15 = 15;\n+const padding16 = 16;\n+const padding17 = 17;\n+const padding18 = 18;\n+const padding19 = 19;\n+const padding20 = 20;\n+const padding21 = 21;\n+const padding22 = 22;\n+const padding23 = 23;\n+export async function pay() {\n+  try { await charge(); }\n+  catch (error) {\n+    return { ok: false, error };\n+  }\n+  return { ok: true };\n+}\n+const padding31 = 31;\n",
+      "targets": []
+    },
+    {
+      "id": "small-edit-needs-catch-context",
+      "source": "const padding0 = 0;\nconst padding1 = 1;\nconst padding2 = 2;\nconst padding3 = 3;\nconst padding4 = 4;\nconst padding5 = 5;\nconst padding6 = 6;\nconst padding7 = 7;\nconst padding8 = 8;\nconst padding9 = 9;\nconst padding10 = 10;\nconst padding11 = 11;\nconst padding12 = 12;\nconst padding13 = 13;\nconst padding14 = 14;\nconst padding15 = 15;\nconst padding16 = 16;\nconst padding17 = 17;\nconst padding18 = 18;\nconst padding19 = 19;\nconst padding20 = 20;\nconst padding21 = 21;\nconst padding22 = 22;\nconst padding23 = 23;\nexport async function pay() {\n  try { await charge(); }\n  catch (error) {\n    return { ok: true };\n  }\n  return { ok: true };\n}\nconst padding31 = 31;",
+      "diff": "--- a/pay.ts\n+++ b/pay.ts\n@@ -28 +28 @@\n-    return { ok: false, error };\n+    return { ok: true };\n",
+      "targets": [
+        28
+      ]
+    },
+    {
+      "id": "unrelated-edit-near-old-defect",
+      "source": "const padding0 = 1;\nconst padding1 = 1;\nconst padding2 = 2;\nconst padding3 = 3;\nconst padding4 = 4;\nconst padding5 = 5;\nconst padding6 = 6;\nconst padding7 = 7;\nconst padding8 = 8;\nconst padding9 = 9;\nconst padding10 = 10;\nconst padding11 = 11;\nconst padding12 = 12;\nconst padding13 = 13;\nconst padding14 = 14;\nconst padding15 = 15;\nconst padding16 = 16;\nconst padding17 = 17;\nconst padding18 = 18;\nconst padding19 = 19;\nconst padding20 = 20;\nconst padding21 = 21;\nconst padding22 = 22;\nconst padding23 = 23;\nexport async function pay() {\n  try { await charge(); }\n  catch (error) {\n    return { ok: true };\n  }\n  return { ok: true };\n}\nconst padding31 = 31;",
+      "diff": "--- a/pay.ts\n+++ b/pay.ts\n@@ -1 +1 @@\n-const padding0 = 0;\n+const padding0 = 1;\n",
+      "targets": []
+    }
+  ],
+  "variants": [
+    {
+      "id": "patch-only",
+      "chunkLines": 150,
+      "contextLines": 0,
+      "localize": false
+    },
+    {
+      "id": "small-with-context",
+      "chunkLines": 8,
+      "contextLines": 40,
+      "localize": false
+    },
+    {
+      "id": "contextual",
+      "chunkLines": 150,
+      "contextLines": 40,
+      "localize": false
+    },
+    {
+      "id": "localized",
+      "chunkLines": 150,
+      "contextLines": 40,
+      "localize": true
+    }
+  ],
+  "implementation": [
+    {
+      "path": "packages/core/src/check.ts",
+      "sha256": "3ca16932b85cb30aeaf3be4c528ef7ca1957f289137b14251964c2844c11b352"
+    },
+    {
+      "path": "packages/core/src/context.ts",
+      "sha256": "d926c2a62d405af577d26618d98dfb4aa2e889bb58e8e40af2417a717455e5e7"
+    },
+    {
+      "path": "packages/core/src/localize.ts",
+      "sha256": "fb28cc3b12f18aa06dc419177f091f63f4be7d690d08e8134205e6598350d97c"
+    },
+    {
+      "path": "packages/core/src/diff.ts",
+      "sha256": "6a9f61783086472d6e74525dc7dce23e8196a1f8f5b415b8d3725ec9c849cf2d"
+    },
+    {
+      "path": "packages/core/src/jev.ts",
+      "sha256": "6601857f42971a796059c817343705cc3e9410f3e519f6c2351c0395f00275e9"
+    },
+    {
+      "path": "packages/core/src/schema.ts",
+      "sha256": "0399d1a63691260bac542d2920aad382ebe288adf11f5e94f21f0faf3354eef6"
+    }
+  ],
+  "runnerHash": "f216dcc194cec264e56b75a5bf8f16b82b0953eb21a23a73102aee76a3f4183f",
+  "annotation": "Agent-authored synthetic local behavior probes, fixed before evaluation. Not an independent benchmark."
+}

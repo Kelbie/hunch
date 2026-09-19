@@ -58,17 +58,19 @@ export const estimateTokens = (s: string) => Math.ceil(s.length / 4);
  * Splits an oversized hunk into windows so state + question stays well under
  * Jev's 32k limit (and small, since accuracy drops with irrelevant state).
  */
-export function windowHunk(h: Hunk, maxTokens = 6000): Hunk[] {
-  if (estimateTokens(h.text) <= maxTokens) return [h];
+export function windowHunk(h: Hunk, maxTokens = 6000, maxLines = Infinity): Hunk[] {
+  if (estimateTokens(h.text) <= maxTokens && h.text.split("\n").length - 1 <= maxLines) return [h];
   const [header, ...body] = h.text.split("\n");
   const out: Hunk[] = [];
   let buf: string[] = [];
   let size = 0;
   let newLine = h.newStart;
   let windowStart = newLine;
+  let oldLine = Number(/^@@ -(\d+)/.exec(header ?? "")?.[1] ?? h.removed[0]?.line ?? h.newStart);
+  let oldWindowStart = oldLine;
   const flush = () => {
     if (!buf.length) return;
-    const text = [header, ...buf].join("\n");
+    const text = [`@@ -${oldWindowStart},${oldLine - oldWindowStart} +${windowStart},${newLine - windowStart} @@`, ...buf].join("\n");
     const inWindow = (l: number) => l >= windowStart && l < newLine;
     out.push({
       ...h,
@@ -76,17 +78,19 @@ export function windowHunk(h: Hunk, maxTokens = 6000): Hunk[] {
       newLines: newLine - windowStart,
       text,
       added: h.added.filter((a) => inWindow(a.line)),
-      removed: h.removed.filter((r) => buf.some((b) => b === `-${r.content}`)),
+      removed: h.removed.filter((r) => r.line >= oldWindowStart && r.line < oldLine),
     });
     buf = [];
     size = 0;
     windowStart = newLine;
+    oldWindowStart = oldLine;
   };
   for (const l of body) {
-    if (size + estimateTokens(l) > maxTokens) flush();
+    if (size + estimateTokens(l) > maxTokens || buf.length >= maxLines) flush();
     buf.push(l);
     size += estimateTokens(l) + 1;
-    if (!l.startsWith("-")) newLine++;
+    if (l.startsWith(" ") || l.startsWith("+")) newLine++;
+    if (l.startsWith(" ") || l.startsWith("-")) oldLine++;
   }
   flush();
   return out;

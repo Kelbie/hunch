@@ -4,7 +4,7 @@ Hunch has three modules: a portable review engine, a local CLI, and a GitHub App
 
 ## Interfaces
 
-- `check({config, hunks, lock, client, readFile})` owns rule selection, budgets, evaluation and findings. It returns structured data. It does not authenticate or publish.
+- `check({config, hunks, lock, client, readFile, readChangedFile})` owns rule selection, budgets, evaluation and findings. It returns structured data. It does not authenticate or publish.
 - `RepoReader` provides read/list/files for local disk, a Git commit, and GitHub. Policy selection stays outside the engine, and each adapter enforces its own file access restrictions.
 - `JevClient.evaluate` normalizes the two real provider contracts. It validates typed output and hides authentication and retries.
 - `runReview(job, deps)` owns the GitHub lifecycle. A signed webhook durably enqueues minimal identifiers; the worker reads current PR state, immutable base policy, immutable comparison, and publishes commit-labelled results.
@@ -34,3 +34,49 @@ Base policy is trusted by repository owners, but never executed. Config referenc
 Jev can identify a local symptom such as a function that exposes bookkeeping or conceals a failed operation. It cannot establish repository-wide module depth, absence of duplication, correct threat modeling, or skill compliance. Both prompt injection and ordinary false positives/negatives remain possible. All semantic findings start advisory; measure per-rule fixtures before enabling failOnError.
 
 No operational credentials are stored in config or a lock. Diffs and selected context go to the chosen provider. Compiler calls send selected guidance to a separate text model. Gateway calls request ZDR; direct TypeSafe retention follows the account agreement. Probabilities and Hunch's distribution-concentration metric are not empirical accuracy or provider-native confidence.
+
+## Semantic search design (2026-09-19)
+
+The caller's task has two distinct forms: finding code that satisfies an existing-behavior
+condition, and gathering context for a future change. Condition search asks one yes/no question;
+task retrieval asks about implementation, contracts, callers, tests and precedents. Recurring
+policy remains `check`, with its existing immutable-base trust model. Search does not require
+creating or compiling project policy.
+
+The search engine owns question construction, bounded scheduling, answer validation, selection
+and report data. Repository readers own enumeration and source access; the CLI connects them.
+Do not introduce an embedding backend, AST framework or persistent index without a demonstrated
+need. Scope excludes files deterministically; model scores never decide which baseline chunks
+are allowed to be evaluated.
+
+Distinguish three claims: selected content was evaluated, matching candidates were returned, and
+those candidates correctly answer the user's question. A request budget or file-read failure
+invalidates the first; a top limit can restrict the second while leaving the first true; only
+labeled evaluation and source verification provide evidence for the third. Model probabilities
+are not calibrated accuracy. Provider error bodies must not reach reports.
+
+Context size is an empirical parameter. Smaller windows can isolate a behavior but remove a guard;
+larger windows can restore the guard but dilute the signal. There is no monotonic predicate that
+would justify binary-search pruning. Expose bounded window experiments, retain an exhaustive
+baseline, and evaluate localization separately from retrieval. An adaptive search should retain
+parent evidence and distinguish its partial refinement coverage before it can replace any default.
+See [research and evaluation design](semantic-search-research.md).
+
+## Configured review context and localization
+
+`review` is shared by CLI, Actions and App. Readers supply reviewed-head source separately from
+trusted-base policy and references. Questions receive the same task, contract, full parent patch
+and bounded surrounding source during attribution. No implicit call graph or cross-file guard is
+claimed. Choice rules may explicitly abstain; those outcomes are incomplete coverage.
+
+Diff windows have consistent old/new coordinates. Optional localization runs after baseline
+coverage, evaluates both halves and keeps broad evidence if child attribution fails. It does not
+maximize scores or prune low-scoring parents. Existing thread reuse is location-specific; a
+complete review resolves superseded locations, while maintainer dismissal still follows the
+rule/file. Actions summaries link the exact reviewed head even when checkout remains at base.
+
+The [live synthetic probe](benchmarks/review-localization-2026-09-19/README.md) found shorter ranges
+but extra adjacent candidates. Localization remains experimental and disabled by default. The
+[fixed-window pilot](benchmarks/fixed-windows-2026-09-19/conclusions.md) supports retaining the
+search default, not declaring an optimal algorithm. Neither study measures downstream agent task
+success or production GitHub delivery reliability.

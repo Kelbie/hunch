@@ -1,0 +1,38 @@
+{
+  "startedAt": "2026-09-19T19:55:28.872Z",
+  "caseId": "two-failures",
+  "variant": {
+    "id": "contextual",
+    "chunkLines": 150,
+    "contextLines": 40,
+    "localize": false
+  },
+  "elapsedMs": 410.91737500000454,
+  "result": {
+    "findings": [
+      {
+        "rule": "failure",
+        "level": "warn",
+        "file": "pay.ts",
+        "line": 1,
+        "endLine": 32,
+        "message": "A caught payment failure is converted into success.",
+        "evidence": "p(yes)=0.96 ≥ 0.7",
+        "source": "config"
+      }
+    ],
+    "stats": {
+      "hunks": 1,
+      "skippedHunks": 0,
+      "requests": 1,
+      "questions": 1,
+      "inputTokens": 1342,
+      "modelIds": [
+        "typesafe-ai/jev"
+      ]
+    },
+    "notices": [],
+    "info": [],
+    "complete": true
+  }
+}

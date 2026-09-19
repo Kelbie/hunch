@@ -1,0 +1,6330 @@
+{
+  "identity": "48bc7daad8d655ca0b5b677f65636444b0edfb3dad4a8f2d5a0b0ac173725ade",
+  "caseId": "flask-encryption-control",
+  "repository": "flask",
+  "commit": "ab8149664182b662453a563161aa89013c806dc9",
+  "variant": {
+    "id": "lines-50",
+    "chunkLines": 50,
+    "overlapLines": 0
+  },
+  "query": "Does the default session implementation encrypt the cookie payload so the browser cannot read its contents?",
+  "provider": "gateway",
+  "requestedModel": "jev-1.13.0",
+  "zeroDataRetention": false,
+  "startedAt": "2026-09-19T19:37:26.001Z",
+  "elapsedMs": 47133.05041600001,
+  "complete": true,
+  "notices": [],
+  "stats": {
+    "chunks": 900,
+    "scored": 900,
+    "requests": 900,
+    "inputTokens": 839801,
+    "modelIds": [
+      "typesafe-ai/jev"
+    ]
+  },
+  "matches": [
+    {
+      "file": "src/flask/app.py",
+      "startLine": 174,
+      "endLine": 223,
+      "score": 0.61,
+      "sourceHash": "b4c7ece198dd2e3a62c29284b01d63c37f2e778107e7fcdd1065b65d33dab415"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 97,
+      "endLine": 146,
+      "score": 0.56,
+      "sourceHash": "784271a6a2af4b468257880c5f8efaa3e134198b557cd05cc21bed7265619c3a"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 390,
+      "endLine": 398,
+      "score": 0.46,
+      "sourceHash": "d5fe5187eb0c1fa5f2547d3b5d4579338dd8f95e6438bd8b063140b014ac4ad1"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 29,
+      "endLine": 73,
+      "score": 0.45,
+      "sourceHash": "f2dae2abd359f1fa9f27a130c0ed1c1d77f0f637b8069f39b3d0ceec11bdd73c"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.45,
+      "sourceHash": "79fdcecc259774c9f7bbffc21590c473e0f9256eaa5b5f67d7d63cf10558fda1"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 224,
+      "endLine": 273,
+      "score": 0.43,
+      "sourceHash": "f65dae5c32f76a6963ebb248c9d7400360f0db4bc174e511d47892c1c3a9f151"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 147,
+      "endLine": 196,
+      "score": 0.39,
+      "sourceHash": "eda7593c2dec899449e5cc920be1296970e05112fc37839f0792df0d587b1224"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 269,
+      "endLine": 318,
+      "score": 0.39,
+      "sourceHash": "b2f78627ac9e50a07cb81b0d963dc848629e01d597cb21d67c3780731e3a30d0"
+    },
+    {
+      "file": "examples/tutorial/flaskr/__init__.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.38,
+      "sourceHash": "04f70ebaecf2ccefc651d4799d1043ccc36646c1e120f04f954cf5304b758f79"
+    },
+    {
+      "file": "examples/tutorial/flaskr/auth.py",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.38,
+      "sourceHash": "2b227b3b9f9ab07e20cff4b1674e6fdc4911fe64e52ad4ad49d975783d418032"
+    },
+    {
+      "file": "examples/tutorial/flaskr/auth.py",
+      "startLine": 84,
+      "endLine": 116,
+      "score": 0.38,
+      "sourceHash": "4b1b7817308f10ccc871da885179deeb805723aa26150c0684b94bd13b9a2461"
+    },
+    {
+      "file": "tests/test_apps/cliapp/inner1/__init__.py",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.38,
+      "sourceHash": "91b19ce23916e0539cb2c6eb1d4f93498935bc477f242d47c85db7b0ed41eac8"
+    },
+    {
+      "file": "tests/test_reqctx.py",
+      "startLine": 229,
+      "endLine": 278,
+      "score": 0.38,
+      "sourceHash": "586d31e5c5d467dd4004450314c9a1ef034ffca7844478ea9747b61665e0b64a"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 100,
+      "endLine": 146,
+      "score": 0.37,
+      "sourceHash": "b5e03f17f6a4e904ac1af5ee07890dac2b66f33358bb3c88d27b099659c23a2a"
+    },
+    {
+      "file": "examples/tutorial/flaskr/__init__.py",
+      "startLine": 51,
+      "endLine": 51,
+      "score": 0.37,
+      "sourceHash": "f63a9f4b93d8fbf13bffe9064d75d62caef35c9f82bdc54f6ebff77ec2849c39"
+    },
+    {
+      "file": "tests/test_apps/cliapp/inner1/inner2/flask.py",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.37,
+      "sourceHash": "a3d044b53b9d308c57c8904e22f6b0f86411007c2bc1ca9b9a1efc9d0d654bcd"
+    },
+    {
+      "file": "tests/test_reqctx.py",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.37,
+      "sourceHash": "dcfcd1ea2014fd7e0b94e2c6fa9b76f3fe5083e911c37351291f90820f038bee"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 247,
+      "endLine": 289,
+      "score": 0.36,
+      "sourceHash": "593b709166aad0005b161f47c1d52da6dfe01fdc5ea3728b10bbd3f15e770797"
+    },
+    {
+      "file": "tests/test_apps/cliapp/app.py",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.36,
+      "sourceHash": "12172bd9d7a5a028040be2eb5426d1f134f96e756dc042a28334ba3b1f7390eb"
+    },
+    {
+      "file": "tests/test_reqctx.py",
+      "startLine": 185,
+      "endLine": 228,
+      "score": 0.36,
+      "sourceHash": "79eb168ae50945c763b04e36e4386c80aa09b89628c7c3097772b11a19829d8f"
+    },
+    {
+      "file": "examples/tutorial/tests/test_auth.py",
+      "startLine": 1,
+      "endLine": 38,
+      "score": 0.35,
+      "sourceHash": "49759fc505defe38ba6cad4fca2cdc24384e925a137c485dc2439cadadda8fde"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 197,
+      "endLine": 246,
+      "score": 0.35,
+      "sourceHash": "42e129b6c58b2282f93067d4ac1aa75b762e50e4f1ebfa890f28a10629ce5dc5"
+    },
+    {
+      "file": "tests/conftest.py",
+      "startLine": 45,
+      "endLine": 84,
+      "score": 0.35,
+      "sourceHash": "d87f1e9372d66a0dc5b6e3f3994642452b363bb9aa665a10663d689e984cf71d"
+    },
+    {
+      "file": "tests/test_apps/blueprintapp/__init__.py",
+      "startLine": 1,
+      "endLine": 9,
+      "score": 0.35,
+      "sourceHash": "9bed8adc7969433bf9ca3f912c2a59d420f4325e5c3bc6a08efc80c5160f62d5"
+    },
+    {
+      "file": "tests/test_apps/helloworld/hello.py",
+      "startLine": 1,
+      "endLine": 8,
+      "score": 0.35,
+      "sourceHash": "d883bb0e5e65b5896dc44cad07c8279d7f28e2d5452e83cf8e128711f1ad0aaa"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1461,
+      "endLine": 1486,
+      "score": 0.35,
+      "sourceHash": "8d55393d8f0263a1a05a8081585c9a14944673cb73df0dff4885ac48baed12f5"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1920,
+      "endLine": 1937,
+      "score": 0.35,
+      "sourceHash": "f1218d4f17eb8edadc74c68ec72d0e2dd7c52b42413e2afc428ff04eb1658996"
+    },
+    {
+      "file": "examples/celery/requirements.txt",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.34,
+      "sourceHash": "6b4bf64c4a1229468f6d4360b244ab3c87720079f66d6d3dea28edf2040a5dea"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 219,
+      "endLine": 268,
+      "score": 0.34,
+      "sourceHash": "bc34ebddfa8db6bb4881d4652dbbd7d6a219741a3f425e4e4bc277f6e5eae5e7"
+    },
+    {
+      "file": "tests/test_config.py",
+      "startLine": 48,
+      "endLine": 78,
+      "score": 0.34,
+      "sourceHash": "e304f37bae0fd47b6c675ee9ca51ea310162965b1d2c6aab4f06d4a28544ff22"
+    },
+    {
+      "file": "tests/test_config.py",
+      "startLine": 144,
+      "endLine": 185,
+      "score": 0.34,
+      "sourceHash": "5b6889d9779359d7e14eae718c75c6749c1bd2ff053e1b7b71d89bf15fe6b604"
+    },
+    {
+      "file": "tests/test_reqctx.py",
+      "startLine": 47,
+      "endLine": 96,
+      "score": 0.34,
+      "sourceHash": "448f2361288a62188c3865332e408b0e45a30c8936ece0967b2ab39f39d22fdd"
+    },
+    {
+      "file": "tests/test_reqctx.py",
+      "startLine": 135,
+      "endLine": 184,
+      "score": 0.34,
+      "sourceHash": "af03782ca679a54b909b6d444da2df4f0d1d8b869214615f9eca523a042df6b5"
+    },
+    {
+      "file": "examples/tutorial/tests/test_blog.py",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.33,
+      "sourceHash": "6251814f888df32016915c2fe01c052f0f92d54f2bdd2d246d5c23bb5957101b"
+    },
+    {
+      "file": "src/flask/__init__.py",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.33,
+      "sourceHash": "41f0ed60a40b1475dbd641223f8725f6efa4432740e43e3a66fc7bdef4123324"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 340,
+      "endLine": 389,
+      "score": 0.33,
+      "sourceHash": "66a680bb2551d2cc02b4a8219900ef0c9f1b196463ad3f2e17e9283622a28805"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1,
+      "endLine": 39,
+      "score": 0.33,
+      "sourceHash": "3500cff3e1285bff64b746b606e7a15f52168e27af10c6c9b0ec6b657900a78a"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 40,
+      "endLine": 69,
+      "score": 0.33,
+      "sourceHash": "ae2ab0b86599bf3d3e921c67e4e23365f621165e3c7c5c066e2724785d95ea67"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 319,
+      "endLine": 360,
+      "score": 0.33,
+      "sourceHash": "0aa37dd0c7ad1b8199d6cdf8a7e14ad21d3c67091fa7810da93492e466c2ba66"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 563,
+      "endLine": 599,
+      "score": 0.33,
+      "sourceHash": "269fc04907d69461dbbd7f329ebb1b5e7b6663b704817ca62d4a33b0bab4639b"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 766,
+      "endLine": 815,
+      "score": 0.33,
+      "sourceHash": "5b7dfd8c2c0618d10ab2629dc6a2b52ac795ad723dedc5fc4f0deb50a7b316f8"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1731,
+      "endLine": 1779,
+      "score": 0.33,
+      "sourceHash": "711e967d9acbca6b6b67ad123cb382dd64dae0f8f32b16b449bfd0b1c4ef06dd"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 524,
+      "endLine": 566,
+      "score": 0.33,
+      "sourceHash": "ad2dcaf343cc998e753c5e7abcc101682cd30a149d822abacf3218672aa06048"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 617,
+      "endLine": 666,
+      "score": 0.33,
+      "sourceHash": "a26ba8e25297b728cdeafde9558303798f40f24cd6b4ab9c38fb6affab83cc1c"
+    },
+    {
+      "file": "tests/test_config.py",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.33,
+      "sourceHash": "d3027794849e298077f4923b62e305244efe2b7deb7090b597706df7401e93cd"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 310,
+      "endLine": 353,
+      "score": 0.33,
+      "sourceHash": "24431543679a1b817ac46e1d9cabff86155771d31df0c3bb25d33aa251e5728b"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 270,
+      "endLine": 319,
+      "score": 0.33,
+      "sourceHash": "32c8141c826b40bb60cb328d976cda51f7616389b785d771f3acc5ce10c0bd44"
+    },
+    {
+      "file": "tests/test_reqctx.py",
+      "startLine": 97,
+      "endLine": 134,
+      "score": 0.33,
+      "sourceHash": "b5a026b1e9353acfc65f3fccb9c681cfaf428fcdd0bcf3754fa72142cdd1ae5a"
+    },
+    {
+      "file": "tests/test_signals.py",
+      "startLine": 95,
+      "endLine": 138,
+      "score": 0.33,
+      "sourceHash": "553e4a6631a6bfd7ae051e86c456e412995e092e5be21ce2e921680345a970ba"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 282,
+      "endLine": 320,
+      "score": 0.33,
+      "sourceHash": "399bd957719496dbe8ef4ab44ee840682bd34652ad9068a41553aee6fe7ca993"
+    },
+    {
+      "file": "tests/test_views.py",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.33,
+      "sourceHash": "f95f81649f172fc5b66e714321ca588660aa8fa5d0cd66b9a6f324a3e20945b3"
+    },
+    {
+      "file": "tests/test_views.py",
+      "startLine": 207,
+      "endLine": 244,
+      "score": 0.33,
+      "sourceHash": "a085471edd94a5f0867beecf19c68d648fe82130c473a0ca1168f3c30070a77a"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 507,
+      "endLine": 556,
+      "score": 0.32,
+      "sourceHash": "f49aa82b1f2d16ddfba5eebdb40cefa870329c34c53883725a874392e05f99cd"
+    },
+    {
+      "file": "examples/tutorial/flaskr/auth.py",
+      "startLine": 46,
+      "endLine": 83,
+      "score": 0.32,
+      "sourceHash": "71a28be4c8edec0d566f0f8135ef6e23014cdc551b06cf29b2309e5cd9c68e51"
+    },
+    {
+      "file": "examples/tutorial/flaskr/blog.py",
+      "startLine": 86,
+      "endLine": 125,
+      "score": 0.32,
+      "sourceHash": "5c3896f2189f25f5b704d9add8371f9ec295c7df8081fe993b8ae1c39842da57"
+    },
+    {
+      "file": "src/flask/views.py",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.32,
+      "sourceHash": "84dcce32b381027d6fbef8fb88b24e5205f6a4cb532bcf1c43008f22210483e8"
+    },
+    {
+      "file": "tests/test_appctx.py",
+      "startLine": 1,
+      "endLine": 43,
+      "score": 0.32,
+      "sourceHash": "f4260b865323e03938df3c4278b2cfd6ccab4062c957137b085105c8958284e7"
+    },
+    {
+      "file": "tests/test_apps/blueprintapp/apps/admin/__init__.py",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.32,
+      "sourceHash": "a113f7269dfbbf70d54b8ef7f131f094639eb9e1842d74d81198043d1e4f8417"
+    },
+    {
+      "file": "tests/test_apps/cliapp/multiapp.py",
+      "startLine": 1,
+      "endLine": 4,
+      "score": 0.32,
+      "sourceHash": "4334aa499b694b7514e4ab2c997307c2672ae61f0cde8dc83c04fb4809e2fbc6"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 361,
+      "endLine": 394,
+      "score": 0.32,
+      "sourceHash": "67f0c5c88d6d0a92846ff956ba7871c38411e1df481b3ae0e158d47f85b8dd99"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 513,
+      "endLine": 562,
+      "score": 0.32,
+      "sourceHash": "b956f7b6bb386ddd653cc128191bf55d44eb609879197da9da2a5cb044bd9fa3"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1258,
+      "endLine": 1300,
+      "score": 0.32,
+      "sourceHash": "b03275b2448877fd1267aa64ced3924adbe8dc15f1c1f35889479f98050feec4"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.32,
+      "sourceHash": "b2ccc82b15f6eb5886ee768a4a1a7db992877f871dd2ae046f640e5d69889249"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 80,
+      "endLine": 129,
+      "score": 0.32,
+      "sourceHash": "e071b0fa75fa703ecffacb4604fa6189fe2f92c3e247dff3e566cdfbdf7a6274"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 727,
+      "endLine": 765,
+      "score": 0.32,
+      "sourceHash": "0904b8a04d7461f3193426c42ff5069c779207749a59607a9a24fab581e48790"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 972,
+      "endLine": 1016,
+      "score": 0.32,
+      "sourceHash": "e3d7bef65e68a32641528802a6286f8d05df84036774f6f38b7def15a24618a8"
+    },
+    {
+      "file": "tests/test_request.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.32,
+      "sourceHash": "72360ca4aabf8fd129263d3ab0a0c92095a4466df61e860bd8fcfab14f370ca0"
+    },
+    {
+      "file": "tests/test_signals.py",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.32,
+      "sourceHash": "a70cfa8afe1620aaeac28781c3926356a5291f4ed942d2cc8116add697860908"
+    },
+    {
+      "file": "tests/test_subclassing.py",
+      "startLine": 1,
+      "endLine": 21,
+      "score": 0.32,
+      "sourceHash": "a5b0f5081d1bfb5b24820b0ed340709454cfd52deb4e2737762f9392d3e42c6b"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.31,
+      "sourceHash": "ee18010156011b09fde5744550190f1f04e457ef94f65841140a1ada81c14c76"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 50,
+      "endLine": 97,
+      "score": 0.31,
+      "sourceHash": "6ad4494959da47a3f598739c0de48c5059f730891c98bc2757e1e578a7ac3309"
+    },
+    {
+      "file": "docs/tutorial/factory.rst",
+      "startLine": 74,
+      "endLine": 117,
+      "score": 0.31,
+      "sourceHash": "ac4fd0e407541261f0f39f52b8fea1ef08e1ff38a5fc050e3419b09cbc9100da"
+    },
+    {
+      "file": "examples/tutorial/flaskr/blog.py",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.31,
+      "sourceHash": "74a44d8d80c64575b3815e95cf69e52f42907220d00b0223a10d913875ea5996"
+    },
+    {
+      "file": "examples/tutorial/flaskr/blog.py",
+      "startLine": 28,
+      "endLine": 59,
+      "score": 0.31,
+      "sourceHash": "a29f9db10b966b238ab67f4bab97d85aea15070446ea1d2b512a0504a00fa20f"
+    },
+    {
+      "file": "examples/tutorial/flaskr/blog.py",
+      "startLine": 60,
+      "endLine": 85,
+      "score": 0.31,
+      "sourceHash": "791d6acbe9da96eb03abc8329c5fa5296e6cf4c421a431130c3ebe2523d8e426"
+    },
+    {
+      "file": "examples/tutorial/tests/test_auth.py",
+      "startLine": 39,
+      "endLine": 69,
+      "score": 0.31,
+      "sourceHash": "355a8a5193a0a59d5d918eb7af53d9857ab57aecfe652cd81a950b8098f03696"
+    },
+    {
+      "file": "src/flask/typing.py",
+      "startLine": 47,
+      "endLine": 90,
+      "score": 0.31,
+      "sourceHash": "4c123039a7f2be497b66438410241a37137d409828bca67c4db9b41ef7477deb"
+    },
+    {
+      "file": "tests/test_appctx.py",
+      "startLine": 134,
+      "endLine": 166,
+      "score": 0.31,
+      "sourceHash": "6b61459e15b5578c58319de9f8859a541c1e76a92120a75391b4180f894ed738"
+    },
+    {
+      "file": "tests/test_appctx.py",
+      "startLine": 167,
+      "endLine": 209,
+      "score": 0.31,
+      "sourceHash": "f2210091da840cd5d12d2c79849b0e82c7d7c315cd84c1c5cc29c5f95af06b69"
+    },
+    {
+      "file": "tests/test_apps/cliapp/factory.py",
+      "startLine": 1,
+      "endLine": 13,
+      "score": 0.31,
+      "sourceHash": "d03138347252a5af6f4818976322c0e7a9c5da0eec017a8464dc358464996afb"
+    },
+    {
+      "file": "tests/test_async.py",
+      "startLine": 1,
+      "endLine": 39,
+      "score": 0.31,
+      "sourceHash": "d8e459268593005a817191b55363f382a1bb15dc05b7338cefe1405be76495da"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 234,
+      "endLine": 268,
+      "score": 0.31,
+      "sourceHash": "442a6bd42cd65aa1af9fcf3365a42152fab5496e02bab61672c3f992d63b11a9"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 472,
+      "endLine": 512,
+      "score": 0.31,
+      "sourceHash": "e496756241f1fda7d47c3c145e7e488241ea164a704bd96fe2c03cce6903bdc3"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 600,
+      "endLine": 649,
+      "score": 0.31,
+      "sourceHash": "f20f482c90a80b160e407a95a4b09b3d35b0d455e6c10ada7ff56203c867e815"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 816,
+      "endLine": 859,
+      "score": 0.31,
+      "sourceHash": "002e4b2616ec736d9f6da7519f749fb1886f42fbe87b76ad5097f9eabfc7418d"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 860,
+      "endLine": 897,
+      "score": 0.31,
+      "sourceHash": "c154913dd67f11b134ef219cd2089285bdfdf7aa7e8591126412ae0bd4b10816"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 898,
+      "endLine": 943,
+      "score": 0.31,
+      "sourceHash": "461cb77c53cc3b4b0a5bb620c6ba43220b217482ca5537f31fafaa2be2d73a55"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1381,
+      "endLine": 1426,
+      "score": 0.31,
+      "sourceHash": "058ec7b36357950227a8fa353d000fc57eafb3d992d2c32fb7b1a3d991c13816"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1529,
+      "endLine": 1573,
+      "score": 0.31,
+      "sourceHash": "554aff24dd809ec88506e0bc5e091127c296042ce105ae623256149b9561f9f4"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1574,
+      "endLine": 1608,
+      "score": 0.31,
+      "sourceHash": "73f24e5e515339ac30245198efa874e5e03a34f1c698535cda65e1db1dd785ed"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1638,
+      "endLine": 1685,
+      "score": 0.31,
+      "sourceHash": "53787ea65361ce601d6360a74ecacca2c6e5e13eb4847e533bdea28a9daba439"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1686,
+      "endLine": 1730,
+      "score": 0.31,
+      "sourceHash": "b1eff41896afdcfb3376f87b8231c1a4c9c4f6b93ace63c7950dd8d5c5cb8de1"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1870,
+      "endLine": 1919,
+      "score": 0.31,
+      "sourceHash": "d5232a0e4d88705537a3774482767a2604a98586664356b18e3eaed1f004f72d"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 295,
+      "endLine": 344,
+      "score": 0.31,
+      "sourceHash": "5d583cd5fabe7df417be19188b615ec08a42d93604f7e4b0fdba32652564e6db"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 481,
+      "endLine": 523,
+      "score": 0.31,
+      "sourceHash": "2633aea5ee2ce9341ed8607edde3479516bba6c2fe36f4a378e48b9e2a0f491c"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 842,
+      "endLine": 891,
+      "score": 0.31,
+      "sourceHash": "c4c7614da970b0be79ea679b79250a2f825cebf7aa5e0077158faf88f7806cde"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 922,
+      "endLine": 971,
+      "score": 0.31,
+      "sourceHash": "cb25653ea6519c08ad349d2a67670b714f266c1a03a78c2ec81667222e10465a"
+    },
+    {
+      "file": "tests/test_config.py",
+      "startLine": 79,
+      "endLine": 109,
+      "score": 0.31,
+      "sourceHash": "46f5405630278effd32e5b090a62c8f585eb060b8cba2e50f94f229734dd7dfb"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 33,
+      "endLine": 82,
+      "score": 0.31,
+      "sourceHash": "6f8e5dcb9cbe10b5fce11d05a112378f3d577c0f3b64f57832c78826aa1ba004"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 217,
+      "endLine": 266,
+      "score": 0.31,
+      "sourceHash": "b79a184f26eaaefe92ef887d5f57c3e295d99f87f8a0ebba20f84f80e2c74b16"
+    },
+    {
+      "file": "tests/test_reqctx.py",
+      "startLine": 279,
+      "endLine": 325,
+      "score": 0.31,
+      "sourceHash": "82b046fcd062f5724e2121302f7dba7b031363218b36fc873e6b061618251aaa"
+    },
+    {
+      "file": "tests/test_session_interface.py",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.31,
+      "sourceHash": "f220b8b4e4d847ed279b8271450d880385b296fab29f8ab17598eedb805d1065"
+    },
+    {
+      "file": "tests/test_signals.py",
+      "startLine": 139,
+      "endLine": 181,
+      "score": 0.31,
+      "sourceHash": "850a2ce84080746dd923149f4cae6a5b5298a446d649082af51cdcd15050411a"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 342,
+      "endLine": 391,
+      "score": 0.31,
+      "sourceHash": "2a5d7b9fa1a930cc34b3219fd85b3d39c23be7c7c04df1b55f60e99e80f83ac3"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 1,
+      "endLine": 41,
+      "score": 0.31,
+      "sourceHash": "b084f88beb341265a5b17f195f1ef13de5c85bfc53dc3c1e5bc169a8ef950dcf"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 251,
+      "endLine": 281,
+      "score": 0.31,
+      "sourceHash": "c26a206439707228ef15e50b92696b6deed69d33e3f929e8b778d95b2709ad90"
+    },
+    {
+      "file": "tests/test_views.py",
+      "startLine": 171,
+      "endLine": 206,
+      "score": 0.31,
+      "sourceHash": "0e3a12e5c0efdaf76795bc50000836e3dbc4a6eb1b197a2bbc508109797a24bc"
+    },
+    {
+      "file": "tests/type_check/typing_route.py",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.31,
+      "sourceHash": "42856091f8dc5df601e5125a947ff9d19fe6e98478c2dc8fd181f0d71ba05081"
+    },
+    {
+      "file": "examples/tutorial/flaskr/templates/auth/register.html",
+      "startLine": 1,
+      "endLine": 15,
+      "score": 0.3,
+      "sourceHash": "45a0c5b1db26a9e4661ac299b200e8622611a59a6cfce7991ee08c7cbe036d0c"
+    },
+    {
+      "file": "examples/tutorial/flaskr/templates/blog/create.html",
+      "startLine": 1,
+      "endLine": 15,
+      "score": 0.3,
+      "sourceHash": "ba200a36827feecaffb7f76959624adea2c4349ac686b6b496792938b21a54e8"
+    },
+    {
+      "file": "examples/tutorial/flaskr/templates/blog/index.html",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.3,
+      "sourceHash": "34f76d2752a8006c62b30ae9823efd07151d8ac2e8e61a7d7a2e2318824be6b4"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.3,
+      "sourceHash": "8e5707b1de8809a57d7130e99e682c4a9e1d44813db93d61bdc471262cb0161c"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.3,
+      "sourceHash": "bc22aece4957ce0d86af1eac87c6cc2178a84daf3c4cbc5418ebb0c198ee963c"
+    },
+    {
+      "file": "src/flask/views.py",
+      "startLine": 101,
+      "endLine": 137,
+      "score": 0.3,
+      "sourceHash": "a0798a28449360aa1275e07622f369d950a934496e6ca652423902332a853128"
+    },
+    {
+      "file": "src/flask/views.py",
+      "startLine": 138,
+      "endLine": 187,
+      "score": 0.3,
+      "sourceHash": "26764165dbec3f88f1aed0bbca01c17397148d099e0a871bec8089da0fda6f05"
+    },
+    {
+      "file": "tests/test_appctx.py",
+      "startLine": 44,
+      "endLine": 90,
+      "score": 0.3,
+      "sourceHash": "1dd58174895ac0e5702d8064d3570c62ca0c7f97442b8b9ac229525c4bd66434"
+    },
+    {
+      "file": "tests/test_appctx.py",
+      "startLine": 91,
+      "endLine": 133,
+      "score": 0.3,
+      "sourceHash": "8350e12efae724b4c087fe9d1d3d45b174816144367ff181a5494f5e87c7f0b3"
+    },
+    {
+      "file": "tests/test_apps/blueprintapp/apps/frontend/__init__.py",
+      "startLine": 1,
+      "endLine": 14,
+      "score": 0.3,
+      "sourceHash": "95211b9b2944fed6d14a69473df2880c385e7d65e12c5c3a1b6bc56ca76ad017"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 70,
+      "endLine": 119,
+      "score": 0.3,
+      "sourceHash": "50e1200d2d752fd81ddddc21e05672be57a37bc690fc7d4b30dfde462060688b"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 120,
+      "endLine": 156,
+      "score": 0.3,
+      "sourceHash": "f2ab221ffd727ff5a021a185dbbbcdd15bf43894862767dd208347a1f27994fb"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 157,
+      "endLine": 192,
+      "score": 0.3,
+      "sourceHash": "f6469089218dafd7e8c95e6d8871915facc1220531842fbe5b23451f4c09c9b4"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 193,
+      "endLine": 233,
+      "score": 0.3,
+      "sourceHash": "ca7b0558aae122727b2cbfd7f7e7bcbc56a96cef0b7643ed0245562d1883274d"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 681,
+      "endLine": 730,
+      "score": 0.3,
+      "sourceHash": "e9bd665e35f5df412fa852b476ce9792808bd9aebc483cef512cc5218d40fcbf"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1025,
+      "endLine": 1070,
+      "score": 0.3,
+      "sourceHash": "c5331dd053515a4c1a834eef89fb389859bb5a8604e69ad1dd32d393f12b8d4d"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1071,
+      "endLine": 1114,
+      "score": 0.3,
+      "sourceHash": "5f4bd43d6f7c3d9979ea292d7421188b79998814955164b1f3ceda539ea4584f"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1301,
+      "endLine": 1343,
+      "score": 0.3,
+      "sourceHash": "916ef106ea2fef2de936043dc7ac1e884a8f07625c60ff0b9b79aee491ac4a3b"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1344,
+      "endLine": 1380,
+      "score": 0.3,
+      "sourceHash": "3d505ddda64d1ff5334f251fb837423f45f15534b9977cc095cfa880d53555b2"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1780,
+      "endLine": 1828,
+      "score": 0.3,
+      "sourceHash": "c3706eb5f10595bfc60b7626b54a294cb531fd6a54ecae943c9824aeb555950f"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1829,
+      "endLine": 1869,
+      "score": 0.3,
+      "sourceHash": "5c67b2dd8a023ca1f9d98adc7318e28be83073e3b71d297e9264fcf42acfd9d6"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 46,
+      "endLine": 79,
+      "score": 0.3,
+      "sourceHash": "fae7599f4e6a8df365da20abd2b85eccd642b805f71e57636ab07bc9fc09768a"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 130,
+      "endLine": 175,
+      "score": 0.3,
+      "sourceHash": "75434501f1cc524c9178d10ad5c473dbd4c917eab4bd917284cc9ab908d96e7d"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 176,
+      "endLine": 222,
+      "score": 0.3,
+      "sourceHash": "c59963f401028a5e087ad34b0ec0907cf62eccdd71437de5288cf49ad77f1c24"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 345,
+      "endLine": 387,
+      "score": 0.3,
+      "sourceHash": "0d736b1b17c5f414ed893c204778ce5a4421e05ace0f5dab0adbf13b003bcfe1"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 431,
+      "endLine": 480,
+      "score": 0.3,
+      "sourceHash": "f47c15acbcc6a6d5249307fa5a78de8435f7ee972474cca656b67f828092795b"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 696,
+      "endLine": 726,
+      "score": 0.3,
+      "sourceHash": "8c1e611b8c61c167f0b8eae88085eb0bce1f87fd5c3b17948c2845e05420d652"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 793,
+      "endLine": 841,
+      "score": 0.3,
+      "sourceHash": "c66837df47200980588c01601e6fc01a2cbc76a40d5abeb9fda4c4e7ca031af8"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 1017,
+      "endLine": 1046,
+      "score": 0.3,
+      "sourceHash": "6c530b4b2f68550c65ed7921ff44616fb73cfeb4f810da9a9c3ea87d212f085e"
+    },
+    {
+      "file": "tests/test_config.py",
+      "startLine": 110,
+      "endLine": 143,
+      "score": 0.3,
+      "sourceHash": "91d543cdc37f71ba07009eff5aed5aa32020b9976df5c65bf7b647f1147083d8"
+    },
+    {
+      "file": "tests/test_config.py",
+      "startLine": 186,
+      "endLine": 216,
+      "score": 0.3,
+      "sourceHash": "05500bbbe835b316f28a349b37f9edd6e055fde5da7423b392c70108e2a6764d"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 1,
+      "endLine": 32,
+      "score": 0.3,
+      "sourceHash": "8085b3ce5265e9894454e0e503e7c08dd2fb5d7d81aea16619b9fc82cf5f9e37"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 83,
+      "endLine": 132,
+      "score": 0.3,
+      "sourceHash": "96d44c4bf61cafbb16d96b7449ea6f08fe40e4f2bc1afc80615fffe0aa071d01"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 178,
+      "endLine": 216,
+      "score": 0.3,
+      "sourceHash": "426665311679f800cf408ed2c7d4839216e2853bb7e6b6b058af19c2ca762c9f"
+    },
+    {
+      "file": "tests/test_instance_config.py",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.3,
+      "sourceHash": "1f2a24740fe800da42bf5961d726574a5f841dbd4a5a0db4cf8671337ace4006"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 1,
+      "endLine": 41,
+      "score": 0.3,
+      "sourceHash": "c11f4bfcfb2521ff46614e748462635c60d868499772eb61b78b18ae671f8aa5"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 91,
+      "endLine": 132,
+      "score": 0.3,
+      "sourceHash": "7df6f8bd3648cc658dc6fc09981747c12628b6ffc1d1fab4d9ff73d8b5d13145"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 176,
+      "endLine": 216,
+      "score": 0.3,
+      "sourceHash": "69ea02b33d14b536c62ebcf07f4d54dd294e3ea6f3ffbb0f5c9dce8e5286cdc0"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 297,
+      "endLine": 341,
+      "score": 0.3,
+      "sourceHash": "17c7084c22bed4f8cb4f10d397779f9cd7ac7739babc66f1bbe3baf47a07223c"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 321,
+      "endLine": 363,
+      "score": 0.3,
+      "sourceHash": "a050d9b9327bc7b7c684b0ba332e773b0b8b1892958c0beb7876b01bb75078e0"
+    },
+    {
+      "file": "tests/test_views.py",
+      "startLine": 80,
+      "endLine": 129,
+      "score": 0.3,
+      "sourceHash": "ca46de211f677bbf31e86b56d89ff9e7684e5e9eb9fcb083764ac90c0465ed08"
+    },
+    {
+      "file": "tests/test_views.py",
+      "startLine": 130,
+      "endLine": 170,
+      "score": 0.3,
+      "sourceHash": "a5ee8093729356e09a6746776615ad767bf613736d6a34e49309bb3c33d4beb7"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 138,
+      "endLine": 185,
+      "score": 0.29,
+      "sourceHash": "d7e0c8841b8d6eebc9b12126944d98e1024e594498c75f256f65fff0cb8498f9"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 186,
+      "endLine": 226,
+      "score": 0.29,
+      "sourceHash": "529bed9d261641ea908089020c3bc964a6c25ff4cc8994c64b97631a07857e15"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 389,
+      "endLine": 437,
+      "score": 0.29,
+      "sourceHash": "8190b801ad7da21e672c10d3ac87fb5ac6d1869d466114ed6acc1eca81d5d488"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 696,
+      "endLine": 733,
+      "score": 0.29,
+      "sourceHash": "777c1abfb5eb85dae66b4bf83e8bdca3cc8f06ca2752f0b16b4877c9513331bf"
+    },
+    {
+      "file": "docs/lifecycle.rst",
+      "startLine": 50,
+      "endLine": 98,
+      "score": 0.29,
+      "sourceHash": "897e80642c8dc36b6538ca68b4a1d54d4f0b0421508394b0e05d28574532564a"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 95,
+      "endLine": 139,
+      "score": 0.29,
+      "sourceHash": "02e696f3f6962f7c7956ae562ea5a519a50baac1cc816079739f91407b2f7bdc"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 600,
+      "endLine": 644,
+      "score": 0.29,
+      "sourceHash": "357dd6b94a98a0248edbe61322b7f24f50e801acef48cf7c24b480efab1c9941"
+    },
+    {
+      "file": "docs/tutorial/views.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.29,
+      "sourceHash": "db38231cbcf7324d35b1e509f8ffbfbe24a89761ce13bd0e1f66f87bfb64390d"
+    },
+    {
+      "file": "docs/tutorial/views.rst",
+      "startLine": 79,
+      "endLine": 127,
+      "score": 0.29,
+      "sourceHash": "7052b79ce1cc123c45b74265a3e0439a4981d7a6819d5ef99f7ea458364839d3"
+    },
+    {
+      "file": "examples/tutorial/flaskr/templates/base.html",
+      "startLine": 1,
+      "endLine": 24,
+      "score": 0.29,
+      "sourceHash": "9babc4e74b87d5848ee3806274a57fb50fc1f74a3b5ab277bec46d85fbe74426"
+    },
+    {
+      "file": "examples/tutorial/tests/test_factory.py",
+      "startLine": 1,
+      "endLine": 12,
+      "score": 0.29,
+      "sourceHash": "de3063538618483fd35703fd848170e658b6a78028de385f7ef6bd7472957bdc"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 724,
+      "endLine": 773,
+      "score": 0.29,
+      "sourceHash": "9bd0d0694f86bee374ab1d5e990880bfcac1d2508c2eb28f857ad26b66eb50b5"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 774,
+      "endLine": 823,
+      "score": 0.29,
+      "sourceHash": "bbade98a6a34b4b0f3fec9cf47b9c6cd2749236c9675205ab113055e524ed382"
+    },
+    {
+      "file": "src/flask/globals.py",
+      "startLine": 1,
+      "endLine": 37,
+      "score": 0.29,
+      "sourceHash": "3ad256a252ab47c8be7b983f811076826f50d60635161e33279ee89f5740e41a"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 143,
+      "endLine": 192,
+      "score": 0.29,
+      "sourceHash": "01cdb3a687c4e6be179b1cc11aefda9d5720b44e6838b151df94a16f88046df8"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 243,
+      "endLine": 292,
+      "score": 0.29,
+      "sourceHash": "2db485f6223d907339dc049852c1d31533623bc43300fe462431e56564569029"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 293,
+      "endLine": 342,
+      "score": 0.29,
+      "sourceHash": "07fe876ecc86506b8a6e4b301cc775b017e573d0d9af7bac0bae94087e94a34e"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 792,
+      "endLine": 792,
+      "score": 0.29,
+      "sourceHash": "df0da4a508c8df75f5d918501e151d3128f4a5e26e7c31189f0d395080ba4e95"
+    },
+    {
+      "file": "src/flask/views.py",
+      "startLine": 188,
+      "endLine": 191,
+      "score": 0.29,
+      "sourceHash": "cc5ce79df43f6408a0bcef81740361972b8d163498850259390b49bc9f2d4999"
+    },
+    {
+      "file": "src/flask/wrappers.py",
+      "startLine": 251,
+      "endLine": 257,
+      "score": 0.29,
+      "sourceHash": "3d0727b460fe08212b7cfb3cc0c77b4a1b75361255824ac3f47a0c1531ab4d28"
+    },
+    {
+      "file": "tests/test_apps/.flaskenv",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.29,
+      "sourceHash": "b0946baa1d2dceca037a9a1f232e8b8798e9a6967e8917c8cd9c3f3ef09ed1f8"
+    },
+    {
+      "file": "tests/test_apps/cliapp/importerrorapp.py",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.29,
+      "sourceHash": "d0011200a04403670101c518a816446bbe704960acb65de24ec5ab7fbc891360"
+    },
+    {
+      "file": "tests/test_apps/subdomaintestmodule/__init__.py",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.29,
+      "sourceHash": "cb406fe7931b4ac5a6a62102b7fe2436431e9a03417fe5b9c96b5b5e5e372962"
+    },
+    {
+      "file": "tests/test_async.py",
+      "startLine": 40,
+      "endLine": 89,
+      "score": 0.29,
+      "sourceHash": "c7714b0fa84a0acd266db08450eec747d67597f625b672a73d8ea88ab866f00f"
+    },
+    {
+      "file": "tests/test_async.py",
+      "startLine": 90,
+      "endLine": 139,
+      "score": 0.29,
+      "sourceHash": "7b557c0575c044a769db733ae45d420e4a681095e8babb88fdb9f0eb3c89d6b0"
+    },
+    {
+      "file": "tests/test_async.py",
+      "startLine": 140,
+      "endLine": 145,
+      "score": 0.29,
+      "sourceHash": "0797afa9001fb37a574f1a2e03fb7755141ea2d1d4510d9ff62eb853978bf81f"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 395,
+      "endLine": 440,
+      "score": 0.29,
+      "sourceHash": "59664ae40322e687457916e7b9e6b88088ba47e52fec801f968b69e130ec3893"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 441,
+      "endLine": 471,
+      "score": 0.29,
+      "sourceHash": "42a871af25a4d821ebcc9c2e64a12216474e39043a0fdcaf2f04bc70f57a2339"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 731,
+      "endLine": 765,
+      "score": 0.29,
+      "sourceHash": "fa9c8ccb8f24c40b6e8c4cbf46cc4e5ec23816c15f1ffb74a51efb4e815bcf35"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 944,
+      "endLine": 991,
+      "score": 0.29,
+      "sourceHash": "c5f7495928bd1dca2a50d0ef6cdb4c280a21ef244b61a8d13c4b597e81aba382"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1115,
+      "endLine": 1164,
+      "score": 0.29,
+      "sourceHash": "f052a6433cbf3cca98fe39d6dcc1df137124e15f816b6dc67ce1ab0bb20c074c"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1209,
+      "endLine": 1257,
+      "score": 0.29,
+      "sourceHash": "f5f36ff8e9df8a0af46e209ff87019dbd99d810cb0ec217f69557f26d2c5cb2c"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1427,
+      "endLine": 1460,
+      "score": 0.29,
+      "sourceHash": "96e7cb4cd76394f3ab6bda7093ebbbc3998b679204f5354a442ee0ed72e7cb60"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 223,
+      "endLine": 263,
+      "score": 0.29,
+      "sourceHash": "a2e7c4dc70246f79e53b4ebf8b69d66ae1cd4623e954ad1266f68774175bb917"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 388,
+      "endLine": 430,
+      "score": 0.29,
+      "sourceHash": "6b614e9b68ab2c85c20cf26562360294459e3b55002f55f635d5323c04faaea9"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 567,
+      "endLine": 616,
+      "score": 0.29,
+      "sourceHash": "cc06cacb9c6bb37d8d8a6fcf83f18a035d325aa8b770dff5df53fe3af0ff9381"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 667,
+      "endLine": 695,
+      "score": 0.29,
+      "sourceHash": "33aac9e5d7a5af3696bd44498f73501002d903b5d0ead9e9c26db42c31b59bb7"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 766,
+      "endLine": 792,
+      "score": 0.29,
+      "sourceHash": "9aa93ba7db5072c92129fe217a049dbcbe92351e51658324d60e14e80848aefb"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 892,
+      "endLine": 921,
+      "score": 0.29,
+      "sourceHash": "501a3c1586c69229b3bc36d419412043fc1bb8c7972a23db85ea5b4e46e03e78"
+    },
+    {
+      "file": "tests/test_config.py",
+      "startLine": 217,
+      "endLine": 250,
+      "score": 0.29,
+      "sourceHash": "e81b92c71d6660517e5c2392aac631de74ecbe75961fa32e8fc2a8d7820a19ab"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 354,
+      "endLine": 360,
+      "score": 0.29,
+      "sourceHash": "477a0c1d22a0b50fa67814beb720e280c2c0b79d8604cd3269b5f5372ccffa48"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 105,
+      "endLine": 144,
+      "score": 0.29,
+      "sourceHash": "ddd268036490e32c99f40db743b2644eb1e90ad9f9590987e4db745eff43c82d"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 191,
+      "endLine": 222,
+      "score": 0.29,
+      "sourceHash": "0bfa8ce77ab356e1f200171aaccec86bfb598001611c45e2398c21c9d2dcd258"
+    },
+    {
+      "file": "tests/test_request.py",
+      "startLine": 51,
+      "endLine": 70,
+      "score": 0.29,
+      "sourceHash": "9ece1229313e304c8641b06fa6b6254a79a8a1eddbc23fa33f5388f702bb1d8b"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 392,
+      "endLine": 441,
+      "score": 0.29,
+      "sourceHash": "df079f26e7dcbde983e5ba5caf63513d32395944780e956966ad46c179f962f7"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 442,
+      "endLine": 451,
+      "score": 0.29,
+      "sourceHash": "037afc6b28264b6b109bc2fa19868f41e9e00294e54aa940899e1904f91a43f4"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 90,
+      "endLine": 116,
+      "score": 0.29,
+      "sourceHash": "a435aaa1b3888011fc8ab825257c050b44879c4f1da491bd3a88a2c63df8f1b9"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 212,
+      "endLine": 250,
+      "score": 0.29,
+      "sourceHash": "319bd6f78c1b9a46ccaaca017e5b296d7715177f7493fa3243b7f0d3a416a0b0"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 364,
+      "endLine": 396,
+      "score": 0.29,
+      "sourceHash": "a9b14eae61dde186c54919597785a7a0741b876df90bebac48fd1d6296e0c85b"
+    },
+    {
+      "file": "tests/test_user_error_handler.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.29,
+      "sourceHash": "0fd200588dd8ba8b037f6b04d926849450b9567db4eaa5e1dae1950c04fe4bd7"
+    },
+    {
+      "file": "tests/test_user_error_handler.py",
+      "startLine": 136,
+      "endLine": 162,
+      "score": 0.29,
+      "sourceHash": "2fd5268ccbb61dc55d7da692f345d25e063eccfbde997454c2bb2c31f36bd56a"
+    },
+    {
+      "file": "tests/test_user_error_handler.py",
+      "startLine": 213,
+      "endLine": 262,
+      "score": 0.29,
+      "sourceHash": "07b4a50ade5c510b946adf31fb1a18295b5ed003996b5741ba553061605e844a"
+    },
+    {
+      "file": "tests/test_views.py",
+      "startLine": 41,
+      "endLine": 79,
+      "score": 0.29,
+      "sourceHash": "b59a0938016f3a5ecad577cb0eb420491ccec2c14f7630cdcacb8b522c9e34c8"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 227,
+      "endLine": 259,
+      "score": 0.28,
+      "sourceHash": "c41512bcfc94f8d0580fd3101fc35247627fbc6cb4c56650d21b917c53a8d556"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 358,
+      "endLine": 388,
+      "score": 0.28,
+      "sourceHash": "76a4cc6fec079e784c15b1e9c95141e45837e0c8ce5bb391c2922e6bf9a9c10f"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 557,
+      "endLine": 606,
+      "score": 0.28,
+      "sourceHash": "ca7ad30d8f8161b9a4255702ea530b91e508e62111fb73d46ade7cd09aab52d9"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 882,
+      "endLine": 931,
+      "score": 0.28,
+      "sourceHash": "2c0641c7e1842da9cf45145ffeb280dcbbce863822986cfefafb2cadd941b5c1"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 979,
+      "endLine": 1026,
+      "score": 0.28,
+      "sourceHash": "a3b0a717cc04330e82e64c075c3f3cd09301ab8896d65e7fb093ae330a80b263"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 415,
+      "endLine": 462,
+      "score": 0.28,
+      "sourceHash": "a24eb6024d1fa22c4768621a86515f0c5855b69666d55fcaab4de9049dfe25e4"
+    },
+    {
+      "file": "docs/tutorial/factory.rst",
+      "startLine": 1,
+      "endLine": 34,
+      "score": 0.28,
+      "sourceHash": "3e53cd0d7ed593d7b887179b41b2cb386714911e54000d941c108bc8a30bfb46"
+    },
+    {
+      "file": "docs/tutorial/factory.rst",
+      "startLine": 35,
+      "endLine": 73,
+      "score": 0.28,
+      "sourceHash": "9255768be0e6104f0055f8018195fc046121c4a995795b820f5be2766700d2c3"
+    },
+    {
+      "file": "examples/tutorial/flaskr/templates/blog/update.html",
+      "startLine": 1,
+      "endLine": 19,
+      "score": 0.28,
+      "sourceHash": "aac99ee18a15f986cfff7454a9ebd6adeb48ed236bc632293178e8640bc8428c"
+    },
+    {
+      "file": "examples/tutorial/tests/test_blog.py",
+      "startLine": 46,
+      "endLine": 83,
+      "score": 0.28,
+      "sourceHash": "6eda2a189a5f83c670bb308ff98a976540ff91ac02e0af9a59313366362a361f"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 124,
+      "endLine": 173,
+      "score": 0.28,
+      "sourceHash": "c7d77ca81e675d9af49f60c71b680b301bcb187ade0c71745c34fd901dbe1ad7"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 424,
+      "endLine": 473,
+      "score": 0.28,
+      "sourceHash": "767e6e082034229a0374e0d1f346361da8b3e6c68ae2cc7d96f287a38b337d7b"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 524,
+      "endLine": 573,
+      "score": 0.28,
+      "sourceHash": "78110d6691efd0c824130e5c1162cf19eb603c70aabcb552f0f359427943c5cd"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 874,
+      "endLine": 923,
+      "score": 0.28,
+      "sourceHash": "b600bf304dcfba618714fd7938e3ed0072018a0cda78dc0c3eed399914bcbca2"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1374,
+      "endLine": 1423,
+      "score": 0.28,
+      "sourceHash": "d197f81e669724fa5716919e9b9f2de73a123c849bcbdeadd95f67fe4fbea3e5"
+    },
+    {
+      "file": "src/flask/debughelpers.py",
+      "startLine": 124,
+      "endLine": 173,
+      "score": 0.28,
+      "sourceHash": "1f91dcb8cce171c1db6639cfbe2b6b372ee82f5577f6a04608133e8bc2ecaec8"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 543,
+      "endLine": 592,
+      "score": 0.28,
+      "sourceHash": "0bea7792f7bb65baff599c0a455ed7888d238c7c832faa45f6e4a98e7dcd42ce"
+    },
+    {
+      "file": "src/flask/views.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.28,
+      "sourceHash": "79aacce15ae0f81b85ad4f7f279bc36ee36f6d6d3cf5ac7b1ef3cb375da95bed"
+    },
+    {
+      "file": "src/flask/wrappers.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.28,
+      "sourceHash": "c2a318a60c685355c1b22e28e07bc01ce3b2dc25e97914bd56fefc65a3d8f4fb"
+    },
+    {
+      "file": "src/flask/wrappers.py",
+      "startLine": 151,
+      "endLine": 200,
+      "score": 0.28,
+      "sourceHash": "3ea346bab3e8ed67cf57a2628ef7510a8841439b55d9b1b0b47fb8b52527d77a"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 650,
+      "endLine": 680,
+      "score": 0.28,
+      "sourceHash": "16295c783a3bafaafd1cf2dcb93dca958ccd1feefdccdbb0642f669dc6733a4a"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 992,
+      "endLine": 1024,
+      "score": 0.28,
+      "sourceHash": "0114bb50f2622b26babcf82abba482ad3ba87b8ae1ada590088bb0c6c4d63173"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1165,
+      "endLine": 1208,
+      "score": 0.28,
+      "sourceHash": "e83d52faf691fa4bc65377c208111be233a7114f96bd3f8214bf20c0b88cc4be"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1487,
+      "endLine": 1528,
+      "score": 0.28,
+      "sourceHash": "cd74b54931cbd06f0255a6a95cb714b175f17e157d795acefe41904766cc4134"
+    },
+    {
+      "file": "tests/test_basic.py",
+      "startLine": 1609,
+      "endLine": 1637,
+      "score": 0.28,
+      "sourceHash": "a31c74b0c02f1cc434c1bf9a043b48d0aca8ea97f4a782baed19cb64c6b308dd"
+    },
+    {
+      "file": "tests/test_blueprints.py",
+      "startLine": 264,
+      "endLine": 294,
+      "score": 0.28,
+      "sourceHash": "d86d4eb06ca85332512ea136962a7b4b17f384fad7642a9b4a4aac6e93095d1a"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 272,
+      "endLine": 319,
+      "score": 0.28,
+      "sourceHash": "415533fac7a8cabb1271d7d90323a7ea73333294da2c8b10cfb3a12bc3bc3826"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 133,
+      "endLine": 177,
+      "score": 0.28,
+      "sourceHash": "021dc7172031d07eb69704dd7ee2572300cac8ae12dbd124a930f2cd99baf856"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 48,
+      "endLine": 77,
+      "score": 0.28,
+      "sourceHash": "78a7b368bdb4298dda1ffb636d4bf0a9af196cd9d533f627c23a998ffc46df5f"
+    },
+    {
+      "file": "tests/test_regression.py",
+      "startLine": 1,
+      "endLine": 30,
+      "score": 0.28,
+      "sourceHash": "512bb8cfe68bc68ddb072efd0433a87bae3df33319c062df0af6b5de0a41df0c"
+    },
+    {
+      "file": "tests/test_signals.py",
+      "startLine": 50,
+      "endLine": 94,
+      "score": 0.28,
+      "sourceHash": "a546440a02f44e2a521f6d4b227d7de2c1dec077b147edce94867fcca6d107d3"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 42,
+      "endLine": 90,
+      "score": 0.28,
+      "sourceHash": "c0f4b5a7f24da3b4994b561db1432ef70027cf5eb988e15e04069a4c5ea2abb0"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 42,
+      "endLine": 89,
+      "score": 0.28,
+      "sourceHash": "04279e4f95e98e591942b9670e710b322542067691c701654469a8a2d980603a"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 117,
+      "endLine": 166,
+      "score": 0.28,
+      "sourceHash": "140a3bb31cde7bd247770175191f027cac05da6fa0187a08ba3d4c73b22a437d"
+    },
+    {
+      "file": "tests/test_user_error_handler.py",
+      "startLine": 100,
+      "endLine": 135,
+      "score": 0.28,
+      "sourceHash": "b5da5bc6ba738c574df78f84b680a0acf0a4cfd1543d68a7c861647fda7c29db"
+    },
+    {
+      "file": "tests/test_user_error_handler.py",
+      "startLine": 163,
+      "endLine": 212,
+      "score": 0.28,
+      "sourceHash": "7ece8544958d74e3822782e3323a970e71a04bd707f17a6ad5fffbe1dc833697"
+    },
+    {
+      "file": "tests/type_check/typing_app_decorators.py",
+      "startLine": 1,
+      "endLine": 32,
+      "score": 0.28,
+      "sourceHash": "b661a295bce7e6928147e88ad27da868f674b3085bc67d20e56e74060eae0b74"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 98,
+      "endLine": 137,
+      "score": 0.27,
+      "sourceHash": "2b102d7cefb15180407cc02423dd5ff2fb9dd08881cd8aeab05b20f43ff3dd82"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 260,
+      "endLine": 309,
+      "score": 0.27,
+      "sourceHash": "efceb1523ac58c220a24f112e4c286ea3f506da3f61083f05a0cc9801cdee287"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 310,
+      "endLine": 357,
+      "score": 0.27,
+      "sourceHash": "1d9f38808226926ac9b365d8bdca6310b73371f1def1900366ac275d78b14471"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 438,
+      "endLine": 468,
+      "score": 0.27,
+      "sourceHash": "caeaf099f15015e4f4a17a7a437fd7854272af10eb62938140c8fedc7ff3f061"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 469,
+      "endLine": 506,
+      "score": 0.27,
+      "sourceHash": "14fef821d5ebc283d5804de568d9cb55c2a9653d67672f826d727d4e4f540147"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 782,
+      "endLine": 831,
+      "score": 0.27,
+      "sourceHash": "161cecb5dedf33583334b964a838bfd77643551c6cea1015f720a7dfc15c4b6f"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1077,
+      "endLine": 1123,
+      "score": 0.27,
+      "sourceHash": "4c4f4ced712cd29be6568ed02782beb3c40315ff81316fdc2db844f655454853"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1356,
+      "endLine": 1405,
+      "score": 0.27,
+      "sourceHash": "f906c230d43e973cea3c556a7f2ecf5dbcc521190cff725443f5d6905fe3f1ad"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 551,
+      "endLine": 599,
+      "score": 0.27,
+      "sourceHash": "9e9896a2bdc8a94bc5928b88a7bcdd2c94dc1bcee31ea3579294cef88452de98"
+    },
+    {
+      "file": "docs/design.rst",
+      "startLine": 190,
+      "endLine": 228,
+      "score": 0.27,
+      "sourceHash": "55196d432d7125e24c58a688008bba1b69b69283a519b36023a2f3c27af8f7ca"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 46,
+      "endLine": 94,
+      "score": 0.27,
+      "sourceHash": "7d80330a7887fa812570adfa87af316aa26418751c770f16e70341c06b125c4a"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 225,
+      "endLine": 264,
+      "score": 0.27,
+      "sourceHash": "ecb01b57313d17e593fc24e4ee0de5af54ccb122c48020b994299a2d832a26e1"
+    },
+    {
+      "file": "docs/reqcontext.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.27,
+      "sourceHash": "90951b1c6a2ab1f6be37c500fdec70a9a5eb693b90847b012ed57b3146710601"
+    },
+    {
+      "file": "docs/templating.rst",
+      "startLine": 219,
+      "endLine": 229,
+      "score": 0.27,
+      "sourceHash": "098b3bff2f625c713d419cd2e423b6615cc982ecf47c0ccfa0ff7c7098ef382e"
+    },
+    {
+      "file": "docs/tutorial/deploy.rst",
+      "startLine": 51,
+      "endLine": 97,
+      "score": 0.27,
+      "sourceHash": "bc02147212744d2894a3d66a464c3ea2490b33230d45e13088bf00bab84408c0"
+    },
+    {
+      "file": "docs/web-security.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.27,
+      "sourceHash": "0236f3a44d30a4d019c3ce1921cec752e8a55494b9d94209a6427b175cc8d70f"
+    },
+    {
+      "file": "examples/celery/pyproject.toml",
+      "startLine": 1,
+      "endLine": 17,
+      "score": 0.27,
+      "sourceHash": "4a813cb329d984e6fcfc61f7e2fd611f85e41207dee4ad41ce8d3bae000d544c"
+    },
+    {
+      "file": "examples/celery/src/task_app/__init__.py",
+      "startLine": 1,
+      "endLine": 39,
+      "score": 0.27,
+      "sourceHash": "663c09670645510ad749accaabe18c1203a0703fd48ef14ea3ff2717efcca415"
+    },
+    {
+      "file": "examples/celery/src/task_app/views.py",
+      "startLine": 1,
+      "endLine": 38,
+      "score": 0.27,
+      "sourceHash": "53337b9b1d3157e1c973ef7ba5dbba02734b3bb847efdebde2b16562b2563fc9"
+    },
+    {
+      "file": "examples/javascript/js_example/__init__.py",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.27,
+      "sourceHash": "4ec5d9945732c300bc6e9a52ea4e66ed12e67896e7e7643555606e86a52db673"
+    },
+    {
+      "file": "examples/tutorial/tests/conftest.py",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.27,
+      "sourceHash": "bb742bf90e8427468957c223e5ee8ef9a5a9495677dc8b643b3fa07248f83e3e"
+    },
+    {
+      "file": "examples/tutorial/tests/test_db.py",
+      "startLine": 1,
+      "endLine": 29,
+      "score": 0.27,
+      "sourceHash": "187c4baace673c1ad1e526da3c7d00f50acf4bb442e42f05bef850471707620c"
+    },
+    {
+      "file": "pyproject.toml",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.27,
+      "sourceHash": "50b21f0d024f7997f703bfbb9766d0c9a3f0d09efcf322c63dadc02ed51ce098"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 824,
+      "endLine": 873,
+      "score": 0.27,
+      "sourceHash": "b8728c19f4642627aba3c4f06909b65b634256ea6564b30616ce9260711530e6"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 924,
+      "endLine": 973,
+      "score": 0.27,
+      "sourceHash": "6618be97ab3d2a4fda73e3446ad32a6fa47ecf4f9c133e97ab23588b08d53669"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1324,
+      "endLine": 1373,
+      "score": 0.27,
+      "sourceHash": "6b7a985765a63e6e9934580e486c46f4f2bb0dfe2b189916371eb0d97264bcc3"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1424,
+      "endLine": 1473,
+      "score": 0.27,
+      "sourceHash": "299eaff7ad49c74cbf8088b97c0590416e9e5a96ab70d71cee7186166c3e6e7c"
+    },
+    {
+      "file": "src/flask/debughelpers.py",
+      "startLine": 50,
+      "endLine": 80,
+      "score": 0.27,
+      "sourceHash": "95cf86c194d9240e10f39c8987888ae3643729bb88adc82f394fb868dcc5750b"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 43,
+      "endLine": 92,
+      "score": 0.27,
+      "sourceHash": "f1f8296c7e0bfb292eb878e738896262f48672064dd51117868872dc26f9105c"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 93,
+      "endLine": 142,
+      "score": 0.27,
+      "sourceHash": "50ba143cf8d2e003b116da45683b5616f588cdbc37883628b3491e9436c8ac4e"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 343,
+      "endLine": 392,
+      "score": 0.27,
+      "sourceHash": "6f84bf2b435c8b8726b8bca8606cd3be84c0935656e28da7a2db1198cf93f3ac"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 493,
+      "endLine": 542,
+      "score": 0.27,
+      "sourceHash": "7a1d0e206165701c3a5d4a6b9fbd9976475c1a11806143de4534e78c568e6bd1"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 593,
+      "endLine": 642,
+      "score": 0.27,
+      "sourceHash": "9f49bfcf6e331923e98e89897bd6c1da476d92ff663a176230ee680c96ca7db4"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 893,
+      "endLine": 942,
+      "score": 0.27,
+      "sourceHash": "e719f64d9c589b12d0494549acacdd42e0f47ceef5148524216c5ac5936c851a"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 142,
+      "endLine": 191,
+      "score": 0.27,
+      "sourceHash": "2b914e1ba586a5757450869dfa7c87e69a9675387303ba47272201ff8e5a8d9c"
+    },
+    {
+      "file": "src/flask/wrappers.py",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.27,
+      "sourceHash": "2fa278770b2e927405ea7d251b66e500ee65aac7c9dcdb675c1a26e396716f8f"
+    },
+    {
+      "file": "tests/conftest.py",
+      "startLine": 130,
+      "endLine": 160,
+      "score": 0.27,
+      "sourceHash": "5aecfae8f5619f6506dba5722d26d79f71fb5433abc819f31e73f3ab21955f6e"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 222,
+      "endLine": 271,
+      "score": 0.27,
+      "sourceHash": "b5a6cb24e48f966c82a6062724151985a93c75e48a4a43248d0ebf78dc66e22b"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 535,
+      "endLine": 583,
+      "score": 0.27,
+      "sourceHash": "5d043ee474a79584d3ba1129b340bb22167821e0cb00ec79e2af952bb9b47bb6"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.27,
+      "sourceHash": "4a8c35d7ce2589630b77258141aec5d3473623fcb20eb463c086b0bf73792000"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 78,
+      "endLine": 104,
+      "score": 0.27,
+      "sourceHash": "df2cea76044c93c4b33f6eb8e54686d940a0d06c9bf40945287f1d8ddc8684c8"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 320,
+      "endLine": 346,
+      "score": 0.27,
+      "sourceHash": "6326422c85d414da2d07050ed3b2e79e61c7af5c66600d16e92654b7b0e94744"
+    },
+    {
+      "file": "tests/test_logging.py",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.27,
+      "sourceHash": "4512138caa2cd2a8e4eb74df2f83c85ee08b4cd37ce046c0c54a42173898cb0e"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 217,
+      "endLine": 256,
+      "score": 0.27,
+      "sourceHash": "c99f2ad1dd46f0a85749c46d71283c63d2e2a3c7a8acfeca304adb9190d51f7b"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 257,
+      "endLine": 296,
+      "score": 0.27,
+      "sourceHash": "9277df2abada79873e398bdd13c193dc51089c0743a9aebbb53a5079470728e2"
+    },
+    {
+      "file": "tests/test_testing.py",
+      "startLine": 167,
+      "endLine": 211,
+      "score": 0.27,
+      "sourceHash": "8a1318fabf262690daa4ed2d65a53fed2f36e5c9a835f1d1dde8fc5b83f304a5"
+    },
+    {
+      "file": "tests/test_user_error_handler.py",
+      "startLine": 51,
+      "endLine": 99,
+      "score": 0.27,
+      "sourceHash": "37c2541d597443cd9b3a9bffeb2708c2551c90cd06c5f9a513800d9e2670e3db"
+    },
+    {
+      "file": "tests/type_check/typing_route.py",
+      "startLine": 50,
+      "endLine": 95,
+      "score": 0.27,
+      "sourceHash": "ef5763063d8fd840319f8c1c42feef0863cdd7cc2ecbde2e95f973c9d7731c59"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 607,
+      "endLine": 645,
+      "score": 0.26,
+      "sourceHash": "36d4c215b022f576a05754090cb2112c694c733d87f5058dcd65cb72ed30cff5"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 646,
+      "endLine": 695,
+      "score": 0.26,
+      "sourceHash": "a84b8a1edee9925bba0ee00bc92f1f003318b87ad2f7df09cffd23d4c1b32f82"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1027,
+      "endLine": 1076,
+      "score": 0.26,
+      "sourceHash": "3276ece1c779b632217fe89201c256b3649d63398d419a0d2e42b6a9991052bd"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1174,
+      "endLine": 1218,
+      "score": 0.26,
+      "sourceHash": "68e1d9b0e18599927eb0b0a299a450baedac5d8ca40d8ebae96eb90473dc8fd1"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.26,
+      "sourceHash": "5545569ebf91a109e03b4226e218529424f0d8e62054efca12d2792721cb70f8"
+    },
+    {
+      "file": "docs/async-await.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.26,
+      "sourceHash": "e8b319d0c07f26069bc66dc3d11d5d0ed95feb36c4b69ee34fcc9542bde750c2"
+    },
+    {
+      "file": "docs/debugging.rst",
+      "startLine": 51,
+      "endLine": 99,
+      "score": 0.26,
+      "sourceHash": "1f5a2de8badc61e74742a48c6a928a923f168ac37e565400e8b4ec19f0ff9d3e"
+    },
+    {
+      "file": "docs/extensiondev.rst",
+      "startLine": 150,
+      "endLine": 199,
+      "score": 0.26,
+      "sourceHash": "bae45fb894646d5d6834ae4908f8f29a65a0fd6f769a4cd87f2467d9add38566"
+    },
+    {
+      "file": "docs/index.rst",
+      "startLine": 1,
+      "endLine": 37,
+      "score": 0.26,
+      "sourceHash": "f95ec7b6d56ad0e62ef7ad473d895179dbce2564052c1e338cd7960f13f4bb1b"
+    },
+    {
+      "file": "docs/lifecycle.rst",
+      "startLine": 99,
+      "endLine": 148,
+      "score": 0.26,
+      "sourceHash": "8abdc0420a4cc32c81481cc7774d88c646e3dcccbe1e161110adc6a1d5340f1f"
+    },
+    {
+      "file": "docs/lifecycle.rst",
+      "startLine": 149,
+      "endLine": 168,
+      "score": 0.26,
+      "sourceHash": "f032e5f89b32dc8636a437f97992b6bb4d2a4a54987f6a03e055a309714cb4b0"
+    },
+    {
+      "file": "docs/patterns/appfactories.rst",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.26,
+      "sourceHash": "46d0ecde6480876b6fdeb3d4b009141886eb9cf981769ccf5a592c15d970f159"
+    },
+    {
+      "file": "docs/patterns/flashing.rst",
+      "startLine": 43,
+      "endLine": 90,
+      "score": 0.26,
+      "sourceHash": "9e746877b5bc182ce3cd9d09880ac6a68857c044114078c709101dd699255de5"
+    },
+    {
+      "file": "docs/patterns/singlepageapplications.rst",
+      "startLine": 1,
+      "endLine": 24,
+      "score": 0.26,
+      "sourceHash": "a8156cfa131d4bde3f0cdb5a967245ba17491f238f1b61fb9feae84edd324a6f"
+    },
+    {
+      "file": "docs/patterns/subclassing.rst",
+      "startLine": 1,
+      "endLine": 17,
+      "score": 0.26,
+      "sourceHash": "d63c740fd652316e0c244ea09536ed89094de4ed7c34f3256fa37a0bb3952b36"
+    },
+    {
+      "file": "docs/patterns/viewdecorators.rst",
+      "startLine": 80,
+      "endLine": 125,
+      "score": 0.26,
+      "sourceHash": "f0875b91e6f6e2b5735ac913ea96abf04cc2aabf4c2b28ba7d45029c2c5821f1"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 265,
+      "endLine": 312,
+      "score": 0.26,
+      "sourceHash": "717ec57d46cdf89ec7d6bd6ecd3fd54ff9694e3559a64b73daee6dbbac7b730d"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 403,
+      "endLine": 450,
+      "score": 0.26,
+      "sourceHash": "83b79e35a3143c084f3faa453f1e44050307eb6a2be4d35e7c1314ca228cff73"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 551,
+      "endLine": 599,
+      "score": 0.26,
+      "sourceHash": "f2629e0e0e47f5d5ed55131ee7d4d053cb841da91a6800d422ef8fd5ee338573"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 780,
+      "endLine": 827,
+      "score": 0.26,
+      "sourceHash": "123aa10bb017a21b9dad0780ef47f59fcd1cc9c7ee4689fe1fa5f6ffdda24170"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 828,
+      "endLine": 877,
+      "score": 0.26,
+      "sourceHash": "8e4a8497eabc32cc36936cebb1964804aa973f6360275be5d96bc6a3a2ad73ef"
+    },
+    {
+      "file": "docs/reqcontext.rst",
+      "startLine": 97,
+      "endLine": 146,
+      "score": 0.26,
+      "sourceHash": "ed6b3aae220d22321ff7faf6c9cafd11b4a3849b7e0f98d0df9f998996165017"
+    },
+    {
+      "file": "docs/reqcontext.rst",
+      "startLine": 176,
+      "endLine": 223,
+      "score": 0.26,
+      "sourceHash": "5e9579d7436337dc8aa335163bea7d06c3de76e4ad17c2eca16328d89e879323"
+    },
+    {
+      "file": "docs/templating.rst",
+      "startLine": 170,
+      "endLine": 218,
+      "score": 0.26,
+      "sourceHash": "742607c67f9692808d2f8b961f5182df6a7027af7955f129503550382fe9bb19"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.26,
+      "sourceHash": "908d791101db4dd3ac6e31140ac4e2fcc7892d1b874159789001f80a12da4bfb"
+    },
+    {
+      "file": "docs/tutorial/factory.rst",
+      "startLine": 118,
+      "endLine": 162,
+      "score": 0.26,
+      "sourceHash": "5048a251e72fc011d5da9b18bfeb4368d088fa9c198217778531764ce393aba8"
+    },
+    {
+      "file": "docs/tutorial/install.rst",
+      "startLine": 50,
+      "endLine": 89,
+      "score": 0.26,
+      "sourceHash": "dde8a15168ae2d3933994cd709bb9f9fe44c194e0c0ecb866730b27381bcbaf5"
+    },
+    {
+      "file": "docs/tutorial/layout.rst",
+      "startLine": 87,
+      "endLine": 110,
+      "score": 0.26,
+      "sourceHash": "e6045bc57d1ba5e03e9935f9ed9954dacfd7b2b7ce7bccf07414f3839dc64719"
+    },
+    {
+      "file": "docs/tutorial/templates.rst",
+      "startLine": 143,
+      "endLine": 187,
+      "score": 0.26,
+      "sourceHash": "a09fe02e828b2040949db3fc00f4ef6ffa94984fe74708db787e1832914ed5e3"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 147,
+      "endLine": 195,
+      "score": 0.26,
+      "sourceHash": "6f15310aad6cec885159e36556792a9c6029700b2b4eaa80f6984c125ec9c423"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 476,
+      "endLine": 524,
+      "score": 0.26,
+      "sourceHash": "6d20c07950e24c4218c77eacc76e1c825959a711c6b704e935e834f03bfd03db"
+    },
+    {
+      "file": "examples/javascript/js_example/views.py",
+      "startLine": 1,
+      "endLine": 18,
+      "score": 0.26,
+      "sourceHash": "c9c626a14595fbc6355f45602c1fed27d0a91b220f6e0dd8ed8f3ad963e5102b"
+    },
+    {
+      "file": "examples/javascript/tests/test_js_example.py",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.26,
+      "sourceHash": "2763e19c678095f35114bb1dcc2fb779d6383e2508fdd50f0518df76999e0386"
+    },
+    {
+      "file": "examples/tutorial/flaskr/templates/auth/login.html",
+      "startLine": 1,
+      "endLine": 15,
+      "score": 0.26,
+      "sourceHash": "cd4890469ad9ecb712478a418550a7e09129d3423e720556a6a68c10b95bfff6"
+    },
+    {
+      "file": "src/flask/__init__.py",
+      "startLine": 46,
+      "endLine": 60,
+      "score": 0.26,
+      "sourceHash": "021aaf1fa2e89d93836c7689187f73f74591137ddd9eaafc751123957622acd8"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 74,
+      "endLine": 123,
+      "score": 0.26,
+      "sourceHash": "407c273203d27d881fc3e706611b184989a2aebf9bf06fd7512d9ee914a053a1"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 574,
+      "endLine": 623,
+      "score": 0.26,
+      "sourceHash": "aeb896a81cfd39d0015cbb794f6ebadb90be1208647d54f9ddd54c9501c95d09"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 624,
+      "endLine": 673,
+      "score": 0.26,
+      "sourceHash": "24e33789a26978a450e4c16b74838f18ed44747f2d26534b0afc5515896078bf"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1024,
+      "endLine": 1073,
+      "score": 0.26,
+      "sourceHash": "da87bc3856445c9ea9ade48f3b7fef8a681a34edbef584cd0cbfc0318f56b2d5"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1174,
+      "endLine": 1223,
+      "score": 0.26,
+      "sourceHash": "d4d03fad947a818c44b980a9dfaf550082ec6ad12572a8750175a47d85a60252"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1224,
+      "endLine": 1273,
+      "score": 0.26,
+      "sourceHash": "16298628a3ed42f5aa4dbd31eac506a8e5fdbaf9a181c2bd9c3361213d216bc6"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1474,
+      "endLine": 1523,
+      "score": 0.26,
+      "sourceHash": "4af5d5d1e5930ae284a9320d00812367c960f3d3ebcbc3d2cadc75a08bfff7cb"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.26,
+      "sourceHash": "f27565403d3bc16453d60bd6a354e28d3dbdc449005f6d3e14da1e274347a690"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.26,
+      "sourceHash": "cf137295176a6bb76bd028e42861d1bb68669031c160e14430b2f4468aa6a45d"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.26,
+      "sourceHash": "b56fc868661c02b9cf869a7e44da3e8e350f89a24585280ac0d84df6e50170ca"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 266,
+      "endLine": 310,
+      "score": 0.26,
+      "sourceHash": "43927ac7f7e3cc4aacf2d3af63e6c874d00af1c3c3edb94c1db60ed21e6bde3e"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 443,
+      "endLine": 492,
+      "score": 0.26,
+      "sourceHash": "4f5b39048252763a38307ac3b4c26647a41578b21a99148b5168659c82ce54fe"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 219,
+      "endLine": 268,
+      "score": 0.26,
+      "sourceHash": "e189e415825c32be9e25283b25252df5adb7faf2469ad43dd778778cd19707cf"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 419,
+      "endLine": 468,
+      "score": 0.26,
+      "sourceHash": "5774586b10ebd2637af428602841c02b95b74c3737cae1feaab1fa0a7c2699d4"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 442,
+      "endLine": 491,
+      "score": 0.26,
+      "sourceHash": "df18a8a441e622f1c33cef6076cfa29baeeb706b3bad3a1d8e1ec415c00ce015"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 492,
+      "endLine": 541,
+      "score": 0.26,
+      "sourceHash": "aa90943fd5decc599e7ddbe8a648db5f4ade23224a9aee9492052e64970636b7"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 542,
+      "endLine": 591,
+      "score": 0.26,
+      "sourceHash": "bc7528a6a8f4398078b8fcb750efdf1bfb37dccd5edf07a8a35471c0a3df777b"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 51,
+      "endLine": 96,
+      "score": 0.26,
+      "sourceHash": "1eb9fb7f2b7c6933f20856d3a8b2d1f02b0293377905ee21583c0c31723fd792"
+    },
+    {
+      "file": "src/flask/wrappers.py",
+      "startLine": 201,
+      "endLine": 250,
+      "score": 0.26,
+      "sourceHash": "fa2b255fde56cd4df21e147e5b7904a8ab14fb192aba0b27c4667bd31114611a"
+    },
+    {
+      "file": "tests/conftest.py",
+      "startLine": 85,
+      "endLine": 129,
+      "score": 0.26,
+      "sourceHash": "83f803255ead3d3fa9165c4c4dd174ef65204855b6832f7e22c33e6fe89761e1"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 413,
+      "endLine": 445,
+      "score": 0.26,
+      "sourceHash": "59f051c58adb89acc52aebe0f73139e9b19d2335c4eed5e26914963b496e3071"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 648,
+      "endLine": 690,
+      "score": 0.26,
+      "sourceHash": "e98503fadb6fecfe3681d906cfa1cce0bcf8634d724c376aef83c2b3b342eb39"
+    },
+    {
+      "file": "tests/test_helpers.py",
+      "startLine": 267,
+      "endLine": 309,
+      "score": 0.26,
+      "sourceHash": "60e0af5f2f2f7b28832297febad3c7db55cc459f5d9be3851a09116c449680aa"
+    },
+    {
+      "file": "tests/test_instance_config.py",
+      "startLine": 46,
+      "endLine": 79,
+      "score": 0.26,
+      "sourceHash": "6d03dba14130bfa83416166b42fc4de641161ac69f960874bfd412c085d7d95b"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 223,
+      "endLine": 269,
+      "score": 0.26,
+      "sourceHash": "ca4b564cb0db10ff3b12ab1553156ae1f958531d378a7d8f769a562169f0c972"
+    },
+    {
+      "file": "tests/test_logging.py",
+      "startLine": 48,
+      "endLine": 85,
+      "score": 0.26,
+      "sourceHash": "f2324644eb3080aa63c134b5bbba379e744880e92067dbb1e653fd9ed525fd5a"
+    },
+    {
+      "file": "tests/test_logging.py",
+      "startLine": 86,
+      "endLine": 98,
+      "score": 0.26,
+      "sourceHash": "401f95cfd5f0cf77e13e7aac05f510176918f8317e2a6d7f2b6e618a0b80b07a"
+    },
+    {
+      "file": "tests/test_templating.py",
+      "startLine": 133,
+      "endLine": 175,
+      "score": 0.26,
+      "sourceHash": "d9c27fd5a89a7cffa9abade7a85f365a2d848596d7d4c1e63a3164e38d2398da"
+    },
+    {
+      "file": "tests/test_views.py",
+      "startLine": 245,
+      "endLine": 260,
+      "score": 0.26,
+      "sourceHash": "02ff1cf368c2899bd0adb1f2813c9ea57230c175a8f4f71d78d3343d8dc0aa09"
+    },
+    {
+      "file": "tests/type_check/typing_error_handler.py",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.26,
+      "sourceHash": "f7fa05627a42725b1e03d143af188eb3b7dee89b3dc094d4f822a54d1959321d"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 734,
+      "endLine": 781,
+      "score": 0.25,
+      "sourceHash": "d61943671c677a01f7e0a1d4cc4c114fa2a94116159fef910a2557009ccd7e41"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 832,
+      "endLine": 881,
+      "score": 0.25,
+      "sourceHash": "06e00d14fa0e6ac2e5aa3ecf3649577c75202efe83de664c01df14b7f2bd6e14"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 932,
+      "endLine": 978,
+      "score": 0.25,
+      "sourceHash": "e2669247a901dbfe6d72960ecaafd18bb7d81403d2d7a5a1f6bf333105a25075"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1406,
+      "endLine": 1453,
+      "score": 0.25,
+      "sourceHash": "52ac27df35789b7a755a8c60d05ddf0ff0dd8ad94104c26c87acd183c34f0b94"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1503,
+      "endLine": 1546,
+      "score": 0.25,
+      "sourceHash": "088b605216ec6f73f5590b2a0b429cbf64b67cb600f071b9bc64692e6bff4c57"
+    },
+    {
+      "file": "docs/appcontext.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.25,
+      "sourceHash": "34093326af8a766f1feaf9af0eda3ea4054e4e16b80500548dc50ae688dc338b"
+    },
+    {
+      "file": "docs/appcontext.rst",
+      "startLine": 49,
+      "endLine": 93,
+      "score": 0.25,
+      "sourceHash": "cea9ef57082854d559b6c69f16ac3b5f13c9ed568a9712df099dd0b786b44566"
+    },
+    {
+      "file": "docs/appcontext.rst",
+      "startLine": 94,
+      "endLine": 142,
+      "score": 0.25,
+      "sourceHash": "82c8c3eaeb7d855804e1d14ef6d822287e10be937b9e7d3d22d98a79b79b54c0"
+    },
+    {
+      "file": "docs/appcontext.rst",
+      "startLine": 143,
+      "endLine": 147,
+      "score": 0.25,
+      "sourceHash": "b645371ebefafa0b5bd16d8eb028ca2d40f6fc065241bcc5002558e64beec55b"
+    },
+    {
+      "file": "docs/async-await.rst",
+      "startLine": 95,
+      "endLine": 125,
+      "score": 0.25,
+      "sourceHash": "93c27b87eac825c884a9111c7a5e0f38b6198833975a1a266cfa28306f61a6b6"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 696,
+      "endLine": 738,
+      "score": 0.25,
+      "sourceHash": "efd3d0e09bfe31630f9fcdbce8f47f434b2b35f9a5026b71501a052d18d1edee"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 739,
+      "endLine": 786,
+      "score": 0.25,
+      "sourceHash": "486270d72698bd50ab9b8a6388c740aab16cfa2e6e2223006d77b3678bf1a408"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 787,
+      "endLine": 836,
+      "score": 0.25,
+      "sourceHash": "48d307eecb1aaedfb16443593cb749a486925eaab90c74326bbdec914f968704"
+    },
+    {
+      "file": "docs/design.rst",
+      "startLine": 47,
+      "endLine": 95,
+      "score": 0.25,
+      "sourceHash": "c53e25cbe56187c0c5e7d37b31473a7a799fabe69fe2da563b936a71a6bd7171"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.25,
+      "sourceHash": "9711469a4e8bc84bed2b41e9070d3e83e0174255c2069ff6a9d6ec1aaec598c9"
+    },
+    {
+      "file": "docs/lifecycle.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.25,
+      "sourceHash": "423c4a3af6a9d92fead007070f2ac6e3fad33f34a99d9323fbb40e1347c16215"
+    },
+    {
+      "file": "docs/patterns/index.rst",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.25,
+      "sourceHash": "c6caf91c53060c94c19f81c621337f3775a16a69fa5997299f2edaa937853f2d"
+    },
+    {
+      "file": "docs/patterns/viewdecorators.rst",
+      "startLine": 126,
+      "endLine": 171,
+      "score": 0.25,
+      "sourceHash": "419d5026000cdbfc560f922d5b13a2836786481a29827970b5c81980839f97dc"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 179,
+      "endLine": 224,
+      "score": 0.25,
+      "sourceHash": "df0d6cbfeabe216d2b40d9ea4a14d729f10f3672dbe2dc33d46f80446eb5cee6"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 313,
+      "endLine": 359,
+      "score": 0.25,
+      "sourceHash": "d9b23d6911bf56307885faadf4e45ca01281ceffab7289d7d6dc82f1f6c98fc1"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 360,
+      "endLine": 402,
+      "score": 0.25,
+      "sourceHash": "070d0915325b287686b24c392ac0b4a09d5a86f66d37a2c29271fdc0f03a9daf"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 451,
+      "endLine": 500,
+      "score": 0.25,
+      "sourceHash": "82af13d0f7c843c5a48d986aa8f419666f92645366020bbc4f860b942fb18f6f"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 501,
+      "endLine": 550,
+      "score": 0.25,
+      "sourceHash": "a8bcdfff46782f5feaa6d33c8d65e2325e17d6ef182ae01ad39b6b971fc87779"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 693,
+      "endLine": 740,
+      "score": 0.25,
+      "sourceHash": "6dfaa791eb144abd80ab0270d73aff8643e72bf56aad20f3aa0b39156d95bd39"
+    },
+    {
+      "file": "docs/reqcontext.rst",
+      "startLine": 50,
+      "endLine": 96,
+      "score": 0.25,
+      "sourceHash": "a12fb85717bd6787442fb28f02630103e0b2b9e10814b251481b9671a545be33"
+    },
+    {
+      "file": "docs/reqcontext.rst",
+      "startLine": 224,
+      "endLine": 243,
+      "score": 0.25,
+      "sourceHash": "ca2805f7d7d4a1ef80d1a9bb7f39b80ece2281aa9b6b038d99ec4497acf73049"
+    },
+    {
+      "file": "docs/testing.rst",
+      "startLine": 278,
+      "endLine": 319,
+      "score": 0.25,
+      "sourceHash": "76147f9a4a7f51932cfb15babde66d894eeb51ed9e10a0d7025758518d8ce1c1"
+    },
+    {
+      "file": "docs/tutorial/templates.rst",
+      "startLine": 46,
+      "endLine": 93,
+      "score": 0.25,
+      "sourceHash": "bdd8fcb01764cbe48cbac4168d6e6789eb5edf7726b098e90a992563e953a179"
+    },
+    {
+      "file": "docs/tutorial/templates.rst",
+      "startLine": 94,
+      "endLine": 142,
+      "score": 0.25,
+      "sourceHash": "7bb2ff87cbe6401f731ea42be4b3eae70a56454baa5e27bd75af02e4d2cbee74"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 256,
+      "endLine": 301,
+      "score": 0.25,
+      "sourceHash": "ebf6fecbd67dc0d0f7aada0bd8c2b7612518031214edfd9674d2aa248ef6fd09"
+    },
+    {
+      "file": "docs/tutorial/views.rst",
+      "startLine": 217,
+      "endLine": 266,
+      "score": 0.25,
+      "sourceHash": "35e7f188e530549e54a1757172668fc0c650afc619c5847a3a3b02af9773b29c"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 1,
+      "endLine": 43,
+      "score": 0.25,
+      "sourceHash": "b02ff24686f0042142d80bcc652e6499a4dd27a4292be81e244425849d61e5ec"
+    },
+    {
+      "file": "docs/web-security.rst",
+      "startLine": 146,
+      "endLine": 195,
+      "score": 0.25,
+      "sourceHash": "29558a1cb0597fdc52056ca6bd50a014652c9c5a454e7f6782dd393482fb2cd8"
+    },
+    {
+      "file": "examples/tutorial/pyproject.toml",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.25,
+      "sourceHash": "fd138c2effab8f45286ca935f42b8a17198c17e8d5084141a31e52fda45c97a7"
+    },
+    {
+      "file": "examples/tutorial/tests/conftest.py",
+      "startLine": 47,
+      "endLine": 62,
+      "score": 0.25,
+      "sourceHash": "4a7ce7654219ba58edb7bdd042b992a1ac40bfd343da179441f59914bc4c1b8e"
+    },
+    {
+      "file": "pyproject.toml",
+      "startLine": 50,
+      "endLine": 95,
+      "score": 0.25,
+      "sourceHash": "a5cf56db1b205eb35c1399b3e82920db4caeb025997bda6de698e007e3dc5e16"
+    },
+    {
+      "file": "README.md",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.25,
+      "sourceHash": "7747d4eb38b3a1833f400cffaba44863b82e2b00595138fa24692ec382615bf2"
+    },
+    {
+      "file": "requirements/tests-min.in",
+      "startLine": 1,
+      "endLine": 6,
+      "score": 0.25,
+      "sourceHash": "9890c416d65214fc9730c9b666813c2403cc034f745d94edc98fb40f59d96fae"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1124,
+      "endLine": 1173,
+      "score": 0.25,
+      "sourceHash": "e88d4cd9686bc1bad1c05d56754fe7cac29bf2d3fc7bb389dc3df930d139f268"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1524,
+      "endLine": 1536,
+      "score": 0.25,
+      "sourceHash": "004401ff25de52232fd8a37af3b773f3c86c6f8b8ae701d0d8e51cde600e8477"
+    },
+    {
+      "file": "src/flask/blueprints.py",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.25,
+      "sourceHash": "6aad9ed885a547defc7b82b3f7b38ebf3c5395e31445d5b5501c95a19f34cc9a"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 117,
+      "endLine": 154,
+      "score": 0.25,
+      "sourceHash": "cb0139848020c5d90da8af366957e797cfd5e821dd7c3376e77ff919ad72fd9b"
+    },
+    {
+      "file": "src/flask/debughelpers.py",
+      "startLine": 174,
+      "endLine": 178,
+      "score": 0.25,
+      "sourceHash": "946621e550079abdc21bf464f02a8ba88b03f76373994961cfb0423870faa06b"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 188,
+      "endLine": 237,
+      "score": 0.25,
+      "sourceHash": "67a59a61838cb5c92c4bb43a9af3616aed97cd9eb90b7ff8fcc8b2e08c535085"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 526,
+      "endLine": 569,
+      "score": 0.25,
+      "sourceHash": "f45e66d28ad4957ce14a82ede364d4fdc3be2cd49bc5a1d297a68b794def6ecd"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 393,
+      "endLine": 442,
+      "score": 0.25,
+      "sourceHash": "c300ee3399a9df70d2560e7c88c7f4c31ce5250128d036aaa8bcd128ffb78d92"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 643,
+      "endLine": 692,
+      "score": 0.25,
+      "sourceHash": "ecb187f947691b78275360cc3ae40e61423beee7956201174030e744980c9616"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 743,
+      "endLine": 792,
+      "score": 0.25,
+      "sourceHash": "6e4c1ceda65456c986018d0823f3da840672be87439c36ae1ddaeec04a0bdc98"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 793,
+      "endLine": 842,
+      "score": 0.25,
+      "sourceHash": "dfbf2743d1e34e3a90394f830f926ab1bb733aeec37a104f59fa67589f9290ca"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 119,
+      "endLine": 168,
+      "score": 0.25,
+      "sourceHash": "a8b0316a34d7a78db4c7b83fecd170f3296698e9b1fdb961cfaccfdd60b76c17"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 569,
+      "endLine": 618,
+      "score": 0.25,
+      "sourceHash": "c7943cf17185488fa647f3bb8f22cffded2e2bd043a97d8a1019fdd7ff33d1f0"
+    },
+    {
+      "file": "src/flask/sansio/README.md",
+      "startLine": 1,
+      "endLine": 6,
+      "score": 0.25,
+      "sourceHash": "0650df20a3c90f57eb0719f71bec2c8300979325bdb6d177b98235d5c4bab89c"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 92,
+      "endLine": 141,
+      "score": 0.25,
+      "sourceHash": "e3a59c6baba4b6ed256ad3dca45e6c9c903644574ca77f8ea40258ae6281dae7"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 342,
+      "endLine": 391,
+      "score": 0.25,
+      "sourceHash": "99beb161d07d97b033f92fff6734781d68102f350cffbfaf87840135a826ce6c"
+    },
+    {
+      "file": "src/flask/signals.py",
+      "startLine": 1,
+      "endLine": 17,
+      "score": 0.25,
+      "sourceHash": "ea5c38249781c19293204bf49545a408acdb235ab71478af37e75d2a7f065577"
+    },
+    {
+      "file": "src/flask/wrappers.py",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.25,
+      "sourceHash": "eb496305b28d7b0fc82bc543500ede5060fb1be5903020839caecbc82996c345"
+    },
+    {
+      "file": "tests/conftest.py",
+      "startLine": 1,
+      "endLine": 44,
+      "score": 0.25,
+      "sourceHash": "b4c522000b08484974feec6ca48b84b10823299c79bc9e0d4fa2f21e2d167854"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.25,
+      "sourceHash": "fe04f04a7683e03cf2b8b3a4c5359849f4af5130a521478e2953ce2871d491c3"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 320,
+      "endLine": 364,
+      "score": 0.25,
+      "sourceHash": "0a31010000e75b32db93e47e3e56aea593aa154d08f8e96a5947ef74768e9150"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 446,
+      "endLine": 495,
+      "score": 0.25,
+      "sourceHash": "79233c735b2d3aef8b4b6ccc792b65961b23a5b4d38439d164028b67b27d6326"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 496,
+      "endLine": 534,
+      "score": 0.25,
+      "sourceHash": "cff30a8026b8a3be05bd5ca0d1f442b29e6f4ca897fc82d103d8e4132999d60e"
+    },
+    {
+      "file": "tests/test_converters.py",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.25,
+      "sourceHash": "df340c6aa5404575d01f5286526b7da76d7055a11776f539a458733227a16a26"
+    },
+    {
+      "file": "tests/test_instance_config.py",
+      "startLine": 80,
+      "endLine": 111,
+      "score": 0.25,
+      "sourceHash": "25ab8fab7881c3351b4c30314f3046afeb3752513f74296c1abeb1130d55e617"
+    },
+    {
+      "file": "tests/test_json.py",
+      "startLine": 145,
+      "endLine": 190,
+      "score": 0.25,
+      "sourceHash": "84a8a6dd730d8a1b466b6b3616ab9ee526ab7998a4af73dea722d29928087b68"
+    },
+    {
+      "file": "tests/type_check/typing_route.py",
+      "startLine": 96,
+      "endLine": 112,
+      "score": 0.25,
+      "sourceHash": "83fb0f1492b6d3f95d1461552100130157f16d949537ffa73674d0d2dfd3fe07"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1124,
+      "endLine": 1173,
+      "score": 0.24,
+      "sourceHash": "ea7822be90405c617908cb0f4c3a386dbc4f511323111601c95084d238296f96"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1454,
+      "endLine": 1502,
+      "score": 0.24,
+      "sourceHash": "d07925177dd769d9b7a9f1c6f27645a9ce87a63fe7489feaf631dc65711196cd"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1547,
+      "endLine": 1596,
+      "score": 0.24,
+      "sourceHash": "72f5cf8a0b4f3ab38149c9998e832d7d73ac9596f93c92cbb4ed0dbe35376775"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 147,
+      "endLine": 185,
+      "score": 0.24,
+      "sourceHash": "4f55c8f8d3070e9277006f0bea90adfeba7c7268755beb05117428fda851da99"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 234,
+      "endLine": 282,
+      "score": 0.24,
+      "sourceHash": "28aa51ff12c9a9f6d5c07c65c79412b0ec42d647fd91fa555ec03f01e26225e4"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 450,
+      "endLine": 496,
+      "score": 0.24,
+      "sourceHash": "77d6b21cbc21d37736e62b86247b217314289b5bc0f0de3c60d0fc095717092c"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 623,
+      "endLine": 672,
+      "score": 0.24,
+      "sourceHash": "3464b75b13c039a35dc13a6a56e6e582dbd08c333aa616eec3823c662f8e610c"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 193,
+      "endLine": 241,
+      "score": 0.24,
+      "sourceHash": "d50d87947d6619a41b44ade4f6b151ed6b7d80b0d4f45deac8d1a96525ba1c08"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.24,
+      "sourceHash": "fdce0647d0588b526fcece9b263c5dd9bc7d9bc6a49852118950c5ed0f096bd5"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 239,
+      "endLine": 275,
+      "score": 0.24,
+      "sourceHash": "2061131b2d3e7ac8cbccc1a273d0641a06c27369e3205ec338094ea6aa26297c"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 276,
+      "endLine": 316,
+      "score": 0.24,
+      "sourceHash": "80e1c31e0ce15ad2f1faed8ff95c465779658209b7653259ea4525eff5a81fba"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 367,
+      "endLine": 414,
+      "score": 0.24,
+      "sourceHash": "86e1bfa5435664e4c2c81b7db5488c5d6b0f7b983d0da781451473b325fd9fa0"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 463,
+      "endLine": 511,
+      "score": 0.24,
+      "sourceHash": "a6222cb6ad9594e3b2ea021d04a2d3f5bbf477a708ea4ee2905175544e167b3d"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 512,
+      "endLine": 550,
+      "score": 0.24,
+      "sourceHash": "d2c27f41101471585f8826915ef769bc53be386c78c48380b43f39c411ebb35b"
+    },
+    {
+      "file": "docs/debugging.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.24,
+      "sourceHash": "bbdf1294eb0de6779e97d02015063c6949688b0d0a47a09d42fb7642c0b90636"
+    },
+    {
+      "file": "docs/design.rst",
+      "startLine": 96,
+      "endLine": 143,
+      "score": 0.24,
+      "sourceHash": "70099147321c0324140f210875347b4947eaec6eb22aa09c18806f8542955fe3"
+    },
+    {
+      "file": "docs/design.rst",
+      "startLine": 144,
+      "endLine": 189,
+      "score": 0.24,
+      "sourceHash": "2c468e0af123bc9eb66eeb69f92376e936ad974c7a1e1ad82777825d6a8d96dc"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 142,
+      "endLine": 188,
+      "score": 0.24,
+      "sourceHash": "6a6667b9b12eb3fbf27fa67d6f2c285b9bb0444e3f8ac54e78754879fd78152f"
+    },
+    {
+      "file": "docs/extensiondev.rst",
+      "startLine": 245,
+      "endLine": 282,
+      "score": 0.24,
+      "sourceHash": "52286059ab48c083f9b4ba01debb1ce866fa5fe89be2d13234621b88afc40c5c"
+    },
+    {
+      "file": "docs/patterns/appfactories.rst",
+      "startLine": 41,
+      "endLine": 89,
+      "score": 0.24,
+      "sourceHash": "a0592bebb91f4e89eca79285bf82460d296dcc9b342d0e21bf2c624a53926d3c"
+    },
+    {
+      "file": "docs/patterns/appfactories.rst",
+      "startLine": 90,
+      "endLine": 118,
+      "score": 0.24,
+      "sourceHash": "387d88c1b36e33f51dbf619e4283098107ca1512da181c0699d422813ca76904"
+    },
+    {
+      "file": "docs/patterns/flashing.rst",
+      "startLine": 91,
+      "endLine": 134,
+      "score": 0.24,
+      "sourceHash": "fcd967e323abe0a42b15a3671b886f66a55c9241f30db6e2deeb93482150994d"
+    },
+    {
+      "file": "docs/patterns/lazyloading.rst",
+      "startLine": 1,
+      "endLine": 43,
+      "score": 0.24,
+      "sourceHash": "06162b241f0177ea04f0a3d0850a4235bc901491ed796a66ceaa20bb7f87e928"
+    },
+    {
+      "file": "docs/patterns/lazyloading.rst",
+      "startLine": 90,
+      "endLine": 109,
+      "score": 0.24,
+      "sourceHash": "e44cce62650bf15e96d90f016fdc4dcb4d592db2531a3f984ff9b09dd4214a5b"
+    },
+    {
+      "file": "docs/patterns/viewdecorators.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.24,
+      "sourceHash": "2e5ec454d1b8a0b1c1f5fc63bb783cce0b8c6487fcf2e157f05fd451ef4f60bf"
+    },
+    {
+      "file": "docs/patterns/viewdecorators.rst",
+      "startLine": 47,
+      "endLine": 79,
+      "score": 0.24,
+      "sourceHash": "a4486c2a1ed5be5a59373ebd2ca1ff9866e559e213fd4e0450a637ba7b55fc8c"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.24,
+      "sourceHash": "b7f20b8941a2ba847369c6dd13eaeb1bcd064630a4362b211e54dc3852bb56ed"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 140,
+      "endLine": 178,
+      "score": 0.24,
+      "sourceHash": "4ff087d4cbe96c27414989eb10886130220b3a43c4738ee1470c9ae6971da5b6"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 645,
+      "endLine": 692,
+      "score": 0.24,
+      "sourceHash": "0c2dbe00ba2f31031e7fb0490e86db5d3617b98e437bb02914e66df535ce36fc"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 878,
+      "endLine": 907,
+      "score": 0.24,
+      "sourceHash": "5236f8a382d18f736956ef0ac3e4fd1a231a6322cf750dca79fbab4da00af91b"
+    },
+    {
+      "file": "docs/reqcontext.rst",
+      "startLine": 147,
+      "endLine": 175,
+      "score": 0.24,
+      "sourceHash": "6f01eb35338948e0cb47c3bb6e562e25f8a87cd33dacd042a58324ac2f7171f0"
+    },
+    {
+      "file": "docs/server.rst",
+      "startLine": 51,
+      "endLine": 99,
+      "score": 0.24,
+      "sourceHash": "d47c6d08c2d10e2aa371e61bbb4a200135beb8a298c1a1464776f52abd9e28a1"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 258,
+      "endLine": 303,
+      "score": 0.24,
+      "sourceHash": "20f166daeef4d6f49804e9fba2d3b6179eac3003b6ae4473805bcde37f3baeb8"
+    },
+    {
+      "file": "docs/tutorial/deploy.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.24,
+      "sourceHash": "7c8bdc4c29c11e6804776b7703ed98f48909fe961173eeabe0066019fa7ea728"
+    },
+    {
+      "file": "docs/tutorial/index.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.24,
+      "sourceHash": "e38085e447707fa9d88ce6a8906b47b6d7bbf5e8224562b8920bddaf1e05def3"
+    },
+    {
+      "file": "docs/tutorial/layout.rst",
+      "startLine": 41,
+      "endLine": 86,
+      "score": 0.24,
+      "sourceHash": "30c402be73e73138458ff5dd9e89ff55d0703ef96f5301f2ced5ff86c8dae1f4"
+    },
+    {
+      "file": "docs/tutorial/next.rst",
+      "startLine": 1,
+      "endLine": 38,
+      "score": 0.24,
+      "sourceHash": "632cb40d52b7a3cbbe4c0e55520c777d4d98df6fa8a83be0cdc681b3702d3cbc"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.24,
+      "sourceHash": "a50891874d97bdc5c7cd1ab6b987d4a3d7408a84ba76cce14a516abf7c9dc9b3"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 302,
+      "endLine": 344,
+      "score": 0.24,
+      "sourceHash": "4f27c2bcd39ec9d9845ea5c2e5b3584a675dfc930dca680afad29e8b76c4999b"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 345,
+      "endLine": 390,
+      "score": 0.24,
+      "sourceHash": "f471f12211ee47e7416b9c833826f6ffd0b11dcdbb39f8cee74d0e074afcea89"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 391,
+      "endLine": 438,
+      "score": 0.24,
+      "sourceHash": "158f6b8d7b608aae4b4943990a32d36e01c024a819b328f3d89bb0a21120eb2e"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 439,
+      "endLine": 475,
+      "score": 0.24,
+      "sourceHash": "f6b9f8a044e8d9e1be27db81dfc1cbf0bd3fec0670bb66eadbdfd238f7044574"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 44,
+      "endLine": 88,
+      "score": 0.24,
+      "sourceHash": "92acccd3d9d8471a07eb5269176c69f8c3bd203acd6b111ffae95b8d1786456c"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 177,
+      "endLine": 218,
+      "score": 0.24,
+      "sourceHash": "902c7afc61aa2116c7251da089e4d84d2dbf2b0f6a023e58e864d4f30b7348f4"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 219,
+      "endLine": 268,
+      "score": 0.24,
+      "sourceHash": "3cd10c9ed919a55e8bbecc498989f3a2b03f586c87571dc46e0e488d236928d1"
+    },
+    {
+      "file": "docs/web-security.rst",
+      "startLine": 47,
+      "endLine": 95,
+      "score": 0.24,
+      "sourceHash": "df0fb5e340d6c4cbef876bf6c2d6329c69db489067cbb1b6ac4746844bade13a"
+    },
+    {
+      "file": "examples/tutorial/README.rst",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.24,
+      "sourceHash": "04d5a4dfdbb036aaddd3674f10099a79b99212fa85f7eb04377b90431db51d84"
+    },
+    {
+      "file": "examples/tutorial/README.rst",
+      "startLine": 48,
+      "endLine": 68,
+      "score": 0.24,
+      "sourceHash": "beec41cede17c9e5e0fd7d770276c5058a4f81d33fa9af236580bf73a04cb47a"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 474,
+      "endLine": 523,
+      "score": 0.24,
+      "sourceHash": "93290a535809d7360c08460518e50a4c6aa01a3a56bc2dd66023580c8b26cc5d"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 974,
+      "endLine": 1023,
+      "score": 0.24,
+      "sourceHash": "bde3f615dac1e24dc68f8c771fa8b52dbdb35a04e2badcb2fefc3febfa1cf730"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1274,
+      "endLine": 1323,
+      "score": 0.24,
+      "sourceHash": "8fd40407518299040a5819686275fb274eddd4d015c20b6cfc94881c0ab198f3"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 50,
+      "endLine": 99,
+      "score": 0.24,
+      "sourceHash": "b76de15f6ef0376320585135e953b5cfaaad2fbf1e09d2ffbd0e5f2b0e46a2ab"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 300,
+      "endLine": 349,
+      "score": 0.24,
+      "sourceHash": "82963615b65dfbc2b25fd32cd78a38d0d375916f08bed045b7b951a910cfc9f6"
+    },
+    {
+      "file": "src/flask/globals.py",
+      "startLine": 38,
+      "endLine": 51,
+      "score": 0.24,
+      "sourceHash": "c061d23f2d43576477a9da90899978b757b49a8e1940801b4b7073ab6a538102"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 50,
+      "endLine": 99,
+      "score": 0.24,
+      "sourceHash": "6b65fc77c742edc1e925d3d29196f5fe4e3723ded717f78f35e03e4a70a78824"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 311,
+      "endLine": 344,
+      "score": 0.24,
+      "sourceHash": "c5a4eb3d1de5b879bfeb6368cbcf822c270b91b3000e379858c9588398451b5c"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 620,
+      "endLine": 634,
+      "score": 0.24,
+      "sourceHash": "ff8e7dc5871070e482c9fc28221a5e78b1fb15928f6820a9dfca6a7094a35f3e"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.24,
+      "sourceHash": "58898394878bd498c73cb6e76e9d21beef442810504cda30ef6636a246ad6f9d"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 193,
+      "endLine": 242,
+      "score": 0.24,
+      "sourceHash": "0bfbe3a71f3af197490e364697018d1434e6bf2fd7cd67708cb251626bb8162a"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 843,
+      "endLine": 892,
+      "score": 0.24,
+      "sourceHash": "c3664570adc25405e21f35b5b5a403174d6620ec063e4b24c8fa0e453d967f0d"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.24,
+      "sourceHash": "ef168c8e1b634dce09a0b8d1a45608226904f0f0acb6e2700474937ce7b75635"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 34,
+      "endLine": 83,
+      "score": 0.24,
+      "sourceHash": "1dc2c4e265513933f77761b786b46078e1638f4f06f36894179c6bb03a2b81a6"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 84,
+      "endLine": 118,
+      "score": 0.24,
+      "sourceHash": "4eceb39dcc65ac21ab55f696f816fd1a5559374bd3b0a6dbc3d34a6edbe5d289"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 469,
+      "endLine": 518,
+      "score": 0.24,
+      "sourceHash": "55b683ea29fafb06db9a4fce7cf36a7d7edafaaa8b8cdbe62ff61997c3a1ba48"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 42,
+      "endLine": 91,
+      "score": 0.24,
+      "sourceHash": "51ab3be5a625e8543faeffd2cbc944950553a981fc92ab412bce868c38a9b9e6"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 192,
+      "endLine": 241,
+      "score": 0.24,
+      "sourceHash": "45de364de21bc1ea83bf6dd02f9a466613a750c032e93906b445bd20fbdac29b"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 642,
+      "endLine": 691,
+      "score": 0.24,
+      "sourceHash": "f37efa64cf5c08ec0bdbbe713afc768df5ad42dc85df78651b06d5057944b204"
+    },
+    {
+      "file": "src/flask/testing.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.24,
+      "sourceHash": "75e7258856727415d25c4e856c983a9ac37a2aba9974bf0f62d1c8fa508f2dff"
+    },
+    {
+      "file": "src/flask/typing.py",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.24,
+      "sourceHash": "ac9e25c5adec505a1b403548fa04614cd87d6fc128bd550727908de9fd34b812"
+    },
+    {
+      "file": "tests/test_apps/helloworld/wsgi.py",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.24,
+      "sourceHash": "60c3c96a8094982d6eecf9149a52c0a6c4004f0fd3dbd44143f7bf9fe00a7df0"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 365,
+      "endLine": 412,
+      "score": 0.24,
+      "sourceHash": "ee0c61966dc205dea9cca210d321bb9d8d1f2f1ace57dde6ed4051626f79a2d7"
+    },
+    {
+      "file": "tests/test_user_error_handler.py",
+      "startLine": 263,
+      "endLine": 295,
+      "score": 0.24,
+      "sourceHash": "014f314bd99079a7f3cdd1ba0c7fa93a62ea44ee0ac4a6f20bbc0bef1b633034"
+    },
+    {
+      "file": ".github/ISSUE_TEMPLATE/feature-request.md",
+      "startLine": 1,
+      "endLine": 15,
+      "score": 0.23,
+      "sourceHash": "13c2842523a27d17b69d0fa5c1f7eb73ff03dfcdd77834ca910700b49b3c18bc"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1269,
+      "endLine": 1305,
+      "score": 0.23,
+      "sourceHash": "d36aa7f7074874197b0cec199be67fc91bb30daa048e84bca128c0e7ad4e037b"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 283,
+      "endLine": 332,
+      "score": 0.23,
+      "sourceHash": "b139004336c0e3555f5f699697c8cbe910ba8d156a8faa40b70bbb911f11f50b"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 373,
+      "endLine": 401,
+      "score": 0.23,
+      "sourceHash": "4f3cdc8f9606149e45d9a7b6c7bfe66eeccffaee5667fbcf9a0f4947c4f7b755"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 402,
+      "endLine": 449,
+      "score": 0.23,
+      "sourceHash": "e82db920f75b3f2f13388fd2c80fa8503770a786e3d28068a635911dd0c2c0ed"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 497,
+      "endLine": 542,
+      "score": 0.23,
+      "sourceHash": "289f15787eb8d04d2c185e0c81f965374f74559596c20976ee1039540f973f73"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 543,
+      "endLine": 591,
+      "score": 0.23,
+      "sourceHash": "5884e391f7964f045ebd573c834826a6272d88d240aadda2905514ab950b5049"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 673,
+      "endLine": 717,
+      "score": 0.23,
+      "sourceHash": "00dbc6e2f722e4f9e498c3c9ea126aa33e55f2203b9aed45fcd49ba97545e440"
+    },
+    {
+      "file": "docs/async-await.rst",
+      "startLine": 47,
+      "endLine": 94,
+      "score": 0.23,
+      "sourceHash": "93e05cc1080ae3330150b1234336d850ab065b9a4b009b0dde6fea62c3ff66fb"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 96,
+      "endLine": 145,
+      "score": 0.23,
+      "sourceHash": "c0e38d56a7412d2bfd366e7ad1d86c15a1d1a53b212006fa1f085a8e2bf9c514"
+    },
+    {
+      "file": "docs/conf.py",
+      "startLine": 43,
+      "endLine": 92,
+      "score": 0.23,
+      "sourceHash": "4c024aa41a592ab1cfe8455125c75052af6b021ef60a71ebc0d35aaa341f7773"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 600,
+      "endLine": 647,
+      "score": 0.23,
+      "sourceHash": "e12e05eab7e6d9c61e4cd5f356eef6f44724ebb901dca0ceb319ee623f7921e2"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 648,
+      "endLine": 695,
+      "score": 0.23,
+      "sourceHash": "0453b62603fc92df508053abd1e72cf21d02ce212adc4deda194c7d1069be69c"
+    },
+    {
+      "file": "docs/design.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.23,
+      "sourceHash": "5c9c76cc102c2a8dc8db09e5d672e4cddbc430d97890aa4b4ad71bbb632572ec"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 51,
+      "endLine": 99,
+      "score": 0.23,
+      "sourceHash": "3e7782e701fe2cae093a53b169eb7f89f78c41232f1782cf682a93095d3d29bb"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 362,
+      "endLine": 406,
+      "score": 0.23,
+      "sourceHash": "efcd7b6d7228808a837cffd1fd009d9f8049c0cda9ca36a3753bf5b362b26704"
+    },
+    {
+      "file": "docs/extensiondev.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.23,
+      "sourceHash": "68a72302c3afd07193f06d1cff9bf1c49201329cdb9643ef6da021de5d582458"
+    },
+    {
+      "file": "docs/extensiondev.rst",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.23,
+      "sourceHash": "44428eac49b8c13c4f82ec546189e0dc8d355f73c304d138756f0f262ebf0780"
+    },
+    {
+      "file": "docs/patterns/appdispatch.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.23,
+      "sourceHash": "6007cd303e496596fe82ae415878ca25bb8fe101903f8c1afe5c49d1d0b2f01f"
+    },
+    {
+      "file": "docs/patterns/deferredcallbacks.rst",
+      "startLine": 1,
+      "endLine": 44,
+      "score": 0.23,
+      "sourceHash": "713f4769d457ffbd46dd450e4581ddc7ccf2e2dd7505e732631b75bfffe385b6"
+    },
+    {
+      "file": "docs/patterns/fileuploads.rst",
+      "startLine": 84,
+      "endLine": 132,
+      "score": 0.23,
+      "sourceHash": "0b5b541618161f86341685e0700ad0e029912b587a371afc9ee85a067cb38104"
+    },
+    {
+      "file": "docs/patterns/flashing.rst",
+      "startLine": 135,
+      "endLine": 148,
+      "score": 0.23,
+      "sourceHash": "a3fdb092e5db5892731aacf8a403d745f3da95d3c322ba92b71eaec1e60f9449"
+    },
+    {
+      "file": "docs/patterns/sqlite3.rst",
+      "startLine": 146,
+      "endLine": 147,
+      "score": 0.23,
+      "sourceHash": "122db4a2ed3d5519add298191822f75095d5fe5c6d7df142b8103bfccb2c786f"
+    },
+    {
+      "file": "docs/patterns/urlprocessors.rst",
+      "startLine": 101,
+      "endLine": 126,
+      "score": 0.23,
+      "sourceHash": "33bf864a64384c345e209a201b41d2077af08ab5132f7692482b3afc8a8d928e"
+    },
+    {
+      "file": "docs/patterns/wtforms.rst",
+      "startLine": 82,
+      "endLine": 126,
+      "score": 0.23,
+      "sourceHash": "8f43cee47fa4211a921d9e83c230b4d0d806bb37907ae3575ca29b38bec74fab"
+    },
+    {
+      "file": "docs/server.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.23,
+      "sourceHash": "7d2ef8a8a786f4ed0cb02ddc8815f864b5bd2fdb589d156cf93276b18579ed8f"
+    },
+    {
+      "file": "docs/signals.rst",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.23,
+      "sourceHash": "532ddc74425b529576dbe973c361834a685479b5d21de8a26b00eb245b09ca72"
+    },
+    {
+      "file": "docs/testing.rst",
+      "startLine": 50,
+      "endLine": 96,
+      "score": 0.23,
+      "sourceHash": "0b00bac6b80e2004daf62c7f55e39ac63612d7df0a6ffb43a0ca1ff945b6307b"
+    },
+    {
+      "file": "docs/testing.rst",
+      "startLine": 97,
+      "endLine": 135,
+      "score": 0.23,
+      "sourceHash": "de63435fd74ca91b578647c89dcf8ab5f210d762d19b9bbed0e52f6d9d3964ca"
+    },
+    {
+      "file": "docs/testing.rst",
+      "startLine": 228,
+      "endLine": 277,
+      "score": 0.23,
+      "sourceHash": "b0ca585fcbcaab184453aaf1a231c467e75cefaf22e8e49b7476c440569a909c"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 89,
+      "endLine": 137,
+      "score": 0.23,
+      "sourceHash": "d34b7e1a38723421e853acc5e888878379fc55299be4156ffad5d2d6790f0f85"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 138,
+      "endLine": 169,
+      "score": 0.23,
+      "sourceHash": "947f07fa2874716ec822c0003a42c657f80d3c11ac7208a9dc1825324fded23f"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 170,
+      "endLine": 216,
+      "score": 0.23,
+      "sourceHash": "29d7df81c8b73ce16ec8ab636a47e7d8a2d8fc4e51d4294988d37b3f7989b159"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 217,
+      "endLine": 257,
+      "score": 0.23,
+      "sourceHash": "30a6fbcee728f27c6dd194b8e60b58eec2b86c0fc3fdc49bc1229a263ccd0583"
+    },
+    {
+      "file": "docs/tutorial/database.rst",
+      "startLine": 1,
+      "endLine": 35,
+      "score": 0.23,
+      "sourceHash": "6f53297eb7a113563b48a77febc505138cea3f38d6b35be1add765457a3d7d63"
+    },
+    {
+      "file": "docs/tutorial/database.rst",
+      "startLine": 211,
+      "endLine": 219,
+      "score": 0.23,
+      "sourceHash": "2bd7c30b77bdc024a4b7772e477c437a55a9618944e74a6800b45aeff3fc904b"
+    },
+    {
+      "file": "docs/tutorial/index.rst",
+      "startLine": 47,
+      "endLine": 64,
+      "score": 0.23,
+      "sourceHash": "87718bd7825363f3d238059b61ae0e3cab81980d8dd519fdef83361f8b5f646d"
+    },
+    {
+      "file": "docs/tutorial/layout.rst",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.23,
+      "sourceHash": "f8b999c862e238e4ef757cd0082661a817bfd5a2c77f8b08f368803e7fd5d84f"
+    },
+    {
+      "file": "docs/tutorial/static.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.23,
+      "sourceHash": "1930105577329022196ac65da26cc6563236b7e653bbeba5128f8247a93231cd"
+    },
+    {
+      "file": "docs/tutorial/static.rst",
+      "startLine": 51,
+      "endLine": 72,
+      "score": 0.23,
+      "sourceHash": "ca6bde9f918b7d543bab8de4de53c9c8d4ea7a44fc5a8cf1bf9cbd6b26186ad0"
+    },
+    {
+      "file": "docs/tutorial/templates.rst",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.23,
+      "sourceHash": "cbdf9303183309e1692bfe73c3a6cffae811af2c200962a8b179923e61c1b654"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.23,
+      "sourceHash": "244774568b3f5143dd7dc1232e04e7eaf8cf34c08e9bd7d69bce3f8f68a4da08"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 101,
+      "endLine": 146,
+      "score": 0.23,
+      "sourceHash": "5dd220cd555086ebfb5a5a6efe24cdcbf05b353573a1cc00489e7ed696eb230c"
+    },
+    {
+      "file": "docs/tutorial/views.rst",
+      "startLine": 50,
+      "endLine": 78,
+      "score": 0.23,
+      "sourceHash": "b71c56367f85b3ce46e6ea527d8f6d3db1ba393892e4901398363229fecb2251"
+    },
+    {
+      "file": "docs/tutorial/views.rst",
+      "startLine": 128,
+      "endLine": 169,
+      "score": 0.23,
+      "sourceHash": "c8b813215e37e8b562e7e02b139ee969001a2a8fb7f463e65819664a104f3aa2"
+    },
+    {
+      "file": "docs/tutorial/views.rst",
+      "startLine": 267,
+      "endLine": 305,
+      "score": 0.23,
+      "sourceHash": "3d0db98eba9c6a6bdc3c52d89896cd381f2aab4649e25e300c587a77b69d0e97"
+    },
+    {
+      "file": "docs/web-security.rst",
+      "startLine": 96,
+      "endLine": 145,
+      "score": 0.23,
+      "sourceHash": "0c4dc2cd1f368c7d83ada47ff0633cd19a38ee80a1d29efd42a1de53ec5152f1"
+    },
+    {
+      "file": "examples/celery/README.md",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.23,
+      "sourceHash": "629972535ac59ec91005764e52cdc38adc4d14078d1cfe1dd70ab038047f5334"
+    },
+    {
+      "file": "examples/javascript/README.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.23,
+      "sourceHash": "1abcbe3c8d8cf5c8c9e0ea2dcf8ca1cff68e948e36196450b598b89aaf88d335"
+    },
+    {
+      "file": "examples/javascript/tests/conftest.py",
+      "startLine": 1,
+      "endLine": 15,
+      "score": 0.23,
+      "sourceHash": "ad93f4062af033fd8105e1cb10b7088ba15e79255e76b3e1795de64c1691c486"
+    },
+    {
+      "file": "src/flask/__main__.py",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.23,
+      "sourceHash": "af706f85457e5a1d589eb54fa0063aac6701190e5424456f40179f4a325bd6ee"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 274,
+      "endLine": 323,
+      "score": 0.23,
+      "sourceHash": "ccfb31d7a91c0e0903682147ee4cef7985a4475b9308a067cb150cebef827c14"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 324,
+      "endLine": 373,
+      "score": 0.23,
+      "sourceHash": "d5a14758d26dbd26af7c68ec9816b04d92304af3663339e1d514e3beb23f6e89"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 674,
+      "endLine": 723,
+      "score": 0.23,
+      "sourceHash": "dd62fae785be56ca63c84e61c751f858f7ae53bbc4691f33028142f97e87a67a"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 1074,
+      "endLine": 1123,
+      "score": 0.23,
+      "sourceHash": "25a99ae94c5c04ac0f3b72b08aa3931888861690c94dd7a6c22d17bc21565d17"
+    },
+    {
+      "file": "src/flask/blueprints.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.23,
+      "sourceHash": "14463b823b3583c21835ca3f5fb045634e348170b7dde9f5b3f55a3564cbf964"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.23,
+      "sourceHash": "e591aeb2ca827ee402171a701831529e99334d33660cd2df89def5475220f62f"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 250,
+      "endLine": 299,
+      "score": 0.23,
+      "sourceHash": "9e6366bc98ec21f5d5671b35f859b4c50a13a665c372b7322242796920a0a5f1"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 287,
+      "endLine": 336,
+      "score": 0.23,
+      "sourceHash": "f88a4c26ef3dee1ccfe1d5349d665706f13f8735e324bf491b924dbb0caa09d8"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 387,
+      "endLine": 436,
+      "score": 0.23,
+      "sourceHash": "bbde02b29d104fa31b7efe761642cfab0d8d9c3d79e17bdc3794facdf45abe9d"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 437,
+      "endLine": 449,
+      "score": 0.23,
+      "sourceHash": "be266ade95a2b4c57f53c5f03bf31db49efa193a48cf33da24c227440cc63b1a"
+    },
+    {
+      "file": "src/flask/debughelpers.py",
+      "startLine": 81,
+      "endLine": 123,
+      "score": 0.23,
+      "sourceHash": "665c43fad8c18f749bd5bc5e1564c2e9d61cd56532a2e454e3be709b9c9db348"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 100,
+      "endLine": 138,
+      "score": 0.23,
+      "sourceHash": "7510de9e89a93b5d6f962f5ef35214edf1417476aaaad590e16de9890b3b6aa9"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 139,
+      "endLine": 187,
+      "score": 0.23,
+      "sourceHash": "35939db9a1919c599d3e42374cf615841f3d690426fab7d3aa35f3cecea975e1"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 437,
+      "endLine": 486,
+      "score": 0.23,
+      "sourceHash": "9a1aaab8c4b74cdd7af1a6cb0c3685bed76d3c460105c009a09fd6168292d5be"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 487,
+      "endLine": 525,
+      "score": 0.23,
+      "sourceHash": "cd37ed3e52469d288f7e111bb629bac1d9ecf65063ef32862a5862e2ee75cafa"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 693,
+      "endLine": 742,
+      "score": 0.23,
+      "sourceHash": "f6253abec953eba1222036872f656a10a3fe7bdd61855ca99942d2edc7ff4815"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 169,
+      "endLine": 218,
+      "score": 0.23,
+      "sourceHash": "70bc93e2b346a09ccda10f4fb0f422bf8d23a929f3160ac9d7d68aa302315bc4"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 319,
+      "endLine": 368,
+      "score": 0.23,
+      "sourceHash": "378ed446045577e7c6ceca9c911218c3453c73662d4d66aa21381aeae6a19f54"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 519,
+      "endLine": 568,
+      "score": 0.23,
+      "sourceHash": "8631f6864ea1c89f67a7368a74b000ba08910501a482656880c347c9be31faf1"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 242,
+      "endLine": 291,
+      "score": 0.23,
+      "sourceHash": "af0d60c18985f258f30521651f574503cf132602d5195c57f4fcfc7dda8004a9"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 592,
+      "endLine": 641,
+      "score": 0.23,
+      "sourceHash": "a3a05b9ff05880a971ebae811320e81d36df3790771be21094a07c06ef7eedd8"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 742,
+      "endLine": 791,
+      "score": 0.23,
+      "sourceHash": "fd37e5d50521d1c1dd7d6d6eda485e56d123335dafd8dccbb5a04f9eb4838bdd"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 48,
+      "endLine": 97,
+      "score": 0.23,
+      "sourceHash": "4f07f70c77530666b50e3ea34b5ef6f930ef1744116488e65c318cd1b869fa76"
+    },
+    {
+      "file": "tests/test_json_tag.py",
+      "startLine": 43,
+      "endLine": 86,
+      "score": 0.23,
+      "sourceHash": "89feffd877550cf861fc8892e0e8f37b0b1f104258e85e03f5361aa6489c4ab4"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1219,
+      "endLine": 1268,
+      "score": 0.22,
+      "sourceHash": "a9c027915cc790dd26b69177487b98a5cccf58ddab505c77aff91af81edccc1f"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1306,
+      "endLine": 1355,
+      "score": 0.22,
+      "sourceHash": "189b5951c919c416e6d258ffdeb016395f3d6afe5b5e404f352cf2879d7c4d39"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 186,
+      "endLine": 233,
+      "score": 0.22,
+      "sourceHash": "db8a4fec63ea893e39a428708063cebfca2161f9801d22ae425f70309f353923"
+    },
+    {
+      "file": "docs/blueprints.rst",
+      "startLine": 95,
+      "endLine": 142,
+      "score": 0.22,
+      "sourceHash": "d83de012ee0b1b85515508056f1f0e80e14ef6e9d700a38a848980574e78afd3"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 50,
+      "endLine": 95,
+      "score": 0.22,
+      "sourceHash": "bc6b3604f3e461515d8bc67bd3074a3b44351cbbf4bd218323b3970d273b36d6"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 242,
+      "endLine": 286,
+      "score": 0.22,
+      "sourceHash": "1efd6b51a271d8c188c36ff4e3ebbea59069e0859f9275aec0ebe82fcca8c1f9"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 317,
+      "endLine": 366,
+      "score": 0.22,
+      "sourceHash": "2ef534acab664c7bc2157374b4511a5db99ce35face1c451c86b1b734cb6b349"
+    },
+    {
+      "file": "docs/deploying/index.rst",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.22,
+      "sourceHash": "7c28fcc5154453529375ff8b93ce61ea9d5df7d0b1f324133a93b0cdedc1bac7"
+    },
+    {
+      "file": "docs/deploying/proxy_fix.rst",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.22,
+      "sourceHash": "fa7d2f3bf17df321538744cd462a6d65a94419205b774f7df3f6c6b556ad1c35"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 237,
+      "endLine": 274,
+      "score": 0.22,
+      "sourceHash": "625faa4d82512c0e3112ae5ede5ca7080a8a8ce4b18af2c8ed7261a5e417639b"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 322,
+      "endLine": 361,
+      "score": 0.22,
+      "sourceHash": "cd981a961ad393d97328f1927f7221894fdc4afb843cdd9021813d979480c205"
+    },
+    {
+      "file": "docs/extensiondev.rst",
+      "startLine": 101,
+      "endLine": 149,
+      "score": 0.22,
+      "sourceHash": "bab2c273a6c7d5c4dfee8e9214dd3a4a67ff886638698ce85d889dcc7c70cd7a"
+    },
+    {
+      "file": "docs/index.rst",
+      "startLine": 38,
+      "endLine": 80,
+      "score": 0.22,
+      "sourceHash": "8371ebbec8d94e7b3cbbe1794b4eae3d3fa12bfbc3e033ff723b88298c40f804"
+    },
+    {
+      "file": "docs/patterns/caching.rst",
+      "startLine": 1,
+      "endLine": 16,
+      "score": 0.22,
+      "sourceHash": "43e2e5f0cf508f385d0e01b0e1297eafd6205d28afdd503945992320db1638e6"
+    },
+    {
+      "file": "docs/patterns/favicon.rst",
+      "startLine": 49,
+      "endLine": 53,
+      "score": 0.22,
+      "sourceHash": "66919ad6bb9f1cb9e2fdc101a3ee34c8149748b79b1758dc723896218691087a"
+    },
+    {
+      "file": "docs/patterns/fileuploads.rst",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.22,
+      "sourceHash": "5a2853f0da0766238ec28ca6eeea904dbbe533152ac07428f250f20f3164c691"
+    },
+    {
+      "file": "docs/patterns/fileuploads.rst",
+      "startLine": 43,
+      "endLine": 83,
+      "score": 0.22,
+      "sourceHash": "bfe15961685783f442b424837327d5dbeff241567b9ac81c721ce5ece08cd9b5"
+    },
+    {
+      "file": "docs/patterns/fileuploads.rst",
+      "startLine": 133,
+      "endLine": 182,
+      "score": 0.22,
+      "sourceHash": "ed5abdf3c4d1d8afc2bca719abdb9d9cffc1c3a0a130fd6e0cbf174a7825b35f"
+    },
+    {
+      "file": "docs/patterns/flashing.rst",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.22,
+      "sourceHash": "9016c48cc90e0fd8127b7f5b18e49168611a0258014abcf211058696c933f217"
+    },
+    {
+      "file": "docs/patterns/methodoverrides.rst",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.22,
+      "sourceHash": "fa0acfed70997c090e65955cacffbc782e47e3815b88b3440a231847a6c6d0c4"
+    },
+    {
+      "file": "docs/patterns/packages.rst",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.22,
+      "sourceHash": "6a863fd472e2f24d26b321fea2dd1dcffbe5693eaad68e22558df010b5974c8d"
+    },
+    {
+      "file": "docs/patterns/packages.rst",
+      "startLine": 48,
+      "endLine": 92,
+      "score": 0.22,
+      "sourceHash": "85aeb77849ecf66eda53183ec0eac2721d4bbf5380239e3f1b35c3cf423cb3b5"
+    },
+    {
+      "file": "docs/patterns/streaming.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.22,
+      "sourceHash": "ba3db303cbe353e237a2bf15e0249ea39b3dd26f168ed1071a64673307fde2ce"
+    },
+    {
+      "file": "docs/patterns/urlprocessors.rst",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.22,
+      "sourceHash": "5025c45038cbba7d959b3426b2bdba5ef027ec4f101bf92a648e1dd3ee0695a7"
+    },
+    {
+      "file": "docs/patterns/wtforms.rst",
+      "startLine": 1,
+      "endLine": 43,
+      "score": 0.22,
+      "sourceHash": "94be32f763c11847c19d3ab8e8ae38a831b9059e85baeb717b5a4cc5b6a52a37"
+    },
+    {
+      "file": "docs/templating.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.22,
+      "sourceHash": "37eca6b954c8fb143f10e84f1e474db3a65db10d5a314347d8bce25e8e616d38"
+    },
+    {
+      "file": "docs/templating.rst",
+      "startLine": 128,
+      "endLine": 169,
+      "score": 0.22,
+      "sourceHash": "8693e60404b7593bffbd75223334847253d6c54c06271d041b777fc6a3e6e19e"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 51,
+      "endLine": 88,
+      "score": 0.22,
+      "sourceHash": "12c8ccbf41577f690f637f8505abbcffc8721a23c859eee58386a28de699f66a"
+    },
+    {
+      "file": "docs/tutorial/database.rst",
+      "startLine": 36,
+      "endLine": 81,
+      "score": 0.22,
+      "sourceHash": "c219b8e228acb4863f4b3343478e2dec2da7cddd0ac8adfdd83f6ea7b06fc427"
+    },
+    {
+      "file": "docs/tutorial/database.rst",
+      "startLine": 120,
+      "endLine": 164,
+      "score": 0.22,
+      "sourceHash": "3c1d6b545df9a6a78d67dd43677dc26e2be8aeb27725065885a72caeae88b66e"
+    },
+    {
+      "file": "docs/tutorial/database.rst",
+      "startLine": 165,
+      "endLine": 210,
+      "score": 0.22,
+      "sourceHash": "b77cb20459114232a80436d97b735b29f75b9b76c5aef9ab95b0ef43f42c3827"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 196,
+      "endLine": 225,
+      "score": 0.22,
+      "sourceHash": "d2d5f8974d8aab9c406a065c4d33daad815d35efd720bd210152905138f9c925"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 525,
+      "endLine": 559,
+      "score": 0.22,
+      "sourceHash": "0dedcda81c76f869ba015c64ca1cde06dfb08b60f7b97127de0b117cf2494959"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 89,
+      "endLine": 132,
+      "score": 0.22,
+      "sourceHash": "b490e908526cd5e44e92acb68e3a25b15e8aede3c1d6d3f0fe1f6a0a7c80e506"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 133,
+      "endLine": 176,
+      "score": 0.22,
+      "sourceHash": "07bd0cd2f778db7646c2eebd73c8156495ef6338946087bed971fc40d474a80f"
+    },
+    {
+      "file": "examples/javascript/pyproject.toml",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.22,
+      "sourceHash": "f5d64839e8e45deaf251e12bdd476f07e2718518b3bdc144bd97306aa4f20523"
+    },
+    {
+      "file": "examples/tutorial/flaskr/static/style.css",
+      "startLine": 1,
+      "endLine": 44,
+      "score": 0.22,
+      "sourceHash": "6f6634faa7e3ce128841a1328d5a48506a6c654c03a1d834e9518f5f5b220ecd"
+    },
+    {
+      "file": "requirements/tests-min.txt",
+      "startLine": 1,
+      "endLine": 21,
+      "score": 0.22,
+      "sourceHash": "6e18b1114af2343e44a8776fccb406351a02111b8c6f3db615c85e31e7944ec0"
+    },
+    {
+      "file": "src/flask/app.py",
+      "startLine": 374,
+      "endLine": 423,
+      "score": 0.22,
+      "sourceHash": "337bffe66a4017b811144d1e2c42bbeb346f7f13de1b76980308f41c9f8a80a9"
+    },
+    {
+      "file": "src/flask/blueprints.py",
+      "startLine": 101,
+      "endLine": 128,
+      "score": 0.22,
+      "sourceHash": "bb9e8c237edc22780183204ba5fb2b925125cb412e497fbd310f2bb35d965e87"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 100,
+      "endLine": 149,
+      "score": 0.22,
+      "sourceHash": "82bfb577ad23e7f67ddf1518fb4537039e400f516d57de2fc14685d01f691ee6"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 350,
+      "endLine": 367,
+      "score": 0.22,
+      "sourceHash": "62478b439ff15344d7b79b51804d126a02ae47dec26c82cf62601d0944c4e1e5"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 29,
+      "endLine": 78,
+      "score": 0.22,
+      "sourceHash": "658ca2a95a2f945ed907d5f68ecaa0a55156c3ddbed689ef1fab955d97a85212"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 155,
+      "endLine": 195,
+      "score": 0.22,
+      "sourceHash": "314c85ea9647afaa46136619d8574e32e31a8dc3a0c32baab90b843606027ad0"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 238,
+      "endLine": 265,
+      "score": 0.22,
+      "sourceHash": "f8fda8d8ea6de5f938d45a92927838481e855a2c5abe1f006e1a2ad24aba200e"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 345,
+      "endLine": 386,
+      "score": 0.22,
+      "sourceHash": "6fca02d636247b79af48753db64da7b25fb849cd6359c559a0353aff9cdd2169"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 570,
+      "endLine": 619,
+      "score": 0.22,
+      "sourceHash": "5d8f2099953f59d2df4a44b1cd7e6b434d2d4bac98662c1c59ccee0350a9ef44"
+    },
+    {
+      "file": "src/flask/sansio/app.py",
+      "startLine": 943,
+      "endLine": 964,
+      "score": 0.22,
+      "sourceHash": "da5efa1cfb0e7d2f567ef55af3201450ad368395bc04bb276f0dffed34145821"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 269,
+      "endLine": 318,
+      "score": 0.22,
+      "sourceHash": "2824486d3a34583fa1db1791340e3c0edccea323236f45d45f0233189c4d8dc3"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 619,
+      "endLine": 632,
+      "score": 0.22,
+      "sourceHash": "02f0d844d38562506b7cd71775e5c56159bac112e25cc6a29257afd21a65e3f6"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 1,
+      "endLine": 41,
+      "score": 0.22,
+      "sourceHash": "f7acbf370b4d48e34a7fad5eb75df14274dbf4e8e73eda85f696cd0967ff98e2"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 392,
+      "endLine": 441,
+      "score": 0.22,
+      "sourceHash": "dc1c200111dadcfe63ddd78fb3263848829c50f3980422fbb0d803db0eb75d66"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 692,
+      "endLine": 741,
+      "score": 0.22,
+      "sourceHash": "114e5e123145262cfdae45fe42a16601d19b2e7da7db6a96f787ab10c16e7d01"
+    },
+    {
+      "file": "src/flask/templating.py",
+      "startLine": 138,
+      "endLine": 187,
+      "score": 0.22,
+      "sourceHash": "f9d368fd7732c2dbf26b077e39930cee0667b0cb780bdc073b0e48bef746824f"
+    },
+    {
+      "file": "src/flask/testing.py",
+      "startLine": 199,
+      "endLine": 248,
+      "score": 0.22,
+      "sourceHash": "85d6de444ed109d253cba8ab7235a87a666a945ea71a85974e02e48c1fec723c"
+    },
+    {
+      "file": "src/flask/testing.py",
+      "startLine": 249,
+      "endLine": 297,
+      "score": 0.22,
+      "sourceHash": "513c26d24130724ec130edf381de536e70a9e686b064a9f6753a622e9f895bd0"
+    },
+    {
+      "file": "tests/test_apps/blueprintapp/apps/admin/static/test.txt",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.22,
+      "sourceHash": "d1fa95ee3f4d52a9acefb559c71fcc55fcb69cc507a86d8e92a655d869d3a62e"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 98,
+      "endLine": 134,
+      "score": 0.22,
+      "sourceHash": "9454c9547aac08583c8e4db5fdbcf3b32980fd33f09ee67a1a7b96721fe3b9f3"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 691,
+      "endLine": 702,
+      "score": 0.22,
+      "sourceHash": "28031cb822e1812cb048e6bf7aae8caba5de4cba2110cb2118a8d682a3818612"
+    },
+    {
+      "file": "tests/test_json_tag.py",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.22,
+      "sourceHash": "85bfaea0cbd5aa476cd3129b1cf77ce8ad97e3e859e1188ba08e6de6dced70a1"
+    },
+    {
+      "file": ".github/ISSUE_TEMPLATE/bug-report.md",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.21,
+      "sourceHash": "d550369f5886347b564caf72d1d0f8320468e7cbc526e7472340f2b910d35b2f"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 333,
+      "endLine": 372,
+      "score": 0.21,
+      "sourceHash": "43540136e4c4969915217d8a8a00f9777d774e5ea0ac5b40f8a766d9ca909f41"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 592,
+      "endLine": 622,
+      "score": 0.21,
+      "sourceHash": "76f1876294276d46f306235a53c0b2b425dcbe121a02bdd49e50c314ea5e2037"
+    },
+    {
+      "file": "docs/blueprints.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.21,
+      "sourceHash": "d95fa2b1f5ffbd299644096fbc41f53b0e014d4db2ae7a7440f043f4021f35eb"
+    },
+    {
+      "file": "docs/blueprints.rst",
+      "startLine": 51,
+      "endLine": 94,
+      "score": 0.21,
+      "sourceHash": "7f8fcfe004a8afba350ed10f97ae8649875ce9e589dda94eca39daedd3d2093d"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 146,
+      "endLine": 192,
+      "score": 0.21,
+      "sourceHash": "18c827cd57500f092e631c6072e2214ffefa0960d839d604ef7572e6fe854308"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 287,
+      "endLine": 336,
+      "score": 0.21,
+      "sourceHash": "0180e2c35f78c58c5c695ecb5a2041f32c7deb650d0557cb8cc552af21dcdca8"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 424,
+      "endLine": 472,
+      "score": 0.21,
+      "sourceHash": "a554aee79900f45cad23b246fab7ee1544307ebcab49916391416b29cdcb0410"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 48,
+      "endLine": 95,
+      "score": 0.21,
+      "sourceHash": "15719377b7d243f74560dab17da2c8c48224a007197dee3021674ed8efc5f8c9"
+    },
+    {
+      "file": "docs/deploying/asgi.rst",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.21,
+      "sourceHash": "b10ce8d4412d19e619652e30567ac0d6fd3d5e3566837186cf64f43d1edeef47"
+    },
+    {
+      "file": "docs/deploying/index.rst",
+      "startLine": 46,
+      "endLine": 79,
+      "score": 0.21,
+      "sourceHash": "12a038cd8fc590b27d227233dacdcf50c5d97d2f0a5fe1624aeae4405277d3aa"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 189,
+      "endLine": 236,
+      "score": 0.21,
+      "sourceHash": "71f91712f474bdcb9124c2da4ad52f225ab2e632380ffd093333b7e0d98fffa7"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 407,
+      "endLine": 445,
+      "score": 0.21,
+      "sourceHash": "dc99b04cf703db2ece350676b4c6c181dece24e0e076022547cedf7c9c73913f"
+    },
+    {
+      "file": "docs/extensiondev.rst",
+      "startLine": 283,
+      "endLine": 304,
+      "score": 0.21,
+      "sourceHash": "c0b965c863eafad45629bd5a1a892c3067f190e892f3c5cd9dee1919d4ca092d"
+    },
+    {
+      "file": "docs/installation.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.21,
+      "sourceHash": "4ee768ef503cda1206820496926e1225bed26123d53a6eeaec0315d717e5952c"
+    },
+    {
+      "file": "docs/installation.rst",
+      "startLine": 139,
+      "endLine": 144,
+      "score": 0.21,
+      "sourceHash": "d412b2ce08e9e781ca2228071d5d658af1176c980323397cf3e07f00c7a8dc15"
+    },
+    {
+      "file": "docs/logging.rst",
+      "startLine": 1,
+      "endLine": 34,
+      "score": 0.21,
+      "sourceHash": "795495d14df6cfa755d886ae331b60e03bd7ed057e255d5be5ccbc58c54dbc2a"
+    },
+    {
+      "file": "docs/logging.rst",
+      "startLine": 35,
+      "endLine": 83,
+      "score": 0.21,
+      "sourceHash": "cd46fbd7cb26a3b30e1aa1fdbfc52aeec87efe8fa7c05e39ed78b2e7618044b3"
+    },
+    {
+      "file": "docs/logging.rst",
+      "startLine": 117,
+      "endLine": 157,
+      "score": 0.21,
+      "sourceHash": "179a9b784f554ad9032c4eb983f1ae48e97b55c7c1ad5b770f1ad458b89fdc95"
+    },
+    {
+      "file": "docs/patterns/appdispatch.rst",
+      "startLine": 49,
+      "endLine": 81,
+      "score": 0.21,
+      "sourceHash": "f460e511b126601e81ae72b10a1899179d29f05936150b16d77107648223da55"
+    },
+    {
+      "file": "docs/patterns/javascript.rst",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.21,
+      "sourceHash": "8ff0c3b947ff3d46e241a41efb89b75087bd269005364bef5c42f62f994f69e7"
+    },
+    {
+      "file": "docs/patterns/javascript.rst",
+      "startLine": 135,
+      "endLine": 183,
+      "score": 0.21,
+      "sourceHash": "17187a78f7f63bd40ebe6e1a95c603a443bfa816f54e4561e1b45d0be488ad3e"
+    },
+    {
+      "file": "docs/patterns/javascript.rst",
+      "startLine": 184,
+      "endLine": 233,
+      "score": 0.21,
+      "sourceHash": "ce048810c590d6b169d6c3db1bd5b138e4005cdcdcefd72c78393e29824a8b75"
+    },
+    {
+      "file": "docs/patterns/javascript.rst",
+      "startLine": 234,
+      "endLine": 259,
+      "score": 0.21,
+      "sourceHash": "4a08a4de47f9e4052fd4837cf3ec5078ba45bfdcaf2004b4ea8651eacabf8543"
+    },
+    {
+      "file": "docs/patterns/sqlite3.rst",
+      "startLine": 51,
+      "endLine": 95,
+      "score": 0.21,
+      "sourceHash": "08657afd0f74b319b88bdba95cbc0dbf8ee73df3503a159cde5db3b1a9f33d89"
+    },
+    {
+      "file": "docs/patterns/sqlite3.rst",
+      "startLine": 96,
+      "endLine": 145,
+      "score": 0.21,
+      "sourceHash": "9d2a6121ce96505fe205631e94223c922c2ce98b0c0d3019ec64a32e9c87c5c6"
+    },
+    {
+      "file": "docs/patterns/wtforms.rst",
+      "startLine": 44,
+      "endLine": 81,
+      "score": 0.21,
+      "sourceHash": "84bf44f5321d2c3fc1181c2bff71a6ab3ea264819dc44efdc68a2e7d4b0e07f4"
+    },
+    {
+      "file": "docs/server.rst",
+      "startLine": 100,
+      "endLine": 115,
+      "score": 0.21,
+      "sourceHash": "2cef299dcff3ea3ab2a247bcadebc8c7db9674b26a1dc815f828386de96f0b3f"
+    },
+    {
+      "file": "docs/shell.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.21,
+      "sourceHash": "d3bd15423c78158c5a6220a32554b0ffc28c93e01fa2d714c55a18b91b8ff72d"
+    },
+    {
+      "file": "docs/shell.rst",
+      "startLine": 50,
+      "endLine": 99,
+      "score": 0.21,
+      "sourceHash": "938e828c0143b77f93b878613f9943ac89ac39f147166957b6650a42aed3c148"
+    },
+    {
+      "file": "docs/signals.rst",
+      "startLine": 41,
+      "endLine": 89,
+      "score": 0.21,
+      "sourceHash": "4453a0cd6aa167179542a535e51aaa8590bfbf554478104cae7ad46e7383cdb7"
+    },
+    {
+      "file": "docs/templating.rst",
+      "startLine": 47,
+      "endLine": 77,
+      "score": 0.21,
+      "sourceHash": "0463ebbf21ea980df1e61e4e92d3ecc1ad85a56882d15619236daed30a54a236"
+    },
+    {
+      "file": "docs/testing.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.21,
+      "sourceHash": "99e4d0dabf0133ba4b5567bfd4ae3aee54743c558c6a92048e7d7f19202dbab2"
+    },
+    {
+      "file": "docs/testing.rst",
+      "startLine": 182,
+      "endLine": 227,
+      "score": 0.21,
+      "sourceHash": "ed12f02e8f4de392bd7b35455ea19dfd0392588327d29ec900705270419bc5b6"
+    },
+    {
+      "file": "docs/tutorial/blog.rst",
+      "startLine": 304,
+      "endLine": 336,
+      "score": 0.21,
+      "sourceHash": "c95f078e747a0ea3c7f453ab09d91ba1724c7e22bcb0e4a541531d924c9dbc52"
+    },
+    {
+      "file": "docs/tutorial/deploy.rst",
+      "startLine": 98,
+      "endLine": 111,
+      "score": 0.21,
+      "sourceHash": "12542f82aa6a59c56c4518d1b97868bb2b9b8241008a225a943f2b252660af65"
+    },
+    {
+      "file": "docs/tutorial/tests.rst",
+      "startLine": 226,
+      "endLine": 255,
+      "score": 0.21,
+      "sourceHash": "9c3b007873e1ddeb2d1a8d75c114af27029cc858cefe686cd8ade71d04f279a6"
+    },
+    {
+      "file": "examples/celery/src/task_app/templates/index.html",
+      "startLine": 1,
+      "endLine": 37,
+      "score": 0.21,
+      "sourceHash": "966041db95cf889b027dfacaab546c98410f7bce7fa411356472f10a54ee3ae5"
+    },
+    {
+      "file": "examples/tutorial/flaskr/static/style.css",
+      "startLine": 45,
+      "endLine": 93,
+      "score": 0.21,
+      "sourceHash": "5db3dc6436be18412ca9949dfedce520454012861ca627660a2c688bf0fdc576"
+    },
+    {
+      "file": "examples/tutorial/flaskr/static/style.css",
+      "startLine": 94,
+      "endLine": 134,
+      "score": 0.21,
+      "sourceHash": "2c6f30b48b33292c24ef01750bd8e31f5ff3d5224b0f504366f44195ab9a970d"
+    },
+    {
+      "file": "examples/tutorial/tests/data.sql",
+      "startLine": 1,
+      "endLine": 8,
+      "score": 0.21,
+      "sourceHash": "77e9aabf550a63db2c761192566f6662a9599384a9fe1a6e01c390aa4b817cf9"
+    },
+    {
+      "file": "requirements/tests-dev.txt",
+      "startLine": 1,
+      "endLine": 6,
+      "score": 0.21,
+      "sourceHash": "983d57c68bf295d4c3d3cbe775f250882262bcc8c9615944a3d6e7bf2f63bd05"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 283,
+      "endLine": 332,
+      "score": 0.21,
+      "sourceHash": "9b3809314a6d5e72b052b7d9060187cd541d448996f339b04d4a39809629db0b"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 1054,
+      "endLine": 1103,
+      "score": 0.21,
+      "sourceHash": "fdd098ceaf9625ed2c766f5bf75d1deb65268ce97e2a1677de4c011a5caab118"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 196,
+      "endLine": 237,
+      "score": 0.21,
+      "sourceHash": "874e8d1f2e84295332be1a8d5da7476060de9788288a607545804e7f6a1a8aef"
+    },
+    {
+      "file": "src/flask/debughelpers.py",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.21,
+      "sourceHash": "190884c946d26e88ddb1ad1ac6dfc42b8c4eabd19daf08e45a1b6278d6ee589d"
+    },
+    {
+      "file": "src/flask/helpers.py",
+      "startLine": 387,
+      "endLine": 436,
+      "score": 0.21,
+      "sourceHash": "1786a85c0b70a7ddd158e5c6b6f7ed5e3cb9db5f9b07780ea7022f35a63a3bc4"
+    },
+    {
+      "file": "src/flask/json/__init__.py",
+      "startLine": 77,
+      "endLine": 107,
+      "score": 0.21,
+      "sourceHash": "266a4f6bb023c72b372b1ebd3c2498f3e77febd83d2e9e122a688d6e630edfb0"
+    },
+    {
+      "file": "src/flask/json/__init__.py",
+      "startLine": 108,
+      "endLine": 137,
+      "score": 0.21,
+      "sourceHash": "d5a2a359bc04084b04ffa30edc45dc1597d749b1f444bedef77e33983aa79ed0"
+    },
+    {
+      "file": "src/flask/json/__init__.py",
+      "startLine": 138,
+      "endLine": 170,
+      "score": 0.21,
+      "sourceHash": "1e1c8e98180c7074f96f6f6fc69405089c7126aec773688291becf29bbaa65bd"
+    },
+    {
+      "file": "src/flask/logging.py",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.21,
+      "sourceHash": "79d4d5dcbf663834da74d2d04ac3d58d3f7d39b02ff9d70976f1de553dec7011"
+    },
+    {
+      "file": "src/flask/sansio/blueprints.py",
+      "startLine": 369,
+      "endLine": 418,
+      "score": 0.21,
+      "sourceHash": "7722a91f82a5413f412ee8195c9a1064721e4e199334e4e18aa6a16afc77f56c"
+    },
+    {
+      "file": "src/flask/templating.py",
+      "startLine": 1,
+      "endLine": 38,
+      "score": 0.21,
+      "sourceHash": "b2ae9a990f3f4d55217cf64a1b6832698b571c95377dbb156002963e1fb809cf"
+    },
+    {
+      "file": "src/flask/templating.py",
+      "startLine": 89,
+      "endLine": 137,
+      "score": 0.21,
+      "sourceHash": "46a14438f3a47be39253a82ac5232017d14e470732b8dc68fba7df1d389ce7f6"
+    },
+    {
+      "file": "src/flask/templating.py",
+      "startLine": 188,
+      "endLine": 219,
+      "score": 0.21,
+      "sourceHash": "c42203b1a5d23f9b4947bfc656ac4fcf54bf88e133a327fb45699fa132ab5865"
+    },
+    {
+      "file": "tests/static/config.toml",
+      "startLine": 1,
+      "endLine": 2,
+      "score": 0.21,
+      "sourceHash": "4e55be45bee5974c3e94667703b66410163e564705851d66584e129136b79227"
+    },
+    {
+      "file": "tests/templates/template_filter.html",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.21,
+      "sourceHash": "931cf8ce1c3db695b9296ec64600b9487835a7f9e7da0fc07102f9cff0d5edcb"
+    },
+    {
+      "file": "tests/test_apps/blueprintapp/apps/admin/static/css/test.css",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.21,
+      "sourceHash": "da8e36b9bfc3c2025a540ca1b09bad88dc6b691a8a8490b483c87832266ec541"
+    },
+    {
+      "file": "tests/test_apps/subdomaintestmodule/static/hello.txt",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.21,
+      "sourceHash": "8f1cbb58318c1ae10f777607f0bf9dc058547571726ad7b912ec97e281e8e4ca"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 180,
+      "endLine": 221,
+      "score": 0.21,
+      "sourceHash": "71a9c1ca22f620774901dfc8b85285956163cb6da6640d696f4262ac48199314"
+    },
+    {
+      "file": "CHANGES.rst",
+      "startLine": 1597,
+      "endLine": 1597,
+      "score": 0.2,
+      "sourceHash": "9b854a5c65f8ee3d05be5cf4ef43e2b8e386c5e501eb8414b68658b1467e83d8"
+    },
+    {
+      "file": "docs/blueprints.rst",
+      "startLine": 143,
+      "endLine": 190,
+      "score": 0.2,
+      "sourceHash": "1312f35126136cb5ba0dd244b58489797fac6d4e68263fdb9cc233be31b55466"
+    },
+    {
+      "file": "docs/blueprints.rst",
+      "startLine": 191,
+      "endLine": 238,
+      "score": 0.2,
+      "sourceHash": "fbd476428d0a3064e6382b64f22f66c580085357cd3861680130a157e0bb9479"
+    },
+    {
+      "file": "docs/blueprints.rst",
+      "startLine": 287,
+      "endLine": 315,
+      "score": 0.2,
+      "sourceHash": "c605b06cef7512b0d41f8ac329b9a8866a1d32eb40412d26e64d4e9c84545171"
+    },
+    {
+      "file": "docs/changes.rst",
+      "startLine": 1,
+      "endLine": 4,
+      "score": 0.2,
+      "sourceHash": "0d4603dc4c0d1b7c36a8d95c32ba865779f5e9fae885094c10a1f4b2ded94de8"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.2,
+      "sourceHash": "92e66f6742857e4a03130bc84b93afddf4b54f5f6fd3aea974605b30b1b3bb94"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 375,
+      "endLine": 423,
+      "score": 0.2,
+      "sourceHash": "197c3c9ae1b733f69030c8644e15016c2669a343f703d3bb826bfa18ce74356d"
+    },
+    {
+      "file": "docs/conf.py",
+      "startLine": 1,
+      "endLine": 42,
+      "score": 0.2,
+      "sourceHash": "ef45f0a99ae0c13cd0f9639a67dc2a4394dec8dd99a47fe61ed51991b8d9764e"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 144,
+      "endLine": 191,
+      "score": 0.2,
+      "sourceHash": "b672c34f8ddea315b2a4e7d26431394fbff95a21c284c60d2a7b26ece3ee077b"
+    },
+    {
+      "file": "docs/deploying/gevent.rst",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.2,
+      "sourceHash": "bb75869a34230c3bc15f1c4a2b198536ae0285975d2bed04939ce60e944b5e05"
+    },
+    {
+      "file": "docs/deploying/waitress.rst",
+      "startLine": 1,
+      "endLine": 44,
+      "score": 0.2,
+      "sourceHash": "1b300ab73637a1314de9a2ea76fb6141fdcdfc68b66f66103fb039d45f94fb33"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 275,
+      "endLine": 321,
+      "score": 0.2,
+      "sourceHash": "d1edf37caf705b0986b11d67c34529150fe6de8c3c4a2cf99aefeac9b20b6477"
+    },
+    {
+      "file": "docs/extensions.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.2,
+      "sourceHash": "3b1d23c554568a48e7e9dc3c3db2ce6b735f01db5133bd1570aa6d9429a60893"
+    },
+    {
+      "file": "docs/patterns/favicon.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.2,
+      "sourceHash": "6de9f5913c889bab2a2de14e4f210afb866f7982e5952b961293fcadda51a0dc"
+    },
+    {
+      "file": "docs/patterns/javascript.rst",
+      "startLine": 46,
+      "endLine": 88,
+      "score": 0.2,
+      "sourceHash": "4934ef3b916368f41ccaf6552514e0aa9f42a0cd1eb98dd73d8247ac6893ffff"
+    },
+    {
+      "file": "docs/patterns/lazyloading.rst",
+      "startLine": 44,
+      "endLine": 89,
+      "score": 0.2,
+      "sourceHash": "ffd3ba2405e4cc2ca7933dcf2b22af1d79e4db723c4ccc19d0e6d7728d71cb7e"
+    },
+    {
+      "file": "docs/patterns/streaming.rst",
+      "startLine": 49,
+      "endLine": 85,
+      "score": 0.2,
+      "sourceHash": "adbae86d6cdd4901c37d5c7bdbad00685989b568aa1829cf734a55bbf98b1ca6"
+    },
+    {
+      "file": "docs/signals.rst",
+      "startLine": 136,
+      "endLine": 167,
+      "score": 0.2,
+      "sourceHash": "698c6c648e9e507c039cfd2695175272bc7a18d63ab27514c262381bc40b0278"
+    },
+    {
+      "file": "docs/testing.rst",
+      "startLine": 136,
+      "endLine": 181,
+      "score": 0.2,
+      "sourceHash": "333c66f36ef45a40b6c328939e5cd5a8d812b01494cbae56d5cea351c5e46496"
+    },
+    {
+      "file": "examples/celery/make_celery.py",
+      "startLine": 1,
+      "endLine": 4,
+      "score": 0.2,
+      "sourceHash": "d08500e89cbcaddce7f4769936f5d9297e6b90373c7eca2b4d220d306ccc8732"
+    },
+    {
+      "file": "examples/celery/requirements.txt",
+      "startLine": 51,
+      "endLine": 58,
+      "score": 0.2,
+      "sourceHash": "3c09695fba374d62f01345027e36ea0db50396ef8b130c513e6d01de747d4fc4"
+    },
+    {
+      "file": "examples/tutorial/flaskr/schema.sql",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.2,
+      "sourceHash": "5b6866db6d269276c62d64315c3f92a0afcd3cfa9ed7700906bdfe1df121da1b"
+    },
+    {
+      "file": "requirements/dev.txt",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.2,
+      "sourceHash": "5fdfc9919f52a95cb7b97ac7e41a09b3407c4dcfa8c28281ebc7a09491409d46"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 333,
+      "endLine": 379,
+      "score": 0.2,
+      "sourceHash": "966d94292aef8b461aa288533119b996dbd7d9d2d4d1daa2967e693bcf7886cc"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 380,
+      "endLine": 429,
+      "score": 0.2,
+      "sourceHash": "c022e55994453f2ec74e08c01cd6b6823f9299c9829e12828f1b9bd89763df07"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 665,
+      "endLine": 703,
+      "score": 0.2,
+      "sourceHash": "79931ac5c815e58f39f2c587cf76662716079b03934f8cdf80105de107f80f98"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 834,
+      "endLine": 872,
+      "score": 0.2,
+      "sourceHash": "aac9f8fc0cd0af5b8928de6e78cc0724fe799ad1bfff7c2c9dac0b59c2229cbb"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 873,
+      "endLine": 922,
+      "score": 0.2,
+      "sourceHash": "60cbe3b6da9c2f85fb1d021430e53e2dd0fc7d7e29e4f8ce0b1a4080f5e80199"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 923,
+      "endLine": 972,
+      "score": 0.2,
+      "sourceHash": "e6475cdca0b61bb014572af4118f86061d098035f3c52766d5499d78e8371b0f"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 1005,
+      "endLine": 1053,
+      "score": 0.2,
+      "sourceHash": "039154961f14ed2059460abdad799451bc24e8844e03b8d8342ed39e2ba6a37f"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 150,
+      "endLine": 199,
+      "score": 0.2,
+      "sourceHash": "85de9f9bfe26e465d05229107409bbc5d22c76bd01e948927a4a1289dd75bb18"
+    },
+    {
+      "file": "src/flask/config.py",
+      "startLine": 200,
+      "endLine": 249,
+      "score": 0.2,
+      "sourceHash": "36e7051a252eb0ca13a4fa01fb02806514d0b0511105714b139cd1f10e92e926"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 79,
+      "endLine": 116,
+      "score": 0.2,
+      "sourceHash": "6f225622713551afb4ab6e9453d4aa9afbb64a866941b36031cd2aea483561ab"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 337,
+      "endLine": 386,
+      "score": 0.2,
+      "sourceHash": "70c50bfb6df68b444f1c5905cbacabb2b1400238c1c900ac58b282c1d723489c"
+    },
+    {
+      "file": "src/flask/json/provider.py",
+      "startLine": 151,
+      "endLine": 200,
+      "score": 0.2,
+      "sourceHash": "5a3519456c1dacc5190aa5fba9a015e6df9440ce4426b5ffb3ce3060fe5f2b0f"
+    },
+    {
+      "file": "src/flask/json/provider.py",
+      "startLine": 201,
+      "endLine": 215,
+      "score": 0.2,
+      "sourceHash": "a3aa1a8a5650b6ddd364a0c7b885b6c5c9afc704b206d6ab1f79e033f752d263"
+    },
+    {
+      "file": "src/flask/logging.py",
+      "startLine": 50,
+      "endLine": 79,
+      "score": 0.2,
+      "sourceHash": "1da4c928e702ce9f83177c7c0dd59606331f6eff22408fbcdb048ec5c1105b94"
+    },
+    {
+      "file": "src/flask/sansio/scaffold.py",
+      "startLine": 292,
+      "endLine": 341,
+      "score": 0.2,
+      "sourceHash": "14469a39e8377a975e6b83f747f2786e11e511f14b53883ba7590a99d9b0ecfa"
+    },
+    {
+      "file": "src/flask/templating.py",
+      "startLine": 39,
+      "endLine": 88,
+      "score": 0.2,
+      "sourceHash": "a3aa5769f67f5eb905b396bfd5d73b8ebbdcaa1839ec5ecf5a98c3feb1a8c43d"
+    },
+    {
+      "file": "src/flask/testing.py",
+      "startLine": 51,
+      "endLine": 98,
+      "score": 0.2,
+      "sourceHash": "e62fd17a3bdfb7c18e5681d8a6df7c358c057cfd68d02d4ed522e543cca5f3ad"
+    },
+    {
+      "file": "src/flask/testing.py",
+      "startLine": 99,
+      "endLine": 148,
+      "score": 0.2,
+      "sourceHash": "b3dd78a87394d6372b69d7e731a10033b460a2effcdc0de49afee973bf92594e"
+    },
+    {
+      "file": "src/flask/testing.py",
+      "startLine": 149,
+      "endLine": 198,
+      "score": 0.2,
+      "sourceHash": "0d5ffd48b36876650590c40fdd9c12dc16bfdc9e7119344a106240f1d9437bdd"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 584,
+      "endLine": 618,
+      "score": 0.2,
+      "sourceHash": "ea113a6eaf325473e64825c14af9aa80a836a183b3f39246d25e28411e5bd724"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 619,
+      "endLine": 647,
+      "score": 0.2,
+      "sourceHash": "7e4770d06c2a789c62442f8a527837a8be06f0e88d420adb4724d43fd22053a5"
+    },
+    {
+      "file": ".github/ISSUE_TEMPLATE/config.yml",
+      "startLine": 1,
+      "endLine": 11,
+      "score": 0.19,
+      "sourceHash": "b2745bd2ee95fb22e8dcaa3828c2b56b3b7cc59f30a022daf3ad469c406a8bfb"
+    },
+    {
+      "file": "CONTRIBUTING.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.19,
+      "sourceHash": "db1d9d47a133879736ed2302741c448c2b45ac5a3e601c020cc5af5ac9e6d935"
+    },
+    {
+      "file": "docs/blueprints.rst",
+      "startLine": 239,
+      "endLine": 286,
+      "score": 0.19,
+      "sourceHash": "9e6f493f9b8c0c4a8838d105927f5c76622d960a7c644b5b8e78b235bedd2e88"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 473,
+      "endLine": 520,
+      "score": 0.19,
+      "sourceHash": "d72269e33f4a5ab928d4c4ea6444c1be8d03884e97851a92bcaf35a8c76e42d0"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 192,
+      "endLine": 238,
+      "score": 0.19,
+      "sourceHash": "f555972037ebfa2d603da0ae47ad85cbf13cf2126b7a874b0d9a9c2e8a1f9949"
+    },
+    {
+      "file": "docs/deploying/eventlet.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.19,
+      "sourceHash": "1af814a7daf2ccebd71af49440e0ce041d461c94a8303defe6bc577f4029770e"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 100,
+      "endLine": 141,
+      "score": 0.19,
+      "sourceHash": "a333da9d1fc5f9da40c209af99be7d7d889933c291f64517fc7ffacbbb827129"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 446,
+      "endLine": 495,
+      "score": 0.19,
+      "sourceHash": "444e21ca47935ba6e81b03b90f7a424a47e5d5957a786f420689d796a6be5784"
+    },
+    {
+      "file": "docs/installation.rst",
+      "startLine": 89,
+      "endLine": 138,
+      "score": 0.19,
+      "sourceHash": "95be5f7e6eb3cb892b4c3a4d3d712cf21351c29c8184cb4af5fd536e2715586c"
+    },
+    {
+      "file": "docs/patterns/celery.rst",
+      "startLine": 1,
+      "endLine": 41,
+      "score": 0.19,
+      "sourceHash": "cb02bc320109beac61659f8d40f60d920c67415cc04d61a4f277e8c4c6e7c38a"
+    },
+    {
+      "file": "docs/patterns/javascript.rst",
+      "startLine": 89,
+      "endLine": 134,
+      "score": 0.19,
+      "sourceHash": "bc0298a74a6a862fa1f75e9b64abe2c7217559aecc24b9399036d65dd5660558"
+    },
+    {
+      "file": "docs/patterns/packages.rst",
+      "startLine": 93,
+      "endLine": 133,
+      "score": 0.19,
+      "sourceHash": "cabb833acf9da6d18f32f6dba1e5e8681d73c23f390d81f0af8303c9e539f265"
+    },
+    {
+      "file": "docs/patterns/sqlite3.rst",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.19,
+      "sourceHash": "f20a809cdd1563e8f526568c01562c31a08842efaf5766113cb927b3e6006364"
+    },
+    {
+      "file": "docs/patterns/urlprocessors.rst",
+      "startLine": 41,
+      "endLine": 67,
+      "score": 0.19,
+      "sourceHash": "f7ee511cd9ca9255216112186f874d9a5d5038dd6777d9e771868837c5f2c143"
+    },
+    {
+      "file": "docs/tutorial/install.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.19,
+      "sourceHash": "c6ba9b1ee42d4ee86775185bab7e3f5b0047f46f55680f8213c46cbf1566d1b1"
+    },
+    {
+      "file": "docs/web-security.rst",
+      "startLine": 292,
+      "endLine": 308,
+      "score": 0.19,
+      "sourceHash": "2686cd7b9406cc2e52816541d544476f94001cb7689fb54010b4359c5bf7788a"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 200,
+      "endLine": 240,
+      "score": 0.19,
+      "sourceHash": "611e7c8e6627c8de2400f3b533aac55a805538e019c25e1053192872347d8ae6"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 241,
+      "endLine": 282,
+      "score": 0.19,
+      "sourceHash": "760e93b1ee615405e6ebd0d177ac7192fbb9ade1ea503636ad0d56122333dc41"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 430,
+      "endLine": 467,
+      "score": 0.19,
+      "sourceHash": "bfffbe463815ba9b1a2e6732e79dea8c7fad11dd0f73e8411488785bbf458317"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 565,
+      "endLine": 614,
+      "score": 0.19,
+      "sourceHash": "23c20a8ad0dfa4cf9c2cc6764f9de4bad8f62fdda9e1ff7668307c41a933a107"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 615,
+      "endLine": 664,
+      "score": 0.19,
+      "sourceHash": "36200ca6c0774db9fe4d3b66c32a14458258eff18d8556b900cb682700b510d0"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 704,
+      "endLine": 753,
+      "score": 0.19,
+      "sourceHash": "dda30d5ee57207d20cc8a7fd8caf93722d2d138b31f6e3eece78aae7bc83d235"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 973,
+      "endLine": 1004,
+      "score": 0.19,
+      "sourceHash": "2e9bcbde98d5f5db83c1c47b262ab58cf043afc9e52b3be6a001f97581b8dbff"
+    },
+    {
+      "file": "src/flask/ctx.py",
+      "startLine": 238,
+      "endLine": 286,
+      "score": 0.19,
+      "sourceHash": "3d0d412960ee571fd022a74abc9c8b74b7cffaf0d1c4bfdb8ae6f0ccda2a9161"
+    },
+    {
+      "file": "src/flask/json/__init__.py",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.19,
+      "sourceHash": "a8983bc94ff47dd38fad6536403358bcc729c94dd635d9da187646cdaf2b857c"
+    },
+    {
+      "file": "src/flask/json/provider.py",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.19,
+      "sourceHash": "e160d2da842d30ecb2ed20676660f4c064bc963a7a93f660963310779daaafac"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 173,
+      "endLine": 218,
+      "score": 0.19,
+      "sourceHash": "e93822c4a80c104c0ce92825b4adc361cba5158ffda52200cff3a80cc789a28c"
+    },
+    {
+      "file": "tests/static/config.json",
+      "startLine": 1,
+      "endLine": 4,
+      "score": 0.19,
+      "sourceHash": "9d730ba429745c76d038d075e8b1d3f816156b50fbc110766cfe9a1e2affefc2"
+    },
+    {
+      "file": "tests/templates/_macro.html",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.19,
+      "sourceHash": "8f872e9a2785ac4891f6af6c03d292acdec450730d4438cca51ec1f61a34763f"
+    },
+    {
+      "file": "tests/test_apps/blueprintapp/apps/admin/templates/admin/index.html",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.19,
+      "sourceHash": "9c1adf58f59074258e20a9aae4cb450fee2b304d350febd9a151dbb0f82a7952"
+    },
+    {
+      "file": "tests/test_apps/blueprintapp/apps/frontend/templates/frontend/index.html",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.19,
+      "sourceHash": "ae01c43b5ddf869828748818f80cebe902a61e2969ff38d3c306f363f7dfdc5c"
+    },
+    {
+      "file": "tests/test_cli.py",
+      "startLine": 135,
+      "endLine": 179,
+      "score": 0.19,
+      "sourceHash": "aa1caa633e7769b5febcc01ee26ff27b76aff5a8f3eab6266d38aa13eea17118"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 521,
+      "endLine": 556,
+      "score": 0.18,
+      "sourceHash": "885aa055ba937e6760fa7b57bee1f03bc7fafd6cae1c0853270247e950f9bf0a"
+    },
+    {
+      "file": "docs/deploying/mod_wsgi.rst",
+      "startLine": 1,
+      "endLine": 49,
+      "score": 0.18,
+      "sourceHash": "29bebda0b6a0132f0455d2790d160d9297f71abead07c6063e1723008e723cec"
+    },
+    {
+      "file": "docs/deploying/nginx.rst",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.18,
+      "sourceHash": "70020f948b69568ecebcbb386fde4dd166643fd3521bfd6b957eb6d4928fb65f"
+    },
+    {
+      "file": "docs/logging.rst",
+      "startLine": 84,
+      "endLine": 116,
+      "score": 0.18,
+      "sourceHash": "e6ee868c52d58ffe1c2b15ee3cdc329bf567ac377d5ad7a954cbd9a1e70c600b"
+    },
+    {
+      "file": "docs/patterns/templateinheritance.rst",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.18,
+      "sourceHash": "6063e8468e8501476d32bbaab5ab61e28b1a0bb87b553f55198e2c2ecf045310"
+    },
+    {
+      "file": "docs/patterns/urlprocessors.rst",
+      "startLine": 68,
+      "endLine": 100,
+      "score": 0.18,
+      "sourceHash": "c3e18ca96bb91cd3268f89616be975be8cf8c3a129bab69c01e98e58bd44cf35"
+    },
+    {
+      "file": "docs/tutorial/database.rst",
+      "startLine": 82,
+      "endLine": 119,
+      "score": 0.18,
+      "sourceHash": "1694b38e6f00ebfac5bf4b0dce608508d7e07636b2609c8bfdf695854ff438f5"
+    },
+    {
+      "file": "examples/celery/src/task_app/templates/index.html",
+      "startLine": 38,
+      "endLine": 87,
+      "score": 0.18,
+      "sourceHash": "d2fa207883d8b300f56be866680617243b938054e70c217193100aef28987396"
+    },
+    {
+      "file": "pyproject.toml",
+      "startLine": 96,
+      "endLine": 124,
+      "score": 0.18,
+      "sourceHash": "17c82feb346124b430c3d8d866c0d76e2ef488e5e19148d89471defa44bd9ce5"
+    },
+    {
+      "file": "requirements/dev.txt",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.18,
+      "sourceHash": "1f5afbecc01cdc7cb3e3c35674764a2e49d25ca139d8ecb1e181d8d5133a3dd3"
+    },
+    {
+      "file": "requirements/typing.in",
+      "startLine": 1,
+      "endLine": 8,
+      "score": 0.18,
+      "sourceHash": "8823ed6aaea5eff128e956cfa92b8c381239bde2348b52ff9cf55ccfb498e0df"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 41,
+      "endLine": 90,
+      "score": 0.18,
+      "sourceHash": "a964d0d42db41bf1713781538b83c09e8a3feb803c0b911ba5bd3772082a65a3"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 120,
+      "endLine": 169,
+      "score": 0.18,
+      "sourceHash": "fc2d5455c5028580432e37f789c905c2f9706752dee6e3148c747c4ebb87bee7"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 170,
+      "endLine": 199,
+      "score": 0.18,
+      "sourceHash": "d539003a60a2bb7e8c49e3afa8c0917bd60dd34509f196f4db6210e6cb2e376f"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 515,
+      "endLine": 564,
+      "score": 0.18,
+      "sourceHash": "3a8332415abb583a0bb8bdc37c3de4d2dff4e588ee8a53e69ca6c83f5c53fffa"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 786,
+      "endLine": 833,
+      "score": 0.18,
+      "sourceHash": "0b8f70309dc526c4ed68b6418656993b0194b9138e2037d47ba8a4cb586e453b"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 1104,
+      "endLine": 1133,
+      "score": 0.18,
+      "sourceHash": "23d8c4b5ceaef1ab17b5fbd5240fb6799ae9e18b56c02262ca085f0d3a64afb4"
+    },
+    {
+      "file": "src/flask/json/provider.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.18,
+      "sourceHash": "9b9d74492d03e8ed773130c795b0850b02aad677f3a20fa36e8e856206b26bd8"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 269,
+      "endLine": 318,
+      "score": 0.18,
+      "sourceHash": "ab7ee412ff170684ee64fa94ae8bbf604e1b33b23bf0c9e387630c5b0c9c4aca"
+    },
+    {
+      "file": "tests/templates/context_template.html",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.18,
+      "sourceHash": "e4e99541ea66f73093d6c483822f027c78946cb5fded7ecca784a15615bb19b7"
+    },
+    {
+      "file": "tests/templates/non_escaping_template.txt",
+      "startLine": 1,
+      "endLine": 8,
+      "score": 0.18,
+      "sourceHash": "46654e38055a4884fc08e799bf1beec7fe9712201c61f61e506dddd7bf26eb08"
+    },
+    {
+      "file": "tests/templates/simple_template.html",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.18,
+      "sourceHash": "6b85c2c50b0d72ee90689b484abd0a2ea3cc72d9532e8c97fdc232b765283962"
+    },
+    {
+      "file": "tests/templates/template_test.html",
+      "startLine": 1,
+      "endLine": 3,
+      "score": 0.18,
+      "sourceHash": "0d86bfe5f3309f26b8d71735ec8e76a371dde82fe30a9bc7c25e80cf242212a1"
+    },
+    {
+      "file": "tests/test_apps/cliapp/message.txt",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.18,
+      "sourceHash": "061fd2c3358a46c70eac09ec18b0eac108451145e532debf31770c85be55d006"
+    },
+    {
+      "file": ".github/workflows/tests.yaml",
+      "startLine": 51,
+      "endLine": 51,
+      "score": 0.17,
+      "sourceHash": "18e22decac0256c8d7780953528c7d8894ae2c40d6ccc0bb0cfff2d791d29645"
+    },
+    {
+      "file": ".readthedocs.yaml",
+      "startLine": 1,
+      "endLine": 13,
+      "score": 0.17,
+      "sourceHash": "2e87aa4c4f8f066302dc80a15d0f53564eb3e10a19c92cb81dc08215a36b3f84"
+    },
+    {
+      "file": "CONTRIBUTING.rst",
+      "startLine": 92,
+      "endLine": 138,
+      "score": 0.17,
+      "sourceHash": "aede31b9c263de57d241d71579cc79486a3f5ba34f3226a910cebc9811cedc3b"
+    },
+    {
+      "file": "CONTRIBUTING.rst",
+      "startLine": 139,
+      "endLine": 188,
+      "score": 0.17,
+      "sourceHash": "99d688852a9f1afa3372f1c5590958de4da081f270c7512046a14f08c989816e"
+    },
+    {
+      "file": "docs/cli.rst",
+      "startLine": 337,
+      "endLine": 374,
+      "score": 0.17,
+      "sourceHash": "bdb03ccbfd14a22e72eaee15b2e8ec24ac1478ad9f78933e56ca3a50fce63bf8"
+    },
+    {
+      "file": "docs/contributing.rst",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.17,
+      "sourceHash": "3986adbb4f39cb58d2f14965f0711472e740fd0df8a53b78a369372189b5410c"
+    },
+    {
+      "file": "docs/deploying/gevent.rst",
+      "startLine": 48,
+      "endLine": 80,
+      "score": 0.17,
+      "sourceHash": "37ea714268f516fa223009adea42ede33584b95d5a0abffc95330881e776bae5"
+    },
+    {
+      "file": "docs/deploying/gunicorn.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.17,
+      "sourceHash": "791f1c0c48dadbba8c35df821f72abd7c3f97ecc9e4b4e6ad19268601ebba30b"
+    },
+    {
+      "file": "docs/deploying/mod_wsgi.rst",
+      "startLine": 50,
+      "endLine": 94,
+      "score": 0.17,
+      "sourceHash": "817ccc6c1d12aea34efff0ddcab3750a8bfc10989ece7558ba5cbb481b8a3816"
+    },
+    {
+      "file": "docs/deploying/uwsgi.rst",
+      "startLine": 49,
+      "endLine": 98,
+      "score": 0.17,
+      "sourceHash": "de91d37b0e7e09794a570851b85726d8b1bfb7169073cf93dd50adbbfee4c0cb"
+    },
+    {
+      "file": "docs/extensiondev.rst",
+      "startLine": 200,
+      "endLine": 244,
+      "score": 0.17,
+      "sourceHash": "4085c3706cfa3711eefcf8ba56776dc6a3b87877e8087e54af05d1aee34853a6"
+    },
+    {
+      "file": "docs/installation.rst",
+      "startLine": 51,
+      "endLine": 88,
+      "score": 0.17,
+      "sourceHash": "5d5879b57437b8699d9bd12dacd1df880a1e0f5ae9c7ab41db253a9c0f4a92a3"
+    },
+    {
+      "file": "docs/logging.rst",
+      "startLine": 158,
+      "endLine": 183,
+      "score": 0.17,
+      "sourceHash": "5ace2264cc5d0620565224cbb12b90d7e0c1712eda85073a3d37d517d9974a40"
+    },
+    {
+      "file": "docs/patterns/appdispatch.rst",
+      "startLine": 112,
+      "endLine": 139,
+      "score": 0.17,
+      "sourceHash": "598641612f70ecfc203ff6eed53b89e45d76db94d8c68dc81ce3c72dc76090cc"
+    },
+    {
+      "file": "docs/patterns/celery.rst",
+      "startLine": 187,
+      "endLine": 234,
+      "score": 0.17,
+      "sourceHash": "4a72af9443e0ee75662bbb0e5e15568ca947c731228f2453054b1154bfb911f2"
+    },
+    {
+      "file": "docs/patterns/mongoengine.rst",
+      "startLine": 1,
+      "endLine": 46,
+      "score": 0.17,
+      "sourceHash": "45d01e544f5cf844373916e49c7d29873497c2ff24809cf929044a8540353dc3"
+    },
+    {
+      "file": "docs/patterns/sqlalchemy.rst",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.17,
+      "sourceHash": "d5b3bb6d2c6dc0bd4a3806c17180feae4beede4b0ae17888bdd11d411a831efa"
+    },
+    {
+      "file": "docs/signals.rst",
+      "startLine": 90,
+      "endLine": 135,
+      "score": 0.17,
+      "sourceHash": "fdc2deb461c17de4dd38a18f548a9968eae9fa07b7d5ffa1c782bc97e77e0c74"
+    },
+    {
+      "file": "docs/templating.rst",
+      "startLine": 78,
+      "endLine": 127,
+      "score": 0.17,
+      "sourceHash": "7ee31947217388c4c36ba0ea0515c5f40ec1608dc3f0fbce42942db656314298"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 311,
+      "endLine": 324,
+      "score": 0.17,
+      "sourceHash": "dc5ed231f40b7dfaf6d7651307e0aab381da3aa2644e4fcce0b5983ab9811221"
+    },
+    {
+      "file": "examples/celery/src/task_app/tasks.py",
+      "startLine": 1,
+      "endLine": 23,
+      "score": 0.17,
+      "sourceHash": "f6f6ef4c50806327fbb285a52b75e925a2584b0e7fddfe268cca737d76446d13"
+    },
+    {
+      "file": "examples/celery/src/task_app/templates/index.html",
+      "startLine": 88,
+      "endLine": 108,
+      "score": 0.17,
+      "sourceHash": "e6cbfb7e6503bb06d4f929ef56b221b5614ce32589980b723fc4d820c866257f"
+    },
+    {
+      "file": "examples/javascript/js_example/templates/fetch.html",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.17,
+      "sourceHash": "7a82454855f17e3658ae85967815fa5290577edfc9efa0d6c94949cbff03c0aa"
+    },
+    {
+      "file": "examples/javascript/js_example/templates/xhr.html",
+      "startLine": 1,
+      "endLine": 29,
+      "score": 0.17,
+      "sourceHash": "15bba7623b05fe064b22db793f2338b569bd15d9d0d4d271dbcac7ec387a044b"
+    },
+    {
+      "file": "examples/tutorial/flaskr/db.py",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.17,
+      "sourceHash": "c3fd3bd896261281134cf2a09584bfeab65d31b7551e516d79718e64fd3d2432"
+    },
+    {
+      "file": "examples/tutorial/flaskr/db.py",
+      "startLine": 51,
+      "endLine": 56,
+      "score": 0.17,
+      "sourceHash": "001c6905ff0b1349966960b3c30bbfb6562ccec8778014bb785d61d98b23fbbf"
+    },
+    {
+      "file": "requirements/dev.txt",
+      "startLine": 151,
+      "endLine": 198,
+      "score": 0.17,
+      "sourceHash": "5cf20e2d38e0f3b409fa843b94b95bb9fa91d7ccde4af71e4ed11dc2f8c91f27"
+    },
+    {
+      "file": "requirements/typing.txt",
+      "startLine": 1,
+      "endLine": 40,
+      "score": 0.17,
+      "sourceHash": "9ea56ceec42c0212f0282b5d4805c413fcde9663460abcb167c8897e233aaaf5"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 91,
+      "endLine": 119,
+      "score": 0.17,
+      "sourceHash": "1e5ba88b0ca7b45852941e32e475c3c8ce648c31a33c30deedb473b48e5aa546"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 46,
+      "endLine": 92,
+      "score": 0.17,
+      "sourceHash": "2ce93d4c01bbf9cffd3caf118fbb7178a08e262955ec93840fe61abda1810ffc"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 93,
+      "endLine": 132,
+      "score": 0.17,
+      "sourceHash": "30122e7638c8eeabe752aaa1e8dcb75ee76a7f6fe6b602b8fd271f269aae8450"
+    },
+    {
+      "file": "tests/templates/escaping_template.html",
+      "startLine": 1,
+      "endLine": 6,
+      "score": 0.17,
+      "sourceHash": "96c50fd6c89e5965d7e074f80f170e41af803354baca96bd5791b78cc3077986"
+    },
+    {
+      "file": "tests/templates/mail.txt",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.17,
+      "sourceHash": "7045bf89e5b407d069a9f43908ce1f40e6f50dfaa2f42cdd3453e6ecc95a42b9"
+    },
+    {
+      "file": "tests/templates/nested/nested.txt",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.17,
+      "sourceHash": "9e417ba55ca08a87687a1d7d9c4a9bd06bae1173eebba108c70569eb24dbb71d"
+    },
+    {
+      "file": ".devcontainer/devcontainer.json",
+      "startLine": 1,
+      "endLine": 17,
+      "score": 0.16,
+      "sourceHash": "83c94854d265f45c1af07623c65d8dfd74891bc4dfd4a1610b01d1c55c68ae2e"
+    },
+    {
+      "file": ".editorconfig",
+      "startLine": 1,
+      "endLine": 13,
+      "score": 0.16,
+      "sourceHash": "feefce4a44b204313a5b7e61656f69b0ecb61f34419f352981e003479f9ebf90"
+    },
+    {
+      "file": ".github/workflows/pre-commit.yaml",
+      "startLine": 1,
+      "endLine": 16,
+      "score": 0.16,
+      "sourceHash": "ffcecd49c7864c5b71f50b63fcc4c31b51211369505cd7a48433ae572626461d"
+    },
+    {
+      "file": "CONTRIBUTING.rst",
+      "startLine": 47,
+      "endLine": 91,
+      "score": 0.16,
+      "sourceHash": "8e2cab2d50a5f354d3344c744f23d789bed9c90a4be2e70e359b7e46b2370e00"
+    },
+    {
+      "file": "CONTRIBUTING.rst",
+      "startLine": 189,
+      "endLine": 238,
+      "score": 0.16,
+      "sourceHash": "9860b430070cdd8c27f5c0c3c40a5d6a9dd24276d5473a74b78ab24dabf6ed06"
+    },
+    {
+      "file": "docs/config.rst",
+      "startLine": 96,
+      "endLine": 143,
+      "score": 0.16,
+      "sourceHash": "928ee9dd389a398c60f44676c9c59076f456854b2aad3c50515be37173995bc3"
+    },
+    {
+      "file": "docs/deploying/eventlet.rst",
+      "startLine": 49,
+      "endLine": 80,
+      "score": 0.16,
+      "sourceHash": "8f2adfbbb97940da1f32a19a02bc29c13e083ec86dc72a14b74bd5355a097970"
+    },
+    {
+      "file": "docs/deploying/nginx.rst",
+      "startLine": 48,
+      "endLine": 69,
+      "score": 0.16,
+      "sourceHash": "17c500be668be76ac329d6abd00ec558b207d26ae64dd79ab17ae8e20a8e02e7"
+    },
+    {
+      "file": "docs/index.rst",
+      "startLine": 81,
+      "endLine": 88,
+      "score": 0.16,
+      "sourceHash": "9c1f95f3cd4442789eb78d2c4187a18289e09e64dd33a3f8033be9bdb93dafa8"
+    },
+    {
+      "file": "docs/patterns/celery.rst",
+      "startLine": 90,
+      "endLine": 138,
+      "score": 0.16,
+      "sourceHash": "b86a239232052b3fa2fbe461ba2a9f311069b8dec6f715343e8cbf042f898037"
+    },
+    {
+      "file": "docs/patterns/celery.rst",
+      "startLine": 139,
+      "endLine": 186,
+      "score": 0.16,
+      "sourceHash": "0800922f22d87b64b457025192abc74c4c76993f4b96e3233225c1021a4133de"
+    },
+    {
+      "file": "docs/patterns/celery.rst",
+      "startLine": 235,
+      "endLine": 242,
+      "score": 0.16,
+      "sourceHash": "5c4ad2b178cb78d9f1d03b264e4f391eb5d5798720c08e5f451d39b233ec15c8"
+    },
+    {
+      "file": "docs/patterns/requestchecksum.rst",
+      "startLine": 46,
+      "endLine": 55,
+      "score": 0.16,
+      "sourceHash": "0fa9b6269dad0d63618f3b5c1a23c6393efa9c7c39dffc9c3e398d65b5df9ccc"
+    },
+    {
+      "file": "docs/patterns/templateinheritance.rst",
+      "startLine": 48,
+      "endLine": 68,
+      "score": 0.16,
+      "sourceHash": "3ae5dff52b40b9cdc2bd3cedb6d4ab3ddd1f2aa99748a8e66a254e0552ec4dcb"
+    },
+    {
+      "file": "docs/views.rst",
+      "startLine": 269,
+      "endLine": 310,
+      "score": 0.16,
+      "sourceHash": "233cf29a3834af816c6ea8f7650736a53b842a5f5d00758e1616f252cf15338e"
+    },
+    {
+      "file": "docs/web-security.rst",
+      "startLine": 196,
+      "endLine": 244,
+      "score": 0.16,
+      "sourceHash": "8bc722a33914a19cfee7b20fd05d867b6a798e0d6262fbbf35775bf9a72aed65"
+    },
+    {
+      "file": "examples/javascript/js_example/templates/base.html",
+      "startLine": 1,
+      "endLine": 33,
+      "score": 0.16,
+      "sourceHash": "b41fc28a42bb7e08462c7501638b6a477f7df3bea0e1cd338455b7a985b55339"
+    },
+    {
+      "file": "requirements/dev.txt",
+      "startLine": 51,
+      "endLine": 100,
+      "score": 0.16,
+      "sourceHash": "8ee8d68360bc26d83ff3135c74387cd57d14ec4bd69b96a0bdcf8f970daa8865"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 468,
+      "endLine": 514,
+      "score": 0.16,
+      "sourceHash": "8c262e5dee91ee1ad01f262293390b2ff519a948322c65ce078b925c334af7b6"
+    },
+    {
+      "file": "src/flask/json/__init__.py",
+      "startLine": 47,
+      "endLine": 76,
+      "score": 0.16,
+      "sourceHash": "5bc40d419e0c60d3e09692c83487896835cb1ae972a3e1bf56d2e26257e13b04"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 133,
+      "endLine": 172,
+      "score": 0.16,
+      "sourceHash": "3070a524f2a533562feda96a64f9c6b4331cb63ec3af1d00f1c240a6a7784237"
+    },
+    {
+      "file": ".github/pull_request_template.md",
+      "startLine": 1,
+      "endLine": 25,
+      "score": 0.15,
+      "sourceHash": "3d2e91f731a8d5969ca48dbb59f36edf6aadab6ece5ba0d766865a4e57e33129"
+    },
+    {
+      "file": ".github/workflows/tests.yaml",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.15,
+      "sourceHash": "423ad52970415e14f58afd53e3b182987512e0a6545d1ec6b046439a1feca342"
+    },
+    {
+      "file": ".gitignore",
+      "startLine": 1,
+      "endLine": 10,
+      "score": 0.15,
+      "sourceHash": "c63293de3b9251f0960a962238d52229e6fafe584791e3a40046260cca3a4124"
+    },
+    {
+      "file": "docs/conf.py",
+      "startLine": 93,
+      "endLine": 97,
+      "score": 0.15,
+      "sourceHash": "08197c2fbfc28cee0140d66f0192f37ac9b4d84cfab3b76d42a316601df9f802"
+    },
+    {
+      "file": "docs/deploying/uwsgi.rst",
+      "startLine": 1,
+      "endLine": 48,
+      "score": 0.15,
+      "sourceHash": "3af6ea45b554d497e3a9dbda23b9f76e8284565ec7e4f437f891008734d6f85a"
+    },
+    {
+      "file": "docs/deploying/uwsgi.rst",
+      "startLine": 99,
+      "endLine": 145,
+      "score": 0.15,
+      "sourceHash": "b2212a64a8e9ad67bba8c5fc0b89dc6eed3670531b8867f378be563e0be24491"
+    },
+    {
+      "file": "docs/patterns/celery.rst",
+      "startLine": 42,
+      "endLine": 89,
+      "score": 0.15,
+      "sourceHash": "36462a538813565266e3f1cba22b0300c9208381c225b74cb472f111ed024e21"
+    },
+    {
+      "file": "docs/patterns/mongoengine.rst",
+      "startLine": 47,
+      "endLine": 94,
+      "score": 0.15,
+      "sourceHash": "f90e85626b72f5a05c01dceb89faed5803b5b88d5e0cdb386c6e5fcf13797398"
+    },
+    {
+      "file": "docs/patterns/mongoengine.rst",
+      "startLine": 95,
+      "endLine": 103,
+      "score": 0.15,
+      "sourceHash": "cedcc6b4a2777ae597292ca413215fe4d556c0b05b7501748f4f76ba9992cc3e"
+    },
+    {
+      "file": "docs/patterns/requestchecksum.rst",
+      "startLine": 1,
+      "endLine": 45,
+      "score": 0.15,
+      "sourceHash": "b15002423d9efbbf381467a7d4212757127c09dffc6d2d6f7a9393f5b1d65de5"
+    },
+    {
+      "file": "docs/shell.rst",
+      "startLine": 100,
+      "endLine": 100,
+      "score": 0.15,
+      "sourceHash": "e7bf92f809ece828748470311e7d1aac23073e1f8c80699857836dc7fbe06550"
+    },
+    {
+      "file": "examples/javascript/js_example/templates/jquery.html",
+      "startLine": 1,
+      "endLine": 27,
+      "score": 0.15,
+      "sourceHash": "3e04311fb7fc94f8ab7e2f667c301cfdd4b7f7c09117f8f6265afda8d118acb4"
+    },
+    {
+      "file": "examples/tutorial/.gitignore",
+      "startLine": 1,
+      "endLine": 14,
+      "score": 0.15,
+      "sourceHash": "27420e0c0cf237103ef15dfb6a21ee5b8d166a82cf4c13283f83eaea84234fa0"
+    },
+    {
+      "file": "examples/tutorial/LICENSE.txt",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.15,
+      "sourceHash": "d28bc0bfb892a2a44cfd419bc979977db25ac52057ce0df5fe905d0bb1cf96ec"
+    },
+    {
+      "file": "LICENSE.txt",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.15,
+      "sourceHash": "d28bc0bfb892a2a44cfd419bc979977db25ac52057ce0df5fe905d0bb1cf96ec"
+    },
+    {
+      "file": "requirements/tests.txt",
+      "startLine": 1,
+      "endLine": 18,
+      "score": 0.15,
+      "sourceHash": "ecdc144c392f114616dc2d27d27f04d5dfa00d826e68667ea8f63c56978ca526"
+    },
+    {
+      "file": ".github/workflows/publish.yaml",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.14,
+      "sourceHash": "15b951c4eab614f65f07f061861397e768e9614f4fa9fd5849079a28e5d1b70e"
+    },
+    {
+      "file": ".github/workflows/publish.yaml",
+      "startLine": 51,
+      "endLine": 69,
+      "score": 0.14,
+      "sourceHash": "fbcb89d152a0c915ab20f390b48f0cf198a0fb9cda321a3df8d0132c33a5f06e"
+    },
+    {
+      "file": "docs/deploying/apache-httpd.rst",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.14,
+      "sourceHash": "7bea4459bd11f49c9ff14266774f51f1ba6d0cf0db775e83f6ea735830bb7dc0"
+    },
+    {
+      "file": "docs/deploying/apache-httpd.rst",
+      "startLine": 48,
+      "endLine": 66,
+      "score": 0.14,
+      "sourceHash": "6dd715b2190b141c9f5b401b24a93df47d79173fbe86f9b32ab7c15e8ec8570e"
+    },
+    {
+      "file": "docs/deploying/gunicorn.rst",
+      "startLine": 49,
+      "endLine": 98,
+      "score": 0.14,
+      "sourceHash": "b5a41c828fec8a883dc471e95077213a8be126cca0c2760de218fbc9a7914201"
+    },
+    {
+      "file": "docs/tutorial/views.rst",
+      "startLine": 170,
+      "endLine": 216,
+      "score": 0.14,
+      "sourceHash": "080d19c11f5ae6a4aa87a284337228c9245aa3dcb50439d5695df8e848f540e3"
+    },
+    {
+      "file": "examples/javascript/.gitignore",
+      "startLine": 1,
+      "endLine": 14,
+      "score": 0.14,
+      "sourceHash": "27420e0c0cf237103ef15dfb6a21ee5b8d166a82cf4c13283f83eaea84234fa0"
+    },
+    {
+      "file": "requirements/build.in",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.14,
+      "sourceHash": "92ceae11b6ca7892526c28533caa776f331e0aea997e53739e560ecabfea48f6"
+    },
+    {
+      "file": "requirements/dev.in",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.14,
+      "sourceHash": "8cacd27754c24b9a7a18015c7da0149f5e06828d42badde767e45bc63d06be47"
+    },
+    {
+      "file": "requirements/docs.in",
+      "startLine": 1,
+      "endLine": 4,
+      "score": 0.14,
+      "sourceHash": "2bc80a95818311495a8ce940bcb2fc2ab8d5c2b142a71aa22fde079f254883e0"
+    },
+    {
+      "file": "requirements/tests.in",
+      "startLine": 1,
+      "endLine": 4,
+      "score": 0.14,
+      "sourceHash": "28c63df9cbd52c2100374b457313b30f110f8a325bee978dd21bea6a275e0bd6"
+    },
+    {
+      "file": "src/flask/cli.py",
+      "startLine": 754,
+      "endLine": 785,
+      "score": 0.14,
+      "sourceHash": "70420566374b5aede86e432f54494dc90751e6b07b7310ec61a0a69370913025"
+    },
+    {
+      "file": "src/flask/json/tag.py",
+      "startLine": 319,
+      "endLine": 327,
+      "score": 0.14,
+      "sourceHash": "2b3c094be972883b619ce9c80926962228db8029b8506f9c2669e441b99d5868"
+    },
+    {
+      "file": "tests/static/index.html",
+      "startLine": 1,
+      "endLine": 1,
+      "score": 0.14,
+      "sourceHash": "3a07158db2af40c672fa572a6c4f323ca71b23be52fba2ddc329452b5d266ffc"
+    },
+    {
+      "file": "CODE_OF_CONDUCT.md",
+      "startLine": 1,
+      "endLine": 47,
+      "score": 0.13,
+      "sourceHash": "efff3d8d66c4bbd7d35a071f1ae141c08017a2fceea51b0a3649ee14cb643b88"
+    },
+    {
+      "file": "CODE_OF_CONDUCT.md",
+      "startLine": 48,
+      "endLine": 76,
+      "score": 0.13,
+      "sourceHash": "1928d3ee968181363b7bd7e9a031c5162d4ef8b8ac62e625afc48b0eefc2a309"
+    },
+    {
+      "file": "docs/deploying/waitress.rst",
+      "startLine": 45,
+      "endLine": 75,
+      "score": 0.13,
+      "sourceHash": "60450385f7ea32d07e54fdf5e5af4dec44588a2047a55e8fcf7e1337f83c7261"
+    },
+    {
+      "file": "docs/errorhandling.rst",
+      "startLine": 496,
+      "endLine": 523,
+      "score": 0.13,
+      "sourceHash": "e8aabcfe4b3adf7c29ed456ef608862ce836a94b7f8e602567b8618e58866638"
+    },
+    {
+      "file": "docs/license.rst",
+      "startLine": 1,
+      "endLine": 5,
+      "score": 0.13,
+      "sourceHash": "6bd662134f2e1001663884c6b24837356ad11ea4c623baf1246a2f4a4ac5017f"
+    },
+    {
+      "file": "docs/patterns/appdispatch.rst",
+      "startLine": 82,
+      "endLine": 111,
+      "score": 0.13,
+      "sourceHash": "c24ece7699eb1c72d16c08009c5a5245eb61f66c17a0771db6b4b844fa183780"
+    },
+    {
+      "file": "docs/patterns/jquery.rst",
+      "startLine": 1,
+      "endLine": 6,
+      "score": 0.13,
+      "sourceHash": "54dc7189bd59df269b926ea448c491e30538bc5f9fe92122fc732eb125e5f6c0"
+    },
+    {
+      "file": "docs/web-security.rst",
+      "startLine": 245,
+      "endLine": 291,
+      "score": 0.13,
+      "sourceHash": "0998082b2a7600880625085b66ee6530075d69402ddb8ba1c9ae6af3b43f92af"
+    },
+    {
+      "file": "examples/javascript/LICENSE.txt",
+      "startLine": 1,
+      "endLine": 28,
+      "score": 0.13,
+      "sourceHash": "d28bc0bfb892a2a44cfd419bc979977db25ac52057ce0df5fe905d0bb1cf96ec"
+    },
+    {
+      "file": "requirements/build.txt",
+      "startLine": 1,
+      "endLine": 12,
+      "score": 0.13,
+      "sourceHash": "b20212e79deb4bee3ef10bc8e37d3c8edc43df30a67f629c6b42c53e1d6af8f2"
+    },
+    {
+      "file": "requirements/docs.txt",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.13,
+      "sourceHash": "2e9661ab9b627b5874c6f6906942ef8f79a4876aceb781dbd0cde6d8ae7fbccb"
+    },
+    {
+      "file": "src/flask/sessions.py",
+      "startLine": 290,
+      "endLine": 339,
+      "score": 0.13,
+      "sourceHash": "45b9ce26e3670ec64868c7921161f6a6d18ff81b196e31393d741f30de46e8a3"
+    },
+    {
+      "file": "tox.ini",
+      "startLine": 1,
+      "endLine": 50,
+      "score": 0.13,
+      "sourceHash": "d48d6850fd99d98fb06a9ea51f3ca2d1f8d91f40c5f250f845cbe506d68dbeef"
+    },
+    {
+      "file": "tox.ini",
+      "startLine": 51,
+      "endLine": 62,
+      "score": 0.13,
+      "sourceHash": "59f3d863fc759db4e55ac8334f3227d572b9eaeab4fe4f3445499a439febead2"
+    },
+    {
+      "file": ".pre-commit-config.yaml",
+      "startLine": 1,
+      "endLine": 14,
+      "score": 0.12,
+      "sourceHash": "150c2595dad360f1589fb1527b5aa39dfda662a83f438e2df8a63d575be7b627"
+    },
+    {
+      "file": "docs/deploying/gunicorn.rst",
+      "startLine": 99,
+      "endLine": 130,
+      "score": 0.12,
+      "sourceHash": "4399a3fa1a5826ceee67a316545b989a8c8b9eacd4b6152482c8bdc02c509d17"
+    },
+    {
+      "file": "docs/make.bat",
+      "startLine": 1,
+      "endLine": 35,
+      "score": 0.12,
+      "sourceHash": "5f9b19e82c3465e97ab9891ce18a57448358dcc264835a64b1d2a1daea254f43"
+    },
+    {
+      "file": "src/flask/json/provider.py",
+      "startLine": 101,
+      "endLine": 150,
+      "score": 0.12,
+      "sourceHash": "881c3998718e64d4934e60c2d1e0e74048718fafc68b8568762fa1d7c69bf3e7"
+    },
+    {
+      "file": ".devcontainer/on-create-command.sh",
+      "startLine": 1,
+      "endLine": 7,
+      "score": 0.11,
+      "sourceHash": "530308d5cd37cf674cfabfe96acc5e0161dbd79fcb16aff6f737b8fc6af723ff"
+    },
+    {
+      "file": ".github/workflows/lock.yaml",
+      "startLine": 1,
+      "endLine": 23,
+      "score": 0.11,
+      "sourceHash": "c15e4abe6531bde93c46907557efd7300a0f554ec2acf7f85b12e78866dca638"
+    },
+    {
+      "file": "docs/Makefile",
+      "startLine": 1,
+      "endLine": 20,
+      "score": 0.11,
+      "sourceHash": "1c881586a7bf92d21c6fd6aa6390a2b57409acd37874634a9e34b156da6237db"
+    },
+    {
+      "file": "docs/patterns/appdispatch.rst",
+      "startLine": 140,
+      "endLine": 189,
+      "score": 0.11,
+      "sourceHash": "5ac2d2106a77372477cceba9fad08e2ada39009699369c02c438a1b585a9ea09"
+    },
+    {
+      "file": "requirements/docs.txt",
+      "startLine": 51,
+      "endLine": 67,
+      "score": 0.11,
+      "sourceHash": "589e8886ee5bf731625110e423dc7d13804243726fbad01039bf3ba99d4eb06c"
+    },
+    {
+      "file": "docs/patterns/sqlalchemy.rst",
+      "startLine": 144,
+      "endLine": 193,
+      "score": 0.1,
+      "sourceHash": "851ae0f742c988c75e8b44b3699e9b9e1a652f26c65e0e697c02e87a15f519d3"
+    },
+    {
+      "file": "docs/patterns/sqlalchemy.rst",
+      "startLine": 70,
+      "endLine": 113,
+      "score": 0.09,
+      "sourceHash": "ac9cf604c668b876aa64a70cb0463392462bde0ebaba0b4d052b3d67fa4f8ec3"
+    },
+    {
+      "file": "docs/quickstart.rst",
+      "startLine": 741,
+      "endLine": 779,
+      "score": 0.08,
+      "sourceHash": "0d7b0caa172d4a52555114e198fcccbb9222362a1a61aa669c8dc94b1e172cc6"
+    },
+    {
+      "file": "docs/patterns/sqlalchemy.rst",
+      "startLine": 194,
+      "endLine": 214,
+      "score": 0.07,
+      "sourceHash": "ac39d797901d7f09369fa1876c1d7469b21abc56337e7cdfbd94a6cb0e413e17"
+    },
+    {
+      "file": "docs/api.rst",
+      "startLine": 50,
+      "endLine": 99,
+      "score": 0.06,
+      "sourceHash": "256faad1834c222a7b647a5bc734ec00e7a44d62718df18a24f7115d7f0a18e4"
+    },
+    {
+      "file": "docs/patterns/sqlalchemy.rst",
+      "startLine": 34,
+      "endLine": 69,
+      "score": 0.06,
+      "sourceHash": "370f6aeb4e981f492eefa1e8bf6a5e863ca60c472cb8dabfa8164af9dd7bfcff"
+    },
+    {
+      "file": "docs/patterns/sqlalchemy.rst",
+      "startLine": 114,
+      "endLine": 143,
+      "score": 0.06,
+      "sourceHash": "6362a730f3d5111465aa6bb1f552dfd8ba2fc0a46d2f0aae2ee1c4ddbb317b74"
+    }
+  ]
+}

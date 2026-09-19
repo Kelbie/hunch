@@ -1,6 +1,6 @@
 # Hunch contributor guidance
 
-Hunch asks Jev small semantic questions about diffs. It does not certify architecture, replace linters, or generate model-written explanations.
+Hunch asks Jev small semantic questions about code: repository-wide condition search, context for a change, and configured diff review. It does not certify architecture, replace linters, or generate model-written explanations.
 
 Use the installed Matt Pocock skills in `.agents/skills/codebase-design`, `.agents/skills/code-review`, and `.agents/skills/tdd`. Their upstream provenance is in `skills-lock.json`.
 

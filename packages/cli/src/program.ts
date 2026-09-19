@@ -6,6 +6,7 @@ import {
   clientFromEnv,
   collectSources,
   FACETS,
+  DEFAULT_IGNORE,
   find,
   findMarkdown,
   findPulls,
@@ -43,7 +44,7 @@ import {
   type RepoReader,
 } from "../../core/src/index.js";
 import { spawnSync } from "node:child_process";
-import { branchDiff, commitOf, localRepo, gitRepo, git } from "./local.js";
+import { branchDiff, commitOf, localRepo, gitRepo, git, readStagedFile } from "./local.js";
 import { defaultAnswers, GITHUB_WORKFLOW, PRESET_NAMES, renderConfig, type ConfigAnswers, type PresetName } from "./templates.js";
 import { runAppCommand } from "./setup/command.js";
 import { resolveConfig } from "./inline.js";
@@ -79,7 +80,7 @@ export function buildProgram(): Command {
   const program = new Command();
   program
     .name("hunch")
-    .description("Code review for the mistakes type checkers and linters miss.\nWrite rules in plain English; Jev checks your code against them.")
+    .description("Search code by behavior and review changes against plain-English rules with Jev.")
     .version(VERSION, "-v, --version", "print the version")
     .option("--cwd <dir>", "run as if started in this directory")
     .showHelpAfterError('(run "hunch <command> --help" for that command\'s options)')
@@ -122,13 +123,16 @@ Examples:
 
   program
     .command("find")
-    .description("find the code a change would touch, anywhere in the repo, and print it")
-    .argument("<task>", "what you are about to do, in your own words")
+    .description("search existing behavior or find context for a change across the repository")
+    .argument("<task>", "an intended change, or a yes/no question with --mode condition")
+    .option("--mode <mode>", "task (change context) or condition (existing behavior)", "task")
+    .option("--chunk-lines <n>", "maximum lines per source window, 1 to 2000", "150")
+    .option("--overlap-lines <n>", "repeat this many lines across source windows", "0")
     .argument("[paths...]", "only search under these paths")
     .option("--head <ref>", "search a branch or tag instead of the working tree")
     .option("--facet <list>", "only ask these: edit, contract, caller, test, precedent")
     .option("--min <score>", "drop matches below this score", "0.5")
-    .option("--top <n>", "keep at most this many matches per facet", "12")
+    .option("--top <n>", "keep at most this many matches per facet; 0 returns all", "12")
     .option("--lines <n>", "lines of each passage to print in the terminal", "40")
     .option("--no-code", "print locations only")
     .option("--concurrency <n>", "requests in flight, 1 to 32", "8")
@@ -144,9 +148,10 @@ Exits 2 when any chunk or the pull request list could not be searched.
 
 Examples:
   hunch find "add a rate limit to the upload endpoint"
+  hunch find "Does this code discard a failed write?" --mode condition --top 0
   hunch find "warn on the onchain receive QR" --prs
   hunch find "rework the feed cache" src/feed --facet test,precedent
-  hunch find "add a rate limit" > context.md      Markdown, to hand to a coding agent`)
+  hunch find "add a rate limit" > /tmp/hunch-context.md      Markdown, to hand to a coding agent`)
     .action((task: string, paths: string[], opts: Opts) => runFind(task, paths, opts, root(), localRepo(root())));
 
   program
@@ -424,11 +429,15 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   const under = underPaths(paths);
   let diff = "";
   let hunks: Hunk[];
+  let skippedFiles: string[] = [];
+  const reviewedSha = opts.head ? commitOf(root, opts.head, "--head") : undefined;
+  const changedSource = reviewedSha ? gitRepo(root, reviewedSha) : localRepo(root);
   if (opts.all) {
     if (opts.diff || opts.staged || opts.baseGiven) return fail("--all reviews whole files; drop --base, --diff and --staged");
-    const source = opts.head ? gitRepo(root, opts.head) : localRepo(root);
-    const full = await repoHunks(source, config, paths);
+    const source = changedSource;
+    const full = await repoHunks(source, config, paths, config.review);
     hunks = full.hunks;
+    skippedFiles = full.skipped;
     if (full.skipped.length) console.error(`hunch: skipped ${full.skipped.length} unreadable, binary or oversized file(s)`);
     const files = new Set(hunks.map((h) => h.file)).size;
     console.error(`hunch: reviewing ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}` +
@@ -437,7 +446,7 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   if ([opts.diff, opts.staged, opts.head].filter(Boolean).length > 1) return fail("Choose only one of --diff, --staged or --head");
   if (opts.head) {
     const base = commitOf(root, opts.base);
-    const head = commitOf(root, opts.head, "--head");
+    const head = reviewedSha!;
     diff = git(root, ["diff", "--no-color", "--no-ext-diff", "--no-textconv", `${base}...${head}`, "--"]);
   } else diff = opts.diff ? readFileSync(opts.diff, "utf8") : branchDiff(root, opts.base!, opts.staged);
   if (diff.length > 16_000_000) return fail("Diff exceeds 16 MB; review a smaller change");
@@ -453,7 +462,7 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   }
   const task = opts.task ?? prTaskFromEvent();
   if (opts.dryRun) {
-    const reviewed = hunks.filter((h) => h.status !== "deleted" && inScope(config)(h.file)).flatMap((h) => windowHunk(h)).slice(0, config.budget.maxHunks);
+    const reviewed = hunks.filter((h) => h.status !== "deleted" && inScope(config)(h.file)).flatMap((h) => h.kind === "file" ? [h] : windowHunk(h, 6000, config.review.chunkLines)).slice(0, config.budget.maxHunks);
     // The same selection check makes: a hunk no rule asks about, after `files` and `when`, sends
     // nothing, and each distinct `reference` among the rest is its own request.
     let questions = 0, requests = 0;
@@ -467,6 +476,8 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     // The real run would be incomplete; a dry run is where someone decides whether to run it.
     if (stale.length) console.error(`hunch: ${staleNotice(lock, stale)} A review now would be incomplete.`);
     console.log(`hunch: dry run, nothing sent. ${new Set(reviewed.map((h) => h.file)).size} file(s) as ${reviewed.length} hunk(s): ${questions} question(s) in ${Math.min(requests, config.budget.maxRequests)} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
+    if (config.review.localize) console.log("Optional localization runs after baseline coverage, within the remaining request/time budget.");
+    if (skippedFiles.length) process.exitCode = 2;
     return;
   }
   // Created on first request, so a diff with nothing to review needs no API key.
@@ -479,10 +490,15 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     only,
     client: { evaluate: (req) => (client ??= clientFromEnv(config)).evaluate(req) },
     readFile: (p) => repo.read(p),
+    readChangedFile: opts.diff ? undefined : opts.staged ? (p) => readStagedFile(root, p) : (p) => changedSource.read(p),
     onProgress: (d, t) => opts.reporter === "text" && process.stderr.write(`\r  checked ${d}/${t} hunks`),
   });
   if (opts.reporter === "text") process.stderr.write("\n");
   if (stale.length) result.complete = false;
+  if (skippedFiles.length) {
+    result.complete = false;
+    result.notices.push(`Selected files could not be reviewed (unreadable, binary or oversized): ${skippedFiles.join(", ")}.`);
+  }
   const unreviewable = unreviewableFiles(diff).filter(inScope(config));
   if (unreviewable.length) { result.complete = false; result.notices.push(`Binary, rename-only or mode changes need human review: ${unreviewable.join(", ")}.`); }
   if (stale.length) result.notices.push(staleNotice(lock, stale));
@@ -500,7 +516,11 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     case "github": {
       const cmds = toWorkflowCommands(result.findings);
       if (cmds) console.log(cmds);
-      const md = summaryMarkdown(result);
+      const repository = process.env.GITHUB_REPOSITORY;
+      const server = process.env.GITHUB_SERVER_URL ?? "https://github.com";
+      const blobBase = reviewedSha && repository && /^[\w.-]+\/[\w.-]+$/.test(repository) && /^https:\/\/[\w.-]+$/.test(server)
+        ? `${server}/${repository}/blob/${reviewedSha}` : undefined;
+      const md = summaryMarkdown(result, { blobBase });
       if (process.env.GITHUB_STEP_SUMMARY) writeFileSync(process.env.GITHUB_STEP_SUMMARY, `${md}\n`, { flag: "a" });
       break;
     }
@@ -534,10 +554,18 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   const facets = String(opts.facet ?? "").split(",").map((f: string) => f.trim()).filter(Boolean) as Facet[];
   const unknown = facets.filter((f: Facet) => !FACETS.includes(f));
   if (unknown.length) return fail(`Unknown --facet ${unknown.join(", ")}; choose from ${FACETS.join(", ")}`);
+  const mode = opts.mode ?? "task";
+  if (mode !== "task" && mode !== "condition") return fail("--mode must be task or condition");
+  if (mode === "condition" && (opts.facet || opts.prs)) return fail("--facet and --prs apply to task mode only");
+  if (!task.trim() || task.trim().length > 4000) return fail("find query must contain 1 to 4000 characters");
+  const chunkLines = Number(opts.chunkLines ?? 150);
+  const overlapLines = Number(opts.overlapLines ?? 0);
+  if (!Number.isInteger(chunkLines) || chunkLines < 1 || chunkLines > 2000) return fail("--chunk-lines must be between 1 and 2000");
+  if (!Number.isInteger(overlapLines) || overlapLines < 0 || overlapLines >= chunkLines) return fail("--overlap-lines must be nonnegative and less than --chunk-lines");
   const minScore = opts.min === undefined ? 0.5 : Number(opts.min);
   if (!Number.isFinite(minScore) || minScore < 0 || minScore > 1) return fail("--min must be between 0 and 1");
   const top = opts.top === undefined ? 12 : Number(opts.top);
-  if (!Number.isInteger(top) || top < 1) return fail("--top must be a positive whole number");
+  if (!Number.isInteger(top) || top < 0) return fail("--top must be a nonnegative whole number (0 returns all)");
   // Not config.budget: that is sized to keep a PR review inside a worker timeout, and
   // inheriting its request cap would end a repository sweep partway through without the
   // person having asked for that.
@@ -546,18 +574,20 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   const maxLines = opts.lines === undefined ? 40 : Number(opts.lines);
   if (!Number.isInteger(maxLines) || maxLines < 1) return fail("--lines must be a positive whole number");
 
-  const source = opts.head ? gitRepo(root, opts.head) : localRepo(root);
-  const { hunks, skipped } = await repoHunks(source, config, paths);
+  const revision = opts.head ? commitOf(root, opts.head, "--head") : "working-tree";
+  const source = opts.head ? gitRepo(root, revision) : localRepo(root);
+  const { hunks, skipped } = await repoHunks(source, config, paths, { chunkLines, overlapLines });
   if (skipped.length) console.error(`hunch: skipped ${skipped.length} unreadable, binary or oversized file(s)`);
   const files = new Set(hunks.map((h) => h.file)).size;
   if (opts.dryRun) {
     // Listing open pull requests is free, but judging them is not; how many there are is only
     // known once listed, so say the rule rather than guess a number.
     const prs = opts.prs ? ` With --prs, add one request per open pull request title, and up to ${opts.prMax ?? 10} more for the diffs whose titles match.` : "";
-    console.log(`hunch: dry run, nothing sent. ${files} file(s) as ${hunks.length} chunk(s): ${hunks.length} request(s), ${(facets.length || FACETS.length) * hunks.length} question(s).${prs}`);
+    console.log(`hunch: dry run, nothing sent. ${files} file(s) as ${hunks.length} chunk(s): ${hunks.length} request(s), ${(mode === "condition" ? 1 : facets.length || FACETS.length) * hunks.length} question(s).${prs}`);
+    if (skipped.length) process.exitCode = 2;
     return;
   }
-  if (!hunks.length) return fail("nothing in scope to search; check `include` and the paths you passed.");
+  if (!hunks.length && !skipped.length) return fail("nothing in scope to search; check `include` and the paths you passed.");
   console.error(`hunch: searching ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}`);
 
   let client: JevClient | undefined;
@@ -593,6 +623,8 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
 
   const result = await find({
     task,
+    mode,
+    skippedFiles: skipped,
     hunks,
     model: config.model,
     facets: facets.length ? facets : undefined,
@@ -602,7 +634,13 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
     client: jev,
     onProgress: (d, t) => progress(`searched ${d}/${t} chunks`, d === t),
   });
-  if (reporter === "json") console.log(JSON.stringify({ ...result, existingWork }, null, 2));
+  // PR coverage is part of the requested operation, including its machine-readable status.
+  if (!existingComplete) {
+    result.complete = false;
+    result.notices.push("The requested open pull request search was incomplete; inspect existingWork.");
+  }
+  const scope = { paths, include: config.include, ignore: [...DEFAULT_IGNORE, ...config.ignore], chunkLines, overlapLines, skippedFiles: skipped, revision };
+  if (reporter === "json") console.log(JSON.stringify({ ...result, scope, existingWork }, null, 2));
   else if (reporter === "text") console.log(findText(result, { ...style, code: !!opts.code, maxLines, existing: existingText }));
   else console.log(findMarkdown(task, result, existingMd));
   // An unfinished sweep means the answer is "here is some of it", which callers must be able to

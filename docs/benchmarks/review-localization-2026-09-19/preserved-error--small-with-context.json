@@ -1,0 +1,27 @@
+{
+  "startedAt": "2026-09-19T19:55:34.468Z",
+  "caseId": "preserved-error",
+  "variant": {
+    "id": "small-with-context",
+    "chunkLines": 8,
+    "contextLines": 40,
+    "localize": false
+  },
+  "elapsedMs": 415.2790420000092,
+  "result": {
+    "findings": [],
+    "stats": {
+      "hunks": 4,
+      "skippedHunks": 0,
+      "requests": 4,
+      "questions": 4,
+      "inputTokens": 4633,
+      "modelIds": [
+        "typesafe-ai/jev"
+      ]
+    },
+    "notices": [],
+    "info": [],
+    "complete": true
+  }
+}

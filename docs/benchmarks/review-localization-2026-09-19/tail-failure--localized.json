@@ -1,0 +1,48 @@
+{
+  "startedAt": "2026-09-19T19:55:27.557Z",
+  "caseId": "tail-failure",
+  "variant": {
+    "id": "localized",
+    "chunkLines": 150,
+    "contextLines": 40,
+    "localize": true
+  },
+  "elapsedMs": 63273.646708,
+  "result": {
+    "findings": [
+      {
+        "rule": "failure",
+        "level": "warn",
+        "file": "pay.ts",
+        "line": 25,
+        "endLine": 28,
+        "message": "A caught payment failure is converted into success.",
+        "evidence": "p(yes)=0.95 ≥ 0.7; localized with full parent context; baseline p(yes)=0.94 ≥ 0.7",
+        "source": "config"
+      },
+      {
+        "rule": "failure",
+        "level": "warn",
+        "file": "pay.ts",
+        "line": 29,
+        "endLine": 32,
+        "message": "A caught payment failure is converted into success.",
+        "evidence": "p(yes)=0.84 ≥ 0.7; localized with full parent context; baseline p(yes)=0.94 ≥ 0.7",
+        "source": "config"
+      }
+    ],
+    "stats": {
+      "hunks": 1,
+      "skippedHunks": 0,
+      "requests": 7,
+      "questions": 7,
+      "inputTokens": 11523,
+      "modelIds": [
+        "typesafe-ai/jev"
+      ]
+    },
+    "notices": [],
+    "info": [],
+    "complete": true
+  }
+}

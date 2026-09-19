@@ -43,3 +43,11 @@ Text output is a table of `rule, precision, recall, tp, fp, fn`. JSON is
 `{ fixtures: [{ file, expected, fired }], rules: [{ rule, precision, recall, tp, fp, fn }] }`.
 A rule with no expected and no fired cases shows 1.00 for both. That isn't evidence, so add
 fixtures for it.
+
+
+## Evaluating search rather than review rules
+
+`eval` measures configured review rules on diffs. For `find` window-size and overlap experiments,
+the Hunch repository includes a [public pinned-corpus benchmark](https://github.com/Kelbie/hunch/blob/main/benchmarks/search/README.md).
+It measures annotated evidence recall, source-reading workload and real provider usage. Its sparse
+labels do not establish exhaustive recall, precision, or superiority to an agent using grep.
