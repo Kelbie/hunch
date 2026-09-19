@@ -113,6 +113,39 @@ describe("check", () => {
     const none = await check({ config: off, hunks: parseHunks(DIFF).slice(0, 1), client: fakeJev(() => ({ type: "noul", p: 1 })).client, lock });
     expect(none.findings).toHaveLength(0);
   });
+
+  test("a policy too large for one request is asked over several, not truncated", async () => {
+    // Each rule carries ~4KB of instructions, so 60 of them cannot share one 80KB request.
+    const rules = Object.fromEntries(Array.from({ length: 60 }, (_, i) => [
+      `policy/r${i}`,
+      ["warn", `Rule ${i}. ${"The contract must hold. ".repeat(160)}`],
+    ]));
+    const { client, calls } = fakeJev((q) => ({ type: "noul", p: q.instructions.includes("Rule 7.") ? 0.99 : 0.01 }));
+    const cfg = config({ budget: { maxRulesPerHunk: 1024, maxRequests: 100 }, rules });
+    const res = await check({ config: cfg, hunks: parseHunks(DIFF).slice(0, 1), client });
+
+    expect(calls.length).toBeGreaterThan(1);
+    expect(res.complete).toBe(true);
+    expect(res.notices.join()).not.toContain("context budget");
+    // Every rule was asked exactly once, across the requests.
+    expect(calls.reduce((n, c) => n + Object.keys(c.questions).length, 0)).toBe(60);
+    expect(res.findings.map((f) => f.rule)).toEqual(["policy/r7"]);
+    for (const call of calls) expect(JSON.stringify(call).length).toBeLessThanOrEqual(80_000);
+  });
+
+  test("the request budget still bounds a split policy, and says so", async () => {
+    const rules = Object.fromEntries(Array.from({ length: 60 }, (_, i) => [
+      `policy/r${i}`,
+      ["warn", `Rule ${i}. ${"The contract must hold. ".repeat(160)}`],
+    ]));
+    const { client, calls } = fakeJev(() => ({ type: "noul", p: 0.01 }));
+    const cfg = config({ budget: { maxRulesPerHunk: 1024, maxRequests: 1 }, rules });
+    const res = await check({ config: cfg, hunks: parseHunks(DIFF).slice(0, 1), client });
+
+    expect(calls).toHaveLength(1);
+    expect(res.complete).toBe(false);
+    expect(res.notices.join()).toContain("request/time budget reached");
+  });
 });
 
 describe("judge", () => {

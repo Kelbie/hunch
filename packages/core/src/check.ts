@@ -57,6 +57,8 @@ interface ActiveRule {
 }
 
 const REFERENCE_TOKEN_LIMIT = 8000;
+/** Conservative ceiling on one serialized Jev request, well inside the provider's context. */
+const REQUEST_CHAR_LIMIT = 80_000;
 
 
 export async function check(input: CheckInput): Promise<CheckResult> {
@@ -182,19 +184,20 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       }
     }
 
-    // One request per distinct `reference` (usually just one: none).
+    // One request per distinct `reference` (usually just one: none), split into as many requests
+    // as the provider context budget needs. A policy with more rules than fit in one request is
+    // asked over several, rather than having the excess silently dropped.
     const byRef = Map.groupBy(candidates, (r) => r.question.reference ?? "");
     for (const [ref, group] of byRef) {
-      if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
-        incomplete = true;
-        notices.push("Review request/time budget reached; remaining rules were skipped.");
-        continue;
-      }
-      reservedRequests++;
       const state: Record<string, unknown> = { context: hunkContext(hunk, { siblings }), file: hunk.file, hunk: hunk.text };
       if (surrounding) state.surrounding = surrounding;
       if (config.task === "pr" && input.task) state.task = input.task.slice(0, 8000);
       if (ref) {
+        if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
+          incomplete = true;
+          notices.push("Review request/time budget reached; remaining rules were skipped.");
+          continue;
+        }
         const text = await readWithinDeadline(() => readReference(ref)).catch(() => null);
         if (text == null) {
           incomplete = true;
@@ -208,54 +211,92 @@ export async function check(input: CheckInput): Promise<CheckResult> {
         }
         state.reference = text;
       }
-      const questions = Object.fromEntries(group.map((r, i) => [`q${i}`, toWire(r.question)]));
-      if (JSON.stringify({ state, questions }).length > 80_000) {
-        incomplete = true;
-        notices.push(`${hunk.file}:${hunk.newStart}: request exceeds conservative context budget; rules skipped.`);
-        continue;
-      }
-      if (Date.now() >= deadline) {
-        incomplete = true;
-        notices.push("Review request/time budget reached; remaining rules were skipped.");
-        continue;
-      }
-      const request = { model: config.model, state, questions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) };
-      const res = await client.evaluate(request);
-      validateAnswers(request, res.answers);
-      stats.requests++;
-      stats.questions += group.length;
-      stats.inputTokens += res.usage.inputTokens;
-      if (!stats.modelIds.includes(res.modelId)) stats.modelIds.push(res.modelId);
-      group.forEach((rule, i) => {
-        const answer = res.answers[`q${i}`];
-        if (!answer || answer.type !== rule.question.kind) throw new Error("Jev returned missing or mismatched answers");
-        if (rule.question.kind === "choice" && answer.type === "choice" && rule.question.abstain.includes(answer.choice)) {
+
+      for (const batch of batchWithinRequestLimit(state, group)) {
+        const questions = Object.fromEntries(batch.map((r, i) => [`q${i}`, toWire(r.question)]));
+        if (JSON.stringify({ state, questions }).length > REQUEST_CHAR_LIMIT) {
+          // Only reachable for a single question whose own text cannot fit beside the state, so
+          // one rule is dropped here rather than every rule sharing the request.
           incomplete = true;
-          notices.push(`${hunk.file}:${hunk.newStart}: ${rule.id} returned insufficient context (${answer.choice}); inspect the relevant contract or caller.`);
-          return;
+          notices.push(`${hunk.file}:${hunk.newStart}: ${batch.map((r) => r.id).join(", ")} exceeds the request context budget; skipped.`);
+          continue;
         }
-        if (rule.question.kind !== "noul" && answer.type !== "noul" && rule.question.minConfidence > 0 && Object.keys(answer.probabilities).length < 2) throw new Error("Provider omitted probabilities required by minConfidence");
-        const verdict = judge(rule.question, answer);
-        if (!verdict) return;
-        const firstAdded = hunk.added[0]?.line ?? hunk.newStart;
-        const lastAdded = hunk.added.at(-1)?.line ?? firstAdded;
-        const finding: Finding = {
-          rule: rule.id,
-          level: rule.level,
-          file: hunk.file,
-          line: Math.max(1, firstAdded),
-          endLine: Math.max(1, lastAdded),
-          message: rule.question.message ?? rule.question.instructions,
-          evidence: verdict,
-          source: rule.source,
-        };
-        findings.push(finding);
-        if (config.review.localize) localization.push({ finding, hunk, question: rule.question, state });
-      });
+        if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
+          incomplete = true;
+          notices.push("Review request/time budget reached; remaining rules were skipped.");
+          continue;
+        }
+        reservedRequests++;
+        const request = { model: config.model, state, questions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) };
+        const res = await client.evaluate(request);
+        validateAnswers(request, res.answers);
+        stats.requests++;
+        stats.questions += batch.length;
+        stats.inputTokens += res.usage.inputTokens;
+        if (!stats.modelIds.includes(res.modelId)) stats.modelIds.push(res.modelId);
+        batch.forEach((rule, i) => {
+          const answer = res.answers[`q${i}`];
+          if (!answer || answer.type !== rule.question.kind) throw new Error("Jev returned missing or mismatched answers");
+          if (rule.question.kind === "choice" && answer.type === "choice" && rule.question.abstain.includes(answer.choice)) {
+            incomplete = true;
+            notices.push(`${hunk.file}:${hunk.newStart}: ${rule.id} returned insufficient context (${answer.choice}); inspect the relevant contract or caller.`);
+            return;
+          }
+          if (rule.question.kind !== "noul" && answer.type !== "noul" && rule.question.minConfidence > 0 && Object.keys(answer.probabilities).length < 2) throw new Error("Provider omitted probabilities required by minConfidence");
+          const verdict = judge(rule.question, answer);
+          if (!verdict) return;
+          const firstAdded = hunk.added[0]?.line ?? hunk.newStart;
+          const lastAdded = hunk.added.at(-1)?.line ?? firstAdded;
+          const finding: Finding = {
+            rule: rule.id,
+            level: rule.level,
+            file: hunk.file,
+            line: Math.max(1, firstAdded),
+            endLine: Math.max(1, lastAdded),
+            message: rule.question.message ?? rule.question.instructions,
+            evidence: verdict,
+            source: rule.source,
+          };
+          findings.push(finding);
+          if (config.review.localize) localization.push({ finding, hunk, question: rule.question, state });
+        });
+      }
     }
   }
 
   return { findings: dedupe(findings), stats, notices: [...new Set(notices)], info, complete: !incomplete };
+}
+
+/**
+ * Splits one hunk's questions into requests that each fit `REQUEST_CHAR_LIMIT`.
+ *
+ * The state (context, hunk, surrounding source, reference) is repeated in every request, so it is
+ * charged against each batch. Batching rather than truncating is what lets a policy carry more
+ * rules than fit in a single request: the extra rules cost extra requests, not lost coverage.
+ * A lone question too large to sit beside the state is returned on its own, and the caller drops
+ * that one rule instead of everything sharing its request.
+ */
+export function batchWithinRequestLimit<T extends { question: Question }>(
+  state: Record<string, unknown>,
+  group: readonly T[],
+): T[][] {
+  const overhead = JSON.stringify({ state, questions: {} }).length;
+  const batches: T[][] = [];
+  let batch: T[] = [];
+  let size = 0;
+  for (const rule of group) {
+    // The serialized question plus its `"q12":` key and a separator.
+    const cost = JSON.stringify(toWire(rule.question)).length + 12;
+    if (batch.length && overhead + size + cost > REQUEST_CHAR_LIMIT) {
+      batches.push(batch);
+      batch = [];
+      size = 0;
+    }
+    batch.push(rule);
+    size += cost;
+  }
+  if (batch.length) batches.push(batch);
+  return batches;
 }
 
 /** Effective rules for one file: config + presets + overrides + compiled skill rules. `only` keeps just those ids. */
