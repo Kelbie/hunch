@@ -132,7 +132,7 @@ negation in `include`. A negated pattern matches every other file, so it widens 
 | Key (TS / TOML) | Default | Max | Limits |
 | --- | --- | --- | --- |
 | `maxHunks` / `max-hunks` | 100 | 10,000 | hunks reviewed per run; the rest make the review partial |
-| `maxRulesPerHunk` / `max-rules-per-hunk` | 24 | 64 | questions asked about one hunk |
+| `maxRulesPerHunk` / `max-rules-per-hunk` | 24 | 128 | questions asked about one hunk |
 | `concurrency` | 4 | 8 | requests in flight |
 | `maxRequests` / `max-requests` | 100 | 10,000 | Jev requests per run: one per hunk, plus one per extra `reference` and optional localization |
 | `timeoutSeconds` / `timeout-seconds` | 180 | 7,200 | deadline shared by requests and localization |

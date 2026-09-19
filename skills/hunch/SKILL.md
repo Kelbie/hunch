@@ -5,7 +5,7 @@ argument-hint: "[install|config|rules|compile|check|find|doctor|eval|operator] [
 allowed-tools: Bash(npx @kelbie/hunch *) Bash(npx hunch *) Bash(hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key only for check, find and eval.
 metadata:
-  version: "0.13.0"
+  version: "0.13.1"
 ---
 
 # Hunch
@@ -32,7 +32,7 @@ Work out the command prefix before running anything.
 | anything else | `npx @kelbie/hunch <command>` (latest from npm; no install needed) |
 
 Check `--version` before using new options: condition mode and `review`/`abstain` configuration
-require 0.13.0. The main-branch skill can precede npm publication; use a matching installed build
+require 0.13.0. Correct compiled path scopes and rule budgets above 64 require 0.13.1. The main-branch skill can precede npm publication; use a matching installed build
 or the Hunch source checkout in that case. Do not silently change a project's pinned dependency.
 
 Every command takes `--cwd <dir>` and `--help`. The complete list of flags with their defaults is in
