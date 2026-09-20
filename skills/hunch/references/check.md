@@ -85,7 +85,8 @@ JSON shape (`CheckResult` in `packages/core/src/check.ts`):
     source: string;           // "config", "hunch:recommended", "skill/<name>", "agents-md/<scope>"
     diff?: string;            // with --code
   }[];
-  stats: { hunks: number; skippedHunks: number; requests: number; questions: number; inputTokens: number; modelIds: string[] };
+  stats: { hunks: number; skippedHunks: number; requests: number; questions: number; inputTokens: number; modelIds: string[];
+           failedRequests: number };  // requests the provider never answered; their chunks are named in notices
   notices: string[];          // gaps in this review: anything here means something wasn't checked
   info: string[];             // standing facts about the policy, e.g. guidance the lock can't check
   complete: boolean;
@@ -103,13 +104,36 @@ How to report it to the user:
 4. If a rule seems wrong for this code, suggest tuning it ([rules.md](rules.md#tuning)) rather than
    rewriting the code to satisfy it.
 
+## Long runs and provider failures
+
+A review keeps what it finds. None of this needs a flag.
+
+- **A failed request costs its own chunk.** A request that still fails after the provider client's
+  retries (about a minute of backoff, 90 seconds at most) is set aside and asked once more after
+  everything else. If it fails again, its rules go unanswered for that chunk: a notice names the file
+  and line, `stats.failedRequests` counts it, the review is partial (exit 2), and every other finding
+  is reported. To fill the gap, run `check --all <those paths>`.
+- **An outage stops the sending.** Eight failures in a row, with no answer between them, end the run
+  with a partial report that says how many hunks were not checked, rather than spending an hour on
+  doomed retries. Run it again shortly.
+- **A provider that never answers is an error, not a partial review.** When nothing has been
+  answered after three failures, the run stops with the provider's message (exit 2): that is a
+  missing key, a refused data-retention policy or a wrong model, and sending more would not help.
+- **Ctrl-C reports what was found.** The first one stops the sending and prints the report, marked
+  interrupted; a second quits at once.
+- **Progress is on stderr**, for every reporter at a terminal, so `--reporter json > audit.json`
+  still shows `checked 120/740 hunks` while the file receives only the report.
+
+The hosted App retries a review whose requests failed, and on its last attempt publishes the
+partial review with the unanswered chunks listed, instead of failing with nothing.
+
 ## Exit codes
 
 | Code | When |
 | --- | --- |
 | 0 | the review completed, whether or not there are findings |
 | 1 | `failOnError` is true and an `error`-level finding was reported |
-| 2 | no config and no `--rule`/`--config`; an invalid config; an unknown `--only` id; or the review is incomplete (budget reached, provider failure, stale `hunch.lock`, deleted, binary or rename-only files) |
+| 2 | no config and no `--rule`/`--config`; an invalid config; an unknown `--only` id; or the review is incomplete (budget reached, unanswered requests, an outage, Ctrl-C, stale `hunch.lock`, deleted, binary or rename-only files) |
 
 On the PR that adds Hunch, run in Actions with `--policy-ref`, there is no base config yet, so check
 prints a notice and exits 0.

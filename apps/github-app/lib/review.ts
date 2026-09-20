@@ -73,6 +73,9 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     const budget = { ...config.budget, maxHunks: Math.min(config.budget.maxHunks, 3000), maxRequests: Math.min(config.budget.maxRequests, 3000), timeoutSeconds: Math.min(config.budget.timeoutSeconds, 240), concurrency: Math.min(config.budget.concurrency, 8) };
     const head = githubRepoReader(api, job.repo, headSha);
     const result = await check({ config: { ...config, budget }, hunks: parseHunks(diff), task: `${pull.title}\n\n${pull.body ?? ""}`, lock, client: (deps.jev ?? clientFromEnv)(config), readFile: (p) => base.read(p), readChangedFile: (p) => head.read(p) });
+    // A provider failure is usually brief, so the queue's retry gets a whole review. The last
+    // attempt publishes what it has, marked partial, rather than nothing at all.
+    if (result.stats.failedRequests && (deps.attempt ?? 1) < (deps.maxAttempts ?? 1)) throw new Error("Provider requests failed; safe to retry");
     if (stale.length) { result.complete = false; result.notices.push(`Guidance is uncompiled or stale: ${stale.join(", ")}. Run hunch compile and review hunch.lock.`); }
     const unreviewable = unreviewableFiles(diff).filter(inScope(config));
       if (unreviewable.length) { result.complete = false; result.notices.push(`Binary, rename-only or mode changes need human review: ${unreviewable.join(", ")}.`); }

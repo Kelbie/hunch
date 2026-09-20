@@ -40,11 +40,17 @@ export interface CheckInput {
    * `budget.maxRequests`, so a budget that is too small is visible before the run is paid for.
    */
   plan?: boolean;
+  /** Stops the review early, as on Ctrl-C. What was found so far is returned, marked incomplete. */
+  signal?: AbortSignal;
+  /** A provider failure, for a caller's own diagnostics. Its text is untrusted and is never put in the result. */
+  onRequestError?: (error: unknown) => void;
 }
 
 export interface CheckResult {
   findings: Finding[];
-  stats: { hunks: number; skippedHunks: number; requests: number; questions: number; inputTokens: number; modelIds: string[] };
+  stats: { hunks: number; skippedHunks: number; requests: number; questions: number; inputTokens: number; modelIds: string[];
+    /** Requests the provider never answered, after every retry. Their rules are named in `notices`. */
+    failedRequests: number };
   /** Gaps in this review: anything here means some changes or guidance weren't checked. */
   notices: string[];
   /** Standing facts about the policy, such as guidance the lock can't check. Never a gap. */
@@ -65,6 +71,13 @@ interface ActiveRule {
 const REFERENCE_TOKEN_LIMIT = 8000;
 /** Conservative ceiling on one serialized Jev request, well inside the provider's context. */
 const REQUEST_CHAR_LIMIT = 80_000;
+/** An answer that breaks the provider contract. Asking again would not mend it, so it fails the review. */
+class ContractError extends Error {}
+
+/** This many failures in a row, with no answer between them, is an outage rather than bad luck. */
+const OUTAGE_FAILURES = 8;
+/** Before anything has been answered, this many failures end the review with the provider's error. */
+const FIRST_FAILURES = 3;
 
 
 export async function check(input: CheckInput): Promise<CheckResult> {
@@ -72,7 +85,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   const reviewed = scopeFilter(config);
   const notices: string[] = [];
   const info: string[] = [];
-  const stats: CheckResult["stats"] = { hunks: 0, skippedHunks: 0, requests: 0, questions: 0, inputTokens: 0, modelIds: [] };
+  const stats: CheckResult["stats"] = { hunks: 0, skippedHunks: 0, requests: 0, questions: 0, inputTokens: 0, modelIds: [], failedRequests: 0 };
   const findings: Finding[] = [];
   const localization: { finding: Finding; hunk: Hunk; question: Question; state: Record<string, unknown> }[] = [];
 
@@ -107,6 +120,16 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length));
   const deadline = input.plan ? Infinity : Date.now() + config.budget.timeoutSeconds * 1000;
   const budgetSpent = () => !input.plan && (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline);
+  // A request that fails is set aside and asked once more after everything else, by when a brief
+  // outage has usually passed. One that fails twice costs its own rules; the findings already made
+  // are kept. Only a provider that has never answered fails the review outright: that is a bad key
+  // or a refused policy, which no amount of further sending will fix.
+  type Batch = { hunk: Hunk; state: Record<string, unknown>; rules: ActiveRule[] };
+  const failed: Batch[] = [];
+  let failuresInARow = 0;
+  let outage = false;
+  let firstError: unknown;
+  const stopped = () => outage || Boolean(input.signal?.aborted);
   // Bound reader waits as well as provider calls. A slow optional reader must not consume
   // the worker's publication time after the review deadline.
   async function readWithinDeadline(read: () => Promise<string | null>): Promise<string | null> {
@@ -122,9 +145,35 @@ export async function check(input: CheckInput): Promise<CheckResult> {
   let reservedRequests = 0;
   let done = 0;
   await pool(hunks, config.budget.concurrency, async (hunk) => {
+    if (stopped()) return;
     await checkHunk(hunk);
-    input.onProgress?.(++done, hunks.length);
+    if (input.signal?.aborted) return;
+    done++;
+    input.onProgress?.(done, hunks.length);
   });
+  if (!stats.requests && firstError !== undefined && !input.signal?.aborted) throw firstError;
+  const unanswered = (b: Batch) => {
+    incomplete = true;
+    stats.failedRequests++;
+    notices.push(`${b.hunk.file}:${b.hunk.newStart}: ${plural(b.rules.length, "rule")} went unanswered because the provider request failed after retries.`);
+  };
+  const secondChance = failed.splice(0);
+  await pool(secondChance, config.budget.concurrency, async (b) => {
+    if (stopped() || budgetSpent()) return unanswered(b);
+    reservedRequests++;
+    try { await ask(b); }
+    catch (e) {
+      if (e instanceof ContractError) throw e;
+      input.onRequestError?.(e);
+      unanswered(b);
+    }
+  });
+  if (done < hunks.length) {
+    incomplete = true;
+    notices.push(input.signal?.aborted
+      ? `Review interrupted: ${plural(hunks.length - done, "hunk")} of ${hunks.length} were not checked.`
+      : `The provider stopped answering (${OUTAGE_FAILURES} requests failed in a row), so ${plural(hunks.length - done, "hunk")} of ${hunks.length} were not checked. Run it again shortly.`);
+  }
 
   // Baseline coverage always gets first use of the budget. Refinement never prunes baseline inputs.
   let localizationRequests = 0;
@@ -155,6 +204,50 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       item.finding.evidence += "; original range retained (localization incomplete)";
       notices.push("Baseline findings retained: requested localization could not finish within the provider, request or time budget.");
     }
+  }
+
+  /** Sends one request and records its answers. Throws, recording nothing, when the provider fails or answers out of contract. */
+  async function ask({ hunk, state, rules: batch }: Batch) {
+    const questions = Object.fromEntries(batch.map((r, i) => [`q${i}`, toWire(r.question)]));
+    const timeout = AbortSignal.timeout(Math.max(1, deadline - Date.now()));
+    const request = { model: config.model, state, questions, signal: input.signal ? AbortSignal.any([input.signal, timeout]) : timeout };
+    const res = await client.evaluate(request);
+    try {
+      validateAnswers(request, res.answers);
+      batch.forEach((rule, i) => {
+        const answer = res.answers[`q${i}`];
+        if (!answer || answer.type !== rule.question.kind) throw new Error("Jev returned missing or mismatched answers");
+        if (rule.question.kind !== "noul" && answer.type !== "noul" && rule.question.minConfidence > 0 && Object.keys(answer.probabilities).length < 2) throw new Error("Provider omitted probabilities required by minConfidence");
+      });
+    } catch (e) { throw new ContractError(e instanceof Error ? e.message : String(e)); }
+    stats.requests++;
+    stats.questions += batch.length;
+    stats.inputTokens += res.usage.inputTokens;
+    if (!stats.modelIds.includes(res.modelId)) stats.modelIds.push(res.modelId);
+    batch.forEach((rule, i) => {
+      const answer = res.answers[`q${i}`]!;
+      if (rule.question.kind === "choice" && answer.type === "choice" && rule.question.abstain.includes(answer.choice)) {
+        incomplete = true;
+        notices.push(`${hunk.file}:${hunk.newStart}: ${rule.id} returned insufficient context (${answer.choice}); inspect the relevant contract or caller.`);
+        return;
+      }
+      const verdict = judge(rule.question, answer);
+      if (!verdict) return;
+      const firstAdded = hunk.added[0]?.line ?? hunk.newStart;
+      const lastAdded = hunk.added.at(-1)?.line ?? firstAdded;
+      const finding: Finding = {
+        rule: rule.id,
+        level: rule.level,
+        file: hunk.file,
+        line: Math.max(1, firstAdded),
+        endLine: Math.max(1, lastAdded),
+        message: rule.question.message ?? rule.question.instructions,
+        evidence: verdict,
+        source: rule.source,
+      };
+      findings.push(finding);
+      if (config.review.localize) localization.push({ finding, hunk, question: rule.question, state });
+    });
   }
 
   async function checkHunk(hunk: Hunk) {
@@ -240,39 +333,20 @@ export async function check(input: CheckInput): Promise<CheckResult> {
           stats.questions += batch.length;
           continue;
         }
-        const request = { model: config.model, state, questions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) };
-        const res = await client.evaluate(request);
-        validateAnswers(request, res.answers);
-        stats.requests++;
-        stats.questions += batch.length;
-        stats.inputTokens += res.usage.inputTokens;
-        if (!stats.modelIds.includes(res.modelId)) stats.modelIds.push(res.modelId);
-        batch.forEach((rule, i) => {
-          const answer = res.answers[`q${i}`];
-          if (!answer || answer.type !== rule.question.kind) throw new Error("Jev returned missing or mismatched answers");
-          if (rule.question.kind === "choice" && answer.type === "choice" && rule.question.abstain.includes(answer.choice)) {
-            incomplete = true;
-            notices.push(`${hunk.file}:${hunk.newStart}: ${rule.id} returned insufficient context (${answer.choice}); inspect the relevant contract or caller.`);
-            return;
-          }
-          if (rule.question.kind !== "noul" && answer.type !== "noul" && rule.question.minConfidence > 0 && Object.keys(answer.probabilities).length < 2) throw new Error("Provider omitted probabilities required by minConfidence");
-          const verdict = judge(rule.question, answer);
-          if (!verdict) return;
-          const firstAdded = hunk.added[0]?.line ?? hunk.newStart;
-          const lastAdded = hunk.added.at(-1)?.line ?? firstAdded;
-          const finding: Finding = {
-            rule: rule.id,
-            level: rule.level,
-            file: hunk.file,
-            line: Math.max(1, firstAdded),
-            endLine: Math.max(1, lastAdded),
-            message: rule.question.message ?? rule.question.instructions,
-            evidence: verdict,
-            source: rule.source,
-          };
-          findings.push(finding);
-          if (config.review.localize) localization.push({ finding, hunk, question: rule.question, state });
-        });
+        if (stopped()) continue;
+        try {
+          await ask({ hunk, state, rules: batch });
+          failuresInARow = 0;
+        } catch (e) {
+          input.onRequestError?.(e);
+          if (input.signal?.aborted) continue;
+          firstError ??= e;
+          if (e instanceof ContractError) throw e;
+          failed.push({ hunk, state, rules: batch });
+          // A provider that has answered nothing yet gets less patience: that is a bad key or a
+          // refused policy far more often than bad luck.
+          if (++failuresInARow >= (stats.requests ? OUTAGE_FAILURES : FIRST_FAILURES)) outage = true;
+        }
       }
     }
   }

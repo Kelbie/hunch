@@ -9,7 +9,7 @@ const result: CheckResult = {
     { rule: "billing/retry", source: "config", level: "error", file: "src/pay.ts", line: 12, endLine: 20, message: "Retrying after a timeout may charge the customer twice.", evidence: "choice=duplicate_charge (confidence 0.94)" },
     { rule: "failures/misleading-success", source: "hunch:recommended", level: "warn", file: "src/pay.ts", line: 12, endLine: 20, message: "A failed operation may now be reported as successful completion.", evidence: "p(yes)=0.96 ≥ 0.85" },
   ],
-  stats: { hunks: 1, skippedHunks: 0, requests: 1, questions: 2, inputTokens: 1234, modelIds: ["typesafe-ai/jev"] },
+  stats: { hunks: 1, skippedHunks: 0, requests: 1, questions: 2, inputTokens: 1234, modelIds: ["typesafe-ai/jev"], failedRequests: 0 },
   notices: [],
   info: ["skill/codebase-design: 1 guidance item can't be checked one change at a time; see notChecked in hunch.lock."],
 };
