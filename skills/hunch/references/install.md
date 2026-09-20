@@ -40,9 +40,11 @@ instead. At a terminal it asks its questions with arrow keys. An agent has no te
 | Install the Hunch skill? | `--install-skill` | no |
 | (everything) | `--yes`: all detected defaults | |
 
-The wizard also asks for a model key on the local and Actions paths. There is deliberately **no key
-flag**, because a key in argv is visible to other processes. Tell the user to put the key in
-`.env.local` or their shell themselves, or use `gh secret set` for Actions.
+The wizard also asks for a model key on the local and Actions paths, and whether to keep it for
+every project on the machine (the default) or only in this project's `.env.local`. There is
+deliberately **no key flag**, because a key in argv is visible to other processes and lands in
+shell history. Outside the wizard the user runs `auth login` themselves ([below](#model-access)),
+or `gh secret set` for Actions.
 
 Zero data retention: Vercel AI Gateway enforces it only on Pro and Enterprise plans. On Hobby,
 every review fails until `zeroDataRetention: false` is set. That is a data-policy decision, so ask
@@ -99,17 +101,45 @@ itself) and prints a notice, rather than failing, when the secret is absent.
 ## Local
 
 ```sh
+npx @kelbie/hunch auth login      # once per machine; see Model access
 npx @kelbie/hunch init --target local
-export AI_GATEWAY_API_KEY=…       # or put it in .env.local; hunch loads .env files like Bun does
 npx @kelbie/hunch check
 ```
 
-The CLI reads `.env.<mode>.local`, `.env.local`, `.env.<mode>` and `.env` from the working
-directory. The real environment wins. Provider options:
+## Model access
+
+Sign in once per machine and Hunch works in every directory, with or without a config. Nothing
+about it lives in the project.
+
+| The user has | They run, once | What is stored in the user config directory |
+| --- | --- | --- |
+| an AI Gateway or TypeSafe key | `auth login`, which asks with a hidden prompt | the key, owner-only |
+| the same, but no terminal (an agent, a script) | `auth login --with-token` with the key on standard input | the key, owner-only |
+| no key, but `vercel login` and a project with AI Gateway | `auth login --vercel` inside a `vercel link`ed directory, or with `--project` and `--team` | the project and team ids; no secret |
+
+`auth status` says which of these Hunch can see from the current directory and where each comes
+from, never the key; `--reporter json` for scripts. It exits 1 when there is nothing to sign in
+with. `auth logout` deletes what was stored. Captured runs: [examples/auth.md](../examples/auth.md). The file is `$XDG_CONFIG_HOME/hunch/credentials`,
+else `~/.config/hunch/credentials` (`%APPDATA%\hunch\credentials` on Windows).
+
+**As an agent, never handle the key.** When a run fails with an authentication error, run
+`auth status`, then ask the user to run `auth login` in their own terminal (in Claude Code:
+`! npx @kelbie/hunch auth login`). Do not ask them to paste a key into the conversation, and do
+not pass one as an argument. `auth login --vercel` stores no secret, so an agent may run it when
+the user asks for that path.
+
+Hunch takes the first of these that is set:
+
+1. the real environment: `AI_GATEWAY_API_KEY` or `TYPESAFE_API_KEY`;
+2. `.env.<mode>.local`, `.env.local`, `.env.<mode>` and `.env` in the working directory, so a
+   project can pin its own key;
+3. the key stored by `auth login`;
+4. for the AI Gateway with no key: the Vercel project linked in or above the working directory,
+   then the one stored by `auth login --vercel`. Both need a current `vercel login`.
 
 | Provider | Credential | Config |
 | --- | --- | --- |
-| Vercel AI Gateway (default) | `AI_GATEWAY_API_KEY`, or Vercel OIDC on Vercel / after `vercel link` | nothing |
+| Vercel AI Gateway (default) | `AI_GATEWAY_API_KEY`, or Vercel OIDC: on Vercel, after `vercel link`, or after `auth login --vercel` | nothing |
 | TypeSafe directly | `TYPESAFE_API_KEY` | `provider: "typesafe"` |
 
 No config at all is fine for a trial: `check --rule id="sentence"` ([check.md](check.md)).

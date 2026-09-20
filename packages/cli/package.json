@@ -1,6 +1,6 @@
 {
   "name": "@kelbie/hunch",
-  "version": "0.14.0",
+  "version": "0.15.0",
   "description": "Search code by behavior and review changes against plain-English rules with TypeSafe's Jev.",
   "type": "module",
   "bin": {
@@ -28,6 +28,7 @@
   "dependencies": {
     "@ai-sdk/gateway": "4.0.85",
     "@clack/prompts": "1.8.1",
+    "@vercel/oidc": "3.2.0",
     "ai": "7.0.105",
     "commander": "^15.0.0",
     "oxc-parser": "0.150.0",

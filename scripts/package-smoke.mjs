@@ -20,6 +20,14 @@ try {
   try { run(process.execPath, [bin, 'init', '--facet', 'edit']); }
   catch (e) { rejected = `${e.stdout ?? ''}${e.stderr ?? ''}`; }
   if (!rejected.includes("unknown option '--facet'")) throw new Error('Per-command options are not enforced');
+  // One login must serve every directory: store a key from stdin, then read it back from an unrelated one.
+  const store = join(temp, 'hunch-home');
+  const authEnv = { ...process.env, HUNCH_CONFIG_DIR: store, AI_GATEWAY_API_KEY: '', TYPESAFE_API_KEY: '' };
+  execFileSync(process.execPath, [bin, 'auth', 'login', '--with-token'], { cwd: temp, input: 'smoke-key\n', env: authEnv, stdio: ['pipe', 'pipe', 'pipe'] });
+  const elsewhere = mkdtempSync(join(tmpdir(), 'hunch-elsewhere-'));
+  const status = execFileSync(process.execPath, [bin, 'auth', 'status', '--reporter', 'json'], { cwd: elsewhere, env: authEnv, encoding: 'utf8' });
+  rmSync(elsewhere, { recursive: true, force: true });
+  if (JSON.parse(status).keys.AI_GATEWAY_API_KEY !== 'stored' || status.includes('smoke-key')) throw new Error('Stored credentials are not found from another directory');
   writeFileSync(join(temp, 'package.json'), '{"type":"module"}');
   writeFileSync(join(temp, 'consumer.ts'), 'import {defineConfig,noul,choice} from "@kelbie/hunch"; export default defineConfig({review:{localize:true,chunkLines:80,contextLines:40},rules:{unknown:["warn",choice({instructions:"Assess",criteria:{bad:"Visible problem",unknown:"Needs context"},report:["bad"],abstain:["unknown"]})],r:["warn",noul({instructions:"Does `hunk` hide a failure?",when:/catch/})]}});');
   run(process.execPath, [join(root, 'node_modules/typescript/bin/tsc'), '--noEmit', '--strict', '--skipLibCheck', '--module', 'nodenext', '--target', 'es2024', 'consumer.ts']);

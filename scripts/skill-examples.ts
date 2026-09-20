@@ -12,7 +12,7 @@
  * they were captured, because they cost money and depend on a model that changes.
  */
 import { spawnSync } from "node:child_process";
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -186,7 +186,14 @@ interface Case {
   /** Files to print after the run, from the repository it ran in. */
   show?: string[];
   env?: Record<string, string>;
+  /** Standard input, for the one command that reads a key from it. */
+  input?: string;
 }
+
+/** Where an offline case's credential store sits inside its fixture; printed as `~/.config/hunch`. */
+const STORE = ".hunch-home";
+/** A directory with nothing in it but a store that already holds a key, as after `auth login`. */
+const signedIn = () => { const d = mkdtempSync(join(tmpdir(), "hunch-example-")); write(d, { [`${STORE}/credentials`]: "AI_GATEWAY_API_KEY=example-key\n" }); chmodSync(join(d, STORE, "credentials"), 0o600); return d; };
 
 interface Page { file: string; title: string; intro: string; cases: Case[] }
 
@@ -195,12 +202,15 @@ const quote = (a: string) => (/^[\w./:=,@-]+$/.test(a) ? a : a.includes("=") && 
 function run(c: Case): { block: string } {
   const dir = c.setup();
   try {
-    const env: Record<string, string> = { PATH: process.env.PATH!, HOME: process.env.HOME!, NO_COLOR: "1", ...c.env };
+    // Offline cases get an empty credential store of their own, so a developer who has run
+    // `hunch auth login` captures the same output as one who has not. Live cases sign in with it.
+    const store = join(dir, STORE);
+    const env: Record<string, string> = { PATH: process.env.PATH!, HOME: process.env.HOME!, NO_COLOR: "1", ...(c.live ? {} : { HUNCH_CONFIG_DIR: store }), ...c.env };
     if (c.live) for (const k of ["AI_GATEWAY_API_KEY", "TYPESAFE_API_KEY", "GH_TOKEN", "GITHUB_TOKEN", "VERCEL_OIDC_TOKEN"]) if (process.env[k]) env[k] = process.env[k]!;
     // Live calls may use the developer's linked Vercel project for OIDC. Source and policy
     // still come exclusively from the synthetic fixture selected by --cwd.
-    const r = spawnSync("bun", [BIN, ...c.args, ...(c.live ? ["--cwd", dir] : [])], { cwd: c.live ? root : dir, encoding: "utf8", env, timeout: 600_000 });
-    const clean = (s: string) => s.replaceAll(dir, ".").replace(/\r?[^\n]*\r/g, "").replace(/\x1b\[[0-9;]*m/g, "").trimEnd();
+    const r = spawnSync("bun", [BIN, ...c.args, ...(c.live ? ["--cwd", dir] : [])], { cwd: c.live ? root : dir, encoding: "utf8", env, input: c.input ?? "", timeout: 600_000 });
+    const clean = (s: string) => s.replaceAll(store, "~/.config/hunch").replaceAll(dir, ".").replace(/\r?[^\n]*\r/g, "").replace(/\x1b\[[0-9;]*m/g, "").trimEnd();
     const stdout = clean(r.stdout ?? "");
     const stderr = clean(r.stderr ?? "");
     const parts = [
@@ -291,6 +301,20 @@ const pages: Page[] = [
       { id: "compile-noninteractive", title: "No terminal, no previous lock, no --with", note: "An agent must say which compiler to use.", args: ["compile"], setup: guidedShop },
       { id: "compile-nothing", title: "Nothing to compile", args: ["compile", "--dry-run"], setup: shop },
       { id: "compile-claude", title: "Compile with Claude Code", live: true, needs: "Claude Code installed and logged in", args: ["compile", "--with", "claude", "--effort", "low"], setup: guidedShop, show: ["hunch.lock"] },
+    ],
+  },
+  {
+    file: "auth.md",
+    title: "hunch auth: examples",
+    intro: "`auth` signs in once per machine, so `check`, `find` and `eval` work in every directory with no `.env.local` and no linked Vercel project. None of these directories is a repository or has a config.",
+    cases: [
+      { id: "auth-status-none", title: "Nothing to sign in with", note: "Exit 1 is the answer \"no\", not a crash.", args: ["auth", "status"], setup: () => mkdtempSync(join(tmpdir(), "hunch-example-")) },
+      { id: "auth-login-token", title: "Store a key without a terminal", note: "The key arrives on standard input, as in `hunch auth login --with-token < key.txt`, never as an argument. At a terminal, plain `hunch auth login` asks with a hidden prompt instead.", args: ["auth", "login", "--with-token"], input: "example-key\n", setup: () => mkdtempSync(join(tmpdir(), "hunch-example-")) },
+      { id: "auth-login-no-terminal", title: "No terminal and no --with-token", note: "An agent cannot answer a hidden prompt, and should not hold the key: ask the user to run `auth login` themselves.", args: ["auth", "login"], setup: () => mkdtempSync(join(tmpdir(), "hunch-example-")) },
+      { id: "auth-status-stored", title: "Signed in, from any directory", args: ["auth", "status"], setup: signedIn },
+      { id: "auth-status-json", title: "The same, for a script", args: ["auth", "status", "--reporter", "json"], setup: signedIn },
+      { id: "auth-login-vercel-unlinked", title: "--vercel outside a linked directory", args: ["auth", "login", "--vercel"], setup: () => mkdtempSync(join(tmpdir(), "hunch-example-")) },
+      { id: "auth-logout", title: "Sign out", args: ["auth", "logout"], setup: signedIn },
     ],
   },
   {
