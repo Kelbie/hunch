@@ -645,6 +645,18 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     return;
   }
   // Created on first request, so a diff with nothing to review needs no API key.
+  // Progress goes to stderr, so it never mixes with a report written to a file or a pipe. Other
+  // reporters show it only at a terminal, where someone is waiting on a long run.
+  const progress = opts.reporter === "text" || Boolean(process.stderr.isTTY);
+  // The first Ctrl-C stops the sending and prints what was found; a second one quits at once.
+  const interrupt = new AbortController();
+  const onSigint = () => {
+    if (interrupt.signal.aborted) process.exit(130);
+    interrupt.abort();
+    process.stderr.write("\nhunch: stopping; reporting what was found. Press Ctrl-C again to quit without a report.\n");
+  };
+  process.on("SIGINT", onSigint);
+  let providerErrors = 0;
   const result = await check({
     config,
     hunks,
@@ -652,11 +664,14 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     lock,
     only,
     client: jevClient(config),
+    signal: interrupt.signal,
     readFile: (p) => repo.read(p),
     readChangedFile: opts.diff ? undefined : opts.staged ? (p) => readStagedFile(root, p) : (p) => changedSource.read(p),
-    onProgress: (d, t) => opts.reporter === "text" && process.stderr.write(`\r  checked ${d}/${t} hunks`),
-  });
-  if (opts.reporter === "text") process.stderr.write("\n");
+    onProgress: (d, t) => progress && process.stderr.write(`\r  checked ${d}/${t} hunks`),
+    // Say once why requests are failing; the report names every chunk that went unanswered.
+    onRequestError: (e) => { if (!providerErrors++ && !interrupt.signal.aborted) process.stderr.write(`\nhunch: a provider request failed (${String(e instanceof Error ? e.message : e).split("\n")[0]!.slice(0, 200)}). Carrying on; it is asked once more at the end.\n`); },
+  }).finally(() => process.off("SIGINT", onSigint));
+  if (progress) process.stderr.write("\n");
   if (stale.length) result.complete = false;
   if (skippedFiles.length) {
     result.complete = false;

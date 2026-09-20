@@ -9,20 +9,20 @@ const BASE = "a".repeat(40), HEAD = "b".repeat(40), NEXT = "c".repeat(40);
 const DIFF = "diff --git a/src/lib.ts b/src/lib.ts\n--- a/src/lib.ts\n+++ b/src/lib.ts\n@@ -1 +1,2 @@\n export const x = 1;\n+const recover = () => { try { pay(); } catch { return { ok: true }; } };\n";
 const job: ReviewJob = { installationId: 1, repo: "o/r", pr: 7, headSha: HEAD, deliveryId: "delivery-1" };
 const changes: { method: string; path: string; body: any }[] = [];
-let currentHead: string, permission: string, failJev: boolean, moveDuringReview: boolean, duplicate: boolean, rejectLines: boolean, badConfig: boolean, flaky: Record<string, number>, rateLimit = false;
+let currentHead: string, permission: string, failJev: boolean, moveDuringReview: boolean, duplicate: boolean, rejectLines: boolean, badConfig: boolean, flaky: Record<string, number>, rateLimit = false, diff = DIFF, failFile = "";
 let threads: { id: string; line: number; isResolved: boolean; resolvedBy: { login: string } | null; comments: { nodes: { body: string; url: string; viewerDidAuthor: boolean }[] } }[];
 const KEY = `failure ${encodeURIComponent("src/lib.ts")}`;
 const thread = (id: string, key: string, over: Partial<(typeof threads)[number]> = {}, mine = true) =>
   ({ id, line: 2, isResolved: false, resolvedBy: null, comments: { nodes: [{ body: `<!-- hunch:finding ${key} -->\nconcern`, url: `https://github.com/o/r/pull/7#discussion_${id}`, viewerDidAuthor: mine }] }, ...over });
 let server: ReturnType<typeof Bun.serve>;
 const jev: JevClient = { async evaluate(req) {
-  if (failJev) throw new Error("secret-provider-response");
+  if (failJev || (failFile && req.state.file === failFile)) throw new Error("secret-provider-response");
   if (moveDuringReview) currentHead = NEXT;
   return { answers: Object.fromEntries(Object.keys(req.questions).map((id) => [id, { type: "noul" as const, p: 0.95 }])), usage: { inputTokens: 10 }, modelId: "fake" };
 } };
 const deps = () => ({ token: "test", appId: 123, apiBase: `http://localhost:${server.port}`, jev: () => jev, sleep: async () => {} });
 const pull = () => ({ number: 7, draft: false, state: "open", title: "Fix recovery", body: "", changed_files: 1, base: { sha: BASE }, head: { sha: currentHead } });
-beforeEach(() => { currentHead = HEAD; permission = "write"; failJev = false; moveDuringReview = false; duplicate = false; rejectLines = false; badConfig = false; flaky = {}; rateLimit = false; threads = []; changes.length = 0; });
+beforeEach(() => { currentHead = HEAD; permission = "write"; failJev = false; moveDuringReview = false; duplicate = false; rejectLines = false; badConfig = false; flaky = {}; rateLimit = false; diff = DIFF; failFile = ""; threads = []; changes.length = 0; });
 beforeAll(() => {
   server = Bun.serve({ port: 0, async fetch(req) {
     const url = new URL(req.url), path = url.pathname;
@@ -52,7 +52,7 @@ beforeAll(() => {
       expect(url.searchParams.get("ref")).toBe(BASE);
       return new Response(badConfig ? "[rules\nbroken" : '[rules]\n"failure" = ["error", "A failed payment must not return success."]');
     }
-    if (path.includes("/compare/")) { expect(path).toEndWith(`${BASE}...${HEAD}`); return new Response(DIFF); }
+    if (path.includes("/compare/")) { expect(path).toEndWith(`${BASE}...${HEAD}`); return new Response(diff); }
     if (path.includes(`/commits/${HEAD}/check-runs`)) return Response.json({ check_runs: duplicate ? [{ id: 99, app: { id: 123 }, external_id: `hunch:7:${BASE}:${HEAD}:delivery-1` }] : [] });
     if (path.endsWith("/check-runs") && req.method === "POST") return Response.json({ id: 99 });
     if (path.endsWith("/check-runs/99")) return Response.json({});
@@ -154,6 +154,22 @@ describe("GitHub review", () => {
     expect(await runReview(job, { ...deps(), attempt: 5, maxAttempts: 5 })).toBe("failed");
     const failed = changes.find((c) => c.body?.conclusion === "failure")!.body;
     expect(failed.output.summary).toContain("after 5 attempts");
+    expect(JSON.stringify(changes)).not.toContain("secret-provider-response");
+  });
+  test("a provider failure part-way is retried by the queue, and the last attempt publishes the partial review", async () => {
+    const other = "diff --git a/src/other.ts b/src/other.ts\n--- a/src/other.ts\n+++ b/src/other.ts\n@@ -1 +1,2 @@\n export const y = 1;\n+export const z = 2;\n";
+    diff = DIFF + other;
+    failFile = "src/other.ts";
+    await expect(runReview(job, { ...deps(), attempt: 1, maxAttempts: 5 })).rejects.toThrow("safe to retry");
+    expect(changes.some((c) => c.path.endsWith("/issues/7/comments"))).toBe(false);
+
+    changes.length = 0;
+    expect(await runReview(job, { ...deps(), attempt: 5, maxAttempts: 5 })).toBe("done");
+    const summary = changes.find((c) => c.path.endsWith("/issues/7/comments") && c.method === "POST")!.body.body as string;
+    expect(summary).toContain("partial review");
+    expect(summary).toContain("src/other.ts:1: 1 rule went unanswered");
+    // The concern in the file that was answered is still raised.
+    expect(summary).toContain("lib.ts");
     expect(JSON.stringify(changes)).not.toContain("secret-provider-response");
   });
   test("an invalid base config fails at once with a fix, without retrying", async () => {
