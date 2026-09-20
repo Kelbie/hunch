@@ -180,6 +180,15 @@ const cap = (s: string) => {
   return s;
 };
 
+/**
+ * Whether the lock was compiled from this document's text. A remote pin moves with every upstream
+ * commit, related or not, so the same text at a newer commit still counts.
+ */
+export async function sameText(locked: { hash: string; commit?: string } | undefined, doc: SourceDoc): Promise<boolean> {
+  if (!locked) return false;
+  return locked.hash === await hashDoc(doc) || (locked.commit !== doc.commit && locked.hash === await hashDoc({ ...doc, commit: locked.commit }));
+}
+
 export const hashDoc = (d: SourceDoc) => sha256(`${d.kind}\n${d.origin}\n${d.commit ?? ""}\n${d.path}\n${d.scope}\n${d.text}`);
 
 /**

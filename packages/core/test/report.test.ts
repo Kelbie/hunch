@@ -58,6 +58,14 @@ test("the headline counts places, not every overlapping rule, and names files on
   expect(markdown).toContain("### 🔮 Hunch · 3 places to review in 2 files (1 with errors) · review complete");
 });
 
+test("a clean review still says how much was asked, so silence can be told from nothing having run", () => {
+  const clean = summaryMarkdown({ ...result, findings: [], info: [], stats: { ...result.stats, hunks: 12, requests: 31, questions: 3720 } });
+  expect(clean).toContain("no concerns found");
+  expect(clean.split("<details>")[1]).toContain("Asked 3,720 questions in 31 requests, across 12 hunks in scope.");
+  const nothing = summaryMarkdown({ ...result, findings: [], info: [], stats: { ...result.stats, hunks: 3, requests: 0, questions: 0 } });
+  expect(nothing.split("<details>")[1]).toContain("No rule applied to the 3 hunks in scope, so nothing was asked.");
+});
+
 test("coverage gaps stay visible even when findings exist", () => {
   const markdown = summaryMarkdown({ ...result, complete: false, notices: ["Review budget reached; remaining rules were skipped."] });
   const visible = markdown.split("<details>")[0]!;

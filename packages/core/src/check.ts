@@ -34,6 +34,12 @@ export interface CheckInput {
   onProgress?: (done: number, total: number) => void;
   /** Ask only these rule ids, to try a rule without paying for the rest. */
   only?: readonly string[];
+  /**
+   * Count the requests and questions this review would send, and send none. The plan walks the
+   * same selection, context and batching as a review, and reports the whole need even past
+   * `budget.maxRequests`, so a budget that is too small is visible before the run is paid for.
+   */
+  plan?: boolean;
 }
 
 export interface CheckResult {
@@ -99,10 +105,12 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     if (source.notChecked.length) info.push(`${source.id}: ${plural(source.notChecked.length, "guidance item")} can't be checked one change at a time; see notChecked in hunch.lock.`);
   }
   let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length));
-  const deadline = Date.now() + config.budget.timeoutSeconds * 1000;
+  const deadline = input.plan ? Infinity : Date.now() + config.budget.timeoutSeconds * 1000;
+  const budgetSpent = () => !input.plan && (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline);
   // Bound reader waits as well as provider calls. A slow optional reader must not consume
   // the worker's publication time after the review deadline.
   async function readWithinDeadline(read: () => Promise<string | null>): Promise<string | null> {
+    if (input.plan) return read(); // a plan has no deadline to race
     if (Date.now() >= deadline) return null;
     let timer: ReturnType<typeof setTimeout> | undefined;
     try {
@@ -159,7 +167,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       candidates = candidates.slice(0, config.budget.maxRulesPerHunk);
     }
     if (!candidates.length) return;
-    if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
+    if (budgetSpent()) {
       incomplete = true;
       notices.push("Review request/time budget reached; remaining rules were skipped.");
       return;
@@ -193,7 +201,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
       if (surrounding) state.surrounding = surrounding;
       if (config.task === "pr" && input.task) state.task = input.task.slice(0, 8000);
       if (ref) {
-        if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
+        if (budgetSpent()) {
           incomplete = true;
           notices.push("Review request/time budget reached; remaining rules were skipped.");
           continue;
@@ -221,12 +229,17 @@ export async function check(input: CheckInput): Promise<CheckResult> {
           notices.push(`${hunk.file}:${hunk.newStart}: ${batch.map((r) => r.id).join(", ")} exceeds the request context budget; skipped.`);
           continue;
         }
-        if (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline) {
+        if (budgetSpent()) {
           incomplete = true;
           notices.push("Review request/time budget reached; remaining rules were skipped.");
           continue;
         }
         reservedRequests++;
+        if (input.plan) {
+          stats.requests++;
+          stats.questions += batch.length;
+          continue;
+        }
         const request = { model: config.model, state, questions, signal: AbortSignal.timeout(Math.max(1, deadline - Date.now())) };
         const res = await client.evaluate(request);
         validateAnswers(request, res.answers);
@@ -264,6 +277,10 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     }
   }
 
+  if (input.plan && stats.requests > config.budget.maxRequests) {
+    incomplete = true;
+    notices.push(`This review needs ${stats.requests} requests; budget.maxRequests is ${config.budget.maxRequests}, so the rest would be skipped. Raise the budget or narrow the paths.`);
+  }
   return { findings: dedupe(findings), stats, notices: [...new Set(notices)], info, complete: !incomplete };
 }
 
@@ -323,7 +340,7 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null, only?
   for (const src of lock?.sources ?? []) {
     if (src.kind === "agents-md" && src.id !== deepestAgent) continue;
     if (src.scope && !(file === src.scope || file.startsWith(`${src.scope}/`))) continue;
-    for (const r of src.rules) {
+    for (const r of src.rules.map((rule) => scoped(config, rule))) {
       if (r.appliesTo.length && !r.appliesTo.some((pattern) =>
         picomatch(pattern, { dot: true, matchBase: !pattern.includes("/") })(file))) continue;
       const level = compiledLevel(entries, r.id);
@@ -342,6 +359,10 @@ function compiledLevel(entries: Map<string, RuleEntry>, id: string): Level {
   for (const [pat, e] of entries) if (!e.question && pat.includes("*") && picomatch.isMatch(id, pat)) level = e.level;
   return entries.get(id)?.level ?? level;
 }
+
+/** The compiler infers `appliesTo` and `when`; `everywhere` trusts the question over that guess. */
+const scoped = (config: Config, r: CompiledRule): CompiledRule =>
+  config.review.compiledScope === "everywhere" ? { ...r, appliesTo: [], when: undefined } : r;
 
 function compiledQuestion(r: CompiledRule): Question {
   return {
@@ -377,7 +398,7 @@ export function policyRules(config: Config, lock?: Lock | null): PolicyRule[] {
   const rows: PolicyRule[] = [];
   for (const [id, e] of entries) if (e.question) rows.push({ id, level: e.level, question: e.question, source: e.source ?? "config", compiled: false });
   for (const src of lock?.sources ?? []) {
-    for (const r of src.rules) {
+    for (const r of src.rules.map((rule) => scoped(config, rule))) {
       if (entries.get(r.id)?.question) continue;
       rows.push({ id: r.id, level: compiledLevel(entries, r.id), question: compiledQuestion(r), source: src.id, compiled: true, scope: src.scope || undefined, appliesTo: r.appliesTo.length ? r.appliesTo : undefined });
     }

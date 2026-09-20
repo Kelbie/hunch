@@ -23,7 +23,7 @@ import {
   serializeLock,
   selectionHash,
   staleNotice,
-  hashDoc,
+  sameText,
   parseConfig,
   applyPresets,
   policyRules,
@@ -37,7 +37,6 @@ import {
   underPaths,
   inScope,
   rulesFor,
-  windowHunk,
   type Hunk,
   type JevClient,
   type Lock,
@@ -629,22 +628,20 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   }
   const task = opts.task ?? prTaskFromEvent();
   if (opts.dryRun) {
-    const reviewed = hunks.filter((h) => h.status !== "deleted" && inScope(config)(h.file)).flatMap((h) => h.kind === "file" ? [h] : windowHunk(h, 6000, config.review.chunkLines)).slice(0, config.budget.maxHunks);
-    // The same selection check makes: a hunk no rule asks about, after `files` and `when`, sends
-    // nothing, and each distinct `reference` among the rest is its own request.
-    let questions = 0, requests = 0;
-    for (const h of reviewed) {
-      const asked = rulesFor(h.file, config, lock, only).jev
-        .filter((r) => !r.question.when || new RegExp(r.question.when.source, r.question.when.flags).test(h.text))
-        .slice(0, config.budget.maxRulesPerHunk);
-      questions += asked.length;
-      requests += new Set(asked.map((r) => r.question.reference ?? "")).size;
-    }
+    // The plan walks the review's own selection, context and batching, so these counts are what a
+    // real run sends; nothing is sent, and no credentials are needed.
+    const plan = await check({
+      config, hunks, task, lock, only, plan: true,
+      client: { evaluate: () => Promise.reject(new Error("a dry run sends nothing")) },
+      readFile: (p) => repo.read(p),
+      readChangedFile: opts.diff ? undefined : opts.staged ? (p) => readStagedFile(root, p) : (p) => changedSource.read(p),
+    });
     // The real run would be incomplete; a dry run is where someone decides whether to run it.
     if (stale.length) console.error(`hunch: ${staleNotice(lock, stale)} A review now would be incomplete.`);
-    console.log(`hunch: dry run, nothing sent. ${new Set(reviewed.map((h) => h.file)).size} file(s) as ${reviewed.length} hunk(s): ${questions} question(s) in ${Math.min(requests, config.budget.maxRequests)} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
+    for (const notice of plan.notices) console.error(`hunch: ${notice}`);
+    console.log(`hunch: dry run, nothing sent. ${new Set(hunks.filter((h) => h.status !== "deleted" && inScope(config)(h.file)).map((h) => h.file)).size} file(s) as ${plan.stats.hunks} hunk(s): ${plan.stats.questions} question(s) in ${plan.stats.requests} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
     if (config.review.localize) console.log("Optional localization runs after baseline coverage, within the remaining request/time budget.");
-    if (skippedFiles.length) process.exitCode = 2;
+    if (skippedFiles.length || !plan.complete) process.exitCode = 2;
     return;
   }
   // Created on first request, so a diff with nothing to review needs no API key.
@@ -824,7 +821,7 @@ async function runCompile(opts: Opts, root: string, repo: RepoReader) {
   const previous = readLock(root);
   if (opts.dryRun) {
     const byId = new Map((previous?.sources ?? []).map((s) => [s.id, s]));
-    const sources = await Promise.all(docs.map(async (d) => ({ id: d.id, path: d.path, status: byId.get(d.id)?.hash === (await hashDoc(d)) ? "unchanged" : byId.has(d.id) ? "changed" : "new" })));
+    const sources = await Promise.all(docs.map(async (d) => ({ id: d.id, path: d.path, status: await sameText(byId.get(d.id), d) ? "unchanged" : byId.has(d.id) ? "changed" : "new" })));
     const removed = [...byId.keys()].filter((id) => !docs.some((d) => d.id === id));
     if (opts.reporter === "json") console.log(JSON.stringify({ compiler: previous?.compiler.model ?? null, sources, removed }, null, 2));
     else {

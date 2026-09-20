@@ -114,6 +114,61 @@ describe("check", () => {
     expect(none.findings).toHaveLength(0);
   });
 
+  test("compiledScope everywhere asks every compiled rule of every chunk, ignoring inferred globs and regexes", async () => {
+    const lock: Lock = { version: 1, compiler: { model: "m" }, sources: [
+      { id: "doc/style", kind: "doc", origin: "./style.md", path: "style.md", scope: "", hash: "h", notChecked: [], rules: [
+        { id: "doc/style/tsx-only", section: "S", message: "m", instructions: "Tsx?", criteria: { true: "t", false: "f" }, appliesTo: ["**/*.tsx"] },
+        { id: "doc/style/never-matches", section: "S", message: "m", instructions: "Regex?", criteria: { true: "t", false: "f" }, appliesTo: [], when: "zzz-not-in-the-hunk" },
+        { id: "doc/style/off", section: "S", message: "m", instructions: "Off?", criteria: { true: "t", false: "f" }, appliesTo: [] },
+      ] },
+      { id: "agents-md/other", kind: "agents-md", origin: "./other/AGENTS.md", path: "other/AGENTS.md", scope: "other", hash: "h", notChecked: [], rules: [
+        { id: "agents-md/other/local", section: "S", message: "m", instructions: "Other dir?", criteria: { true: "t", false: "f" }, appliesTo: [] },
+      ] },
+    ] };
+    const hunks = parseHunks(DIFF).slice(0, 1);
+    const asked = async (raw: object) => {
+      const { client, calls } = fakeJev(() => ({ type: "noul", p: 0.01 }));
+      const res = await check({ config: config({ rules: { "doc/style/off": "off" }, ...raw }), hunks, client, lock });
+      return { res, questions: calls.flatMap((c) => Object.values(c.questions).map((q) => q.instructions.split(" ")[0])) };
+    };
+
+    expect((await asked({})).questions).toEqual([]);
+    const everywhere = await asked({ review: { compiledScope: "everywhere" } });
+    // A rule switched off stays off, and a nested AGENTS.md still governs only its own directory.
+    expect(everywhere.questions).toEqual(["Tsx?", "Regex?"]);
+    expect(everywhere.res.complete).toBe(true);
+  });
+
+  test("a plan counts exactly what a review would send, and sends nothing", async () => {
+    const rules = Object.fromEntries(Array.from({ length: 60 }, (_, i) => [
+      `policy/r${i}`,
+      ["warn", `Rule ${i}. ${"The contract must hold. ".repeat(160)}`],
+    ]));
+    const hunks = parseHunks(DIFF).slice(0, 1);
+    const real = fakeJev(() => ({ type: "noul", p: 0.01 }));
+    const sent = await check({ config: config({ budget: { maxRulesPerHunk: 1024, maxRequests: 100 }, rules }), hunks, client: real.client });
+
+    const planned = fakeJev(() => ({ type: "noul", p: 0.99 }));
+    const plan = await check({ config: config({ budget: { maxRulesPerHunk: 1024, maxRequests: 100 }, rules }), hunks, client: planned.client, plan: true });
+    expect(planned.calls).toHaveLength(0);
+    expect(plan.findings).toEqual([]);
+    expect(plan.stats.requests).toBe(sent.stats.requests);
+    expect(plan.stats.questions).toBe(60);
+    expect(plan.complete).toBe(true);
+
+    // Planning reads the same surrounding source a review would, however slow the reader is.
+    const source = Array.from({ length: 8 }, (_, i) => hunks[0]!.added.find((a) => a.line === i + 1)?.content ?? "").join("\n");
+    const slow = await check({ config: config({ rules: { "a/b": ["warn", "Anything?"] } }), hunks, client: planned.client, plan: true,
+      readChangedFile: () => new Promise((resolve) => setTimeout(() => resolve(source), 20)) });
+    expect(slow.notices).toEqual([]);
+
+    // A budget the review would exhaust shows up in the plan, not only after paying for the run.
+    const short = await check({ config: config({ budget: { maxRulesPerHunk: 1024, maxRequests: 2 }, rules }), hunks, client: planned.client, plan: true });
+    expect(short.complete).toBe(false);
+    expect(short.stats.requests).toBe(sent.stats.requests);
+    expect(short.notices.join()).toContain(`needs ${sent.stats.requests} requests; budget.maxRequests is 2`);
+  });
+
   test("a policy too large for one request is asked over several, not truncated", async () => {
     // Each rule carries ~4KB of instructions, so 60 of them cannot share one 80KB request.
     const rules = Object.fromEntries(Array.from({ length: 60 }, (_, i) => [

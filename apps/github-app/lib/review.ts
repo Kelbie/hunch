@@ -70,7 +70,7 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
       if (!allowed) throw new PermanentError(`This installation has used its ${limit} Hunch reviews for today. Reviews resume after 00:00 UTC. For unlimited reviews, run Hunch in your own CI or deployment: https://github.com/Kelbie/hunch#install`);
     }
     // The hosted worker has a 300-second limit, so time is the binding cap; 60 seconds stay free for publishing. Repository budgets can't raise these.
-    const budget = { ...config.budget, maxHunks: Math.min(config.budget.maxHunks, 3000), maxRequests: Math.min(config.budget.maxRequests, 3000), timeoutSeconds: Math.min(config.budget.timeoutSeconds, 240) };
+    const budget = { ...config.budget, maxHunks: Math.min(config.budget.maxHunks, 3000), maxRequests: Math.min(config.budget.maxRequests, 3000), timeoutSeconds: Math.min(config.budget.timeoutSeconds, 240), concurrency: Math.min(config.budget.concurrency, 8) };
     const head = githubRepoReader(api, job.repo, headSha);
     const result = await check({ config: { ...config, budget }, hunks: parseHunks(diff), task: `${pull.title}\n\n${pull.body ?? ""}`, lock, client: (deps.jev ?? clientFromEnv)(config), readFile: (p) => base.read(p), readChangedFile: (p) => head.read(p) });
     if (stale.length) { result.complete = false; result.notices.push(`Guidance is uncompiled or stale: ${stale.join(", ")}. Run hunch compile and review hunch.lock.`); }

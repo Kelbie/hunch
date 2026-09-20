@@ -37,8 +37,14 @@ compiled. `hunch config` reports it as missing from `hunch.lock` until then.
 
 Without a terminal and without `--with`, it reuses the compiler recorded in `hunch.lock`, or fails
 asking for `--with`. Claude Code runs with no tools and no settings files, and Codex in its read-only
-sandbox. Both run in an empty temporary directory and must return schema-valid rules. Unchanged
-sources are reused only if the compiler identity is the same.
+sandbox. Both run in an empty temporary directory and must return schema-valid rules.
+
+Only changed guidance is compiled. Each source's text is hashed into `hunch.lock`, and a source
+whose hash still matches keeps its reviewed rules untouched. A remote skill is pinned to a commit,
+but the pin alone decides nothing: when upstream moves on and the skill's text is the same, the lock
+takes the new commit and keeps the rules. Two things recompile everything: `--force`, and choosing a
+different compiler or effort than the one recorded in the lock, since rules from two compilers would
+sit under one recorded identity. `compile --dry-run` shows which sources would be compiled.
 
 ## After compiling
 
@@ -46,10 +52,16 @@ sources are reused only if the compiler identity is the same.
    can lose nuance, misplace scope, or infer the wrong globs. Each source records its path, hash,
    rules (`id`, `instructions`, `criteria`, `appliesTo`, `message`) and `notChecked`.
 2. `notChecked` lists guidance that can't be judged one change at a time, such as "run the tests"
-   or "discuss big changes first". It is reported as a limitation, never silently dropped.
-3. `hunch config` lists the compiled rules alongside the rest. Tune or silence them by id or glob:
+   or "discuss big changes first". It is reported as a limitation, never silently dropped. It is a
+   record of what the compiler left out and why, not a fault: a review with `notChecked` entries is
+   still complete. Read it for guidance that was dropped wrongly, reword that guidance so one chunk
+   can show a violation, and recompile.
+3. `appliesTo` and `when` on a compiled rule are the compiler's guess at where the rule matters. A
+   wrong guess silences the rule. Set `review.compiledScope: "everywhere"`
+   ([config.md](config.md#review-context)) to ask every compiled rule of every chunk instead.
+4. `hunch config` lists the compiled rules alongside the rest. Tune or silence them by id or glob:
    `"skill/api-style/*": "off"`, `"agents-md/root/no-secrets": "error"`.
-4. Commit `hunch.lock` to the default branch with the config.
+5. Commit `hunch.lock` to the default branch with the config.
 
 ## Staleness
 
