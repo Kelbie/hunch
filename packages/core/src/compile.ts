@@ -1,7 +1,7 @@
 import { generateObject } from "ai";
 import { z } from "zod";
 import type { CompiledRule, Lock, LockSource } from "./lock.js";
-import { hashDoc, type SourceDoc } from "./skills.js";
+import { hashDoc, sameText, type SourceDoc } from "./skills.js";
 
 /**
  * Turns prose guidance into atomic yes/no rules Jev can judge from one hunk.
@@ -101,8 +101,8 @@ export async function compileSources(
   for (const doc of docs) {
     const hash = await hashDoc(doc);
     const old = prev.get(doc.id);
-    if (!opts.force && old && old.hash === hash && old.origin === doc.origin && old.commit === doc.commit && opts.previous?.compiler.model === opts.model) {
-      sources.push(old); // unchanged: keep reviewed rules as-is
+    if (!opts.force && old && await sameText(old, doc) && old.origin === doc.origin && opts.previous?.compiler.model === opts.model) {
+      sources.push(old.hash === hash ? old : { ...old, commit: doc.commit, hash }); // unchanged text: keep reviewed rules, follow a moved remote pin
       opts.onSource?.(doc.id, true);
       continue;
     }

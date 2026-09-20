@@ -131,15 +131,17 @@ negation in `include`. A negated pattern matches every other file, so it widens 
 
 | Key (TS / TOML) | Default | Max | Limits |
 | --- | --- | --- | --- |
-| `maxHunks` / `max-hunks` | 100 | 10,000 | hunks reviewed per run; the rest make the review partial |
+| `maxHunks` / `max-hunks` | 100 | 100,000 | hunks reviewed per run; the rest make the review partial |
 | `maxRulesPerHunk` / `max-rules-per-hunk` | 24 | 1,024 | questions asked about one hunk |
-| `concurrency` | 4 | 8 | requests in flight |
-| `maxRequests` / `max-requests` | 100 | 10,000 | Jev requests per run: at least one per hunk, more when the hunk's rules do not fit one request, plus one per extra `reference` and optional localization |
-| `timeoutSeconds` / `timeout-seconds` | 180 | 7,200 | deadline shared by requests and localization |
+| `concurrency` | 4 | 32 | requests in flight |
+| `maxRequests` / `max-requests` | 100 | 1,000,000 | Jev requests per run: at least one per hunk, more when the hunk's rules do not fit one request, plus one per extra `reference` and optional localization |
+| `timeoutSeconds` / `timeout-seconds` | 180 | 86,400 | deadline shared by requests and localization |
 
-The hosted App always caps a run at 3,000 hunks, 3,000 requests and 240 seconds. On a large PR the
+The hosted App always caps a run at 3,000 hunks, 3,000 requests, 8 requests in flight and 240 seconds. On a large PR the
 time limit usually ends the review first, and the report says the review is partial. Raise the budget for
-`check --all` on a big repository. `find` ignores the budget; it has its own `--concurrency`.
+`check --all` on a big repository, and size it with `check --all --dry-run`: the dry run counts the
+requests the whole review needs and exits 2 when the budget is smaller. `find` ignores the budget;
+it has its own `--concurrency`.
 
 ## Review context
 
@@ -154,6 +156,7 @@ no verified source revision, so it receives no automatic surrounding source.
 | `chunkLines` / `chunk-lines` | 150 | Maximum diff-body rows or whole-file source lines per window, also subject to token limits. Range 1–2000. |
 | `overlapLines` / `overlap-lines` | 0 | Repeated source lines between `check --all` windows; smaller than chunkLines. Diff windows use surrounding context instead. |
 | `localize` | false | Experimental: after all baseline checks, refine positive findings into smaller changed-line ranges. |
+| `compiledScope` / `compiled-scope` | `"inferred"` | Where compiled rules are asked. `"inferred"` uses each rule's `appliesTo` globs and `when` regex from `hunch.lock`, which the compiler guessed. `"everywhere"` asks every compiled rule of every reviewed chunk: no rule is lost to a wrong guess, at the price of more questions and requests. Levels (`"off"`), `include`/`ignore` and a nested `AGENTS.md`'s directory still apply, as do `files` and `when` on rules written in the config. |
 | `localizationLines` / `localization-lines` | 10 | Target range size for localization, 1–100. Not a guarantee: ambiguous findings keep their broader range. |
 | `maxLocalizationRequests` / `max-localization-requests` | 32 | Additional refinement requests, 0–1000, also inside the overall request/time budget. |
 

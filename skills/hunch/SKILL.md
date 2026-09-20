@@ -5,7 +5,7 @@ argument-hint: "[install|auth|config|rules|compile|check|find|doctor|eval|operat
 allowed-tools: Bash(npx @kelbie/hunch *) Bash(npx hunch *) Bash(hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
 metadata:
-  version: "0.15.0"
+  version: "0.16.0"
 ---
 
 # Hunch
@@ -31,7 +31,7 @@ Work out the command prefix before running anything.
 | has a global `hunch` matching this skill version | `hunch <command>` |
 | anything else | `npx @kelbie/hunch <command>` (latest from npm; no install needed) |
 
-Check `--version` before using new options: `auth` requires 0.15.0. Condition mode and `review`/`abstain` configuration
+Check `--version` before using new options: `review.compiledScope`, budgets above 10,000 requests and a dry run that counts every request require 0.16.0. `auth` requires 0.15.0. Condition mode and `review`/`abstain` configuration
 require 0.13.0. Correct compiled path scopes and rule budgets above 64 require 0.13.1. A policy whose rules exceed one request is split across requests, instead of having the excess skipped, from 0.14.0. The main-branch skill can precede npm publication; use a matching installed build
 or the Hunch source checkout in that case. Do not silently change a project's pinned dependency.
 

@@ -45,7 +45,14 @@ warns on stderr when `hunch.lock` is missing or stale, because the real run woul
 hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 15 question(s) in 2 request(s). Budget: 100 hunks, 100 requests, 180s.
 ```
 
-The dry run counts baseline requests; optional localization uses the remaining budget.
+The dry run walks the same rule selection, source context and request batching as a review, so its
+counts are what the run would send; optional localization uses the remaining budget. When the
+review needs more requests than `budget.maxRequests`, it says how many and exits 2, as it does for
+anything else that would leave the review partial.
+
+For a full audit, `check --all --dry-run` first, then `check --all`. With
+`review.compiledScope: "everywhere"` every compiled rule is asked of every chunk; see
+[config.md](config.md#review-context).
 
 A request carries every question for one hunk, plus one more request per distinct `reference`. What
 matters on a large branch is `budget.maxRequests`, not money: anything past the budget is skipped

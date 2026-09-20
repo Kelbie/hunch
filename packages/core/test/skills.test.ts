@@ -83,6 +83,30 @@ describe("skill sources", () => {
     expect(await staleSources(lock, cfg, edited)).toEqual(["agents-md/root", "agents-md/packages/api"]);
   });
 
+  test("a remote skill is recompiled when its text changes, not when its repository merely moves on", async () => {
+    let calls = 0;
+    const extractor: RuleExtractor = { async extract() { calls++; return { rules: [{ slug: "r", section: "S", message: "m", instructions: "?", criteriaTrue: "t", criteriaFalse: "f", appliesTo: [], when: null }], notChecked: [] }; } };
+    const upstream = (commit: string, text: string): RemoteFetcher => ({
+      commit: async () => commit,
+      tree: async () => ["seo/SKILL.md"],
+      read: async () => text,
+    });
+    const cfg = parseConfig({ skills: ["acme/skills"], agentsMd: false }, "t");
+    const empty = memoryRepo({});
+    const first = await compileSources(await collectSources(cfg, empty, upstream("a".repeat(40), "---\nname: seo\n---\nUse one h1.")), { extractor, model: "m" });
+    expect(calls).toBe(1);
+
+    // An unrelated upstream commit: the pin follows it, the reviewed rules stay as they were.
+    const moved = await compileSources(await collectSources(cfg, empty, upstream("b".repeat(40), "---\nname: seo\n---\nUse one h1.")), { extractor, model: "m", previous: first });
+    expect(calls).toBe(1);
+    expect(moved.sources[0]!.commit).toBe("b".repeat(40));
+    expect(moved.sources[0]!.rules).toEqual(first.sources[0]!.rules);
+    expect(moved.sources[0]!.hash).not.toBe(first.sources[0]!.hash);
+
+    await compileSources(await collectSources(cfg, empty, upstream("c".repeat(40), "---\nname: seo\n---\nUse two h1s.")), { extractor, model: "m", previous: moved });
+    expect(calls).toBe(2);
+  });
+
   test("chunkMarkdown keeps sections whole under the limit", () => {
     const md = ["# A", "a".repeat(50), "## B", "b".repeat(50), "## C", "c".repeat(50)].join("\n");
     const chunks = chunkMarkdown(md, 70);

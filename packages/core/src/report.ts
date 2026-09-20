@@ -68,8 +68,11 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
   const model = result.stats.modelIds.length ? ` with ${result.stats.modelIds.map(id => escapeCell(id.slice(0, 200))).join(", ")}` : "";
   lines.push(`<sub>Reviewed ${commit}${model}. Findings are model judgments, not proven bugs.${ctx.threads ? " Resolve a comment to dismiss it. Comment <code>/hunch recheck</code> to review again." : ""}</sub>`, "");
   const guidance = result.info ?? [];
-  if (shown.length || guidance.length) {
+  const { hunks, questions, requests } = result.stats;
+  if (shown.length || guidance.length || hunks) {
     lines.push("<details>", "<summary>Review details</summary>", "");
+    const n = (count: number, noun: string) => `${count.toLocaleString("en-US")} ${noun}${count === 1 ? "" : "s"}`;
+    if (hunks) lines.push(questions ? `Asked ${n(questions, "question")} in ${n(requests, "request")}, across ${n(hunks, "hunk")} in scope.` : `No rule applied to the ${n(hunks, "hunk")} in scope, so nothing was asked.`, "");
     if (shown.length) {
       lines.push("| Rule | Source | Model result |", "| --- | --- | --- |");
       for (const issue of shown) for (const f of issue) lines.push(`| ${escapeCell(f.rule)} | ${escapeCell(f.source)} | ${escapeCell(f.evidence)} |`);

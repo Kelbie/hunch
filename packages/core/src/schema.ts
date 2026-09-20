@@ -173,19 +173,26 @@ export const configSchema = z.strictObject({
     chunkLines: z.number().int().min(1).max(2000).default(150),
     overlapLines: z.number().int().min(0).max(1999).default(0),
     localize: z.boolean().default(false),
+    /**
+     * `inferred` asks a compiled rule only where the compiler's `appliesTo` globs and `when` regex
+     * match. `everywhere` asks every compiled rule of every reviewed chunk.
+     */
+    compiledScope: z.enum(["inferred", "everywhere"]).default("inferred"),
     localizationLines: z.number().int().min(1).max(100).default(10),
     maxLocalizationRequests: z.number().int().min(0).max(1000).default(32),
   }).refine(value => value.overlapLines < value.chunkLines, { message: "overlapLines must be less than chunkLines" })
-    .default({ contextLines: 40, chunkLines: 150, overlapLines: 0, localize: false, localizationLines: 10, maxLocalizationRequests: 32 }),
+    .default({ contextLines: 40, chunkLines: 150, overlapLines: 0, localize: false, compiledScope: "inferred", localizationLines: 10, maxLocalizationRequests: 32 }),
   budget: z
     .strictObject({
-      maxHunks: z.number().int().min(1).max(10_000).default(100),
+      // The ceilings admit a whole-repository audit with every rule asked of every chunk. The
+      // hosted App applies its own, lower, caps.
+      maxHunks: z.number().int().min(1).max(100_000).default(100),
       maxRulesPerHunk: z.number().int().min(1).max(1024).default(24),
-      concurrency: z.number().int().min(1).max(8).default(4),
-      /** Jev requests per run (one per hunk and reference). */
-      maxRequests: z.number().int().min(1).max(10_000).default(100),
+      concurrency: z.number().int().min(1).max(32).default(4),
+      /** Jev requests per run (one per hunk and reference, more when the rules need several). */
+      maxRequests: z.number().int().min(1).max(1_000_000).default(100),
       /** Stop starting new requests after this long. */
-      timeoutSeconds: z.number().int().min(10).max(7200).default(180),
+      timeoutSeconds: z.number().int().min(10).max(86_400).default(180),
     })
     .default({ maxHunks: 100, maxRulesPerHunk: 24, concurrency: 4, maxRequests: 100, timeoutSeconds: 180 }),
   rules: z.record(z.string(), ruleEntrySchema).default({}),

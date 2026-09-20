@@ -386,6 +386,7 @@ stdout:
       "chunkLines": 150,
       "overlapLines": 0,
       "localize": false,
+      "compiledScope": "inferred",
       "localizationLines": 10,
       "maxLocalizationRequests": 32
     },
