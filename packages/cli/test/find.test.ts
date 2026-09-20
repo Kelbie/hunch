@@ -22,7 +22,7 @@ function withRepo(files: Record<string, string>, run: (root: string) => void) {
 }
 
 function hunch(cwd: string, args: string[]) {
-  return spawnSync("bun", [BIN, ...args], { cwd, encoding: "utf8", env: { PATH: process.env.PATH! }, timeout: 10_000 });
+  return spawnSync("bun", [BIN, ...args], { cwd, encoding: "utf8", env: { PATH: process.env.PATH!, HUNCH_CONFIG_DIR: "/nonexistent/hunch-test-config" }, timeout: 10_000 });
 }
 
 test("CLI plans condition and task sweeps with the requested windows without calling a provider", () => {
@@ -94,7 +94,7 @@ test("Actions CLI reads immutable base policy and links its summary to the revie
     const summary = join(root, "summary.md");
     const result = spawnSync("bun", [BIN, "check", "--cwd", root, "--base", base, "--head", head, "--policy-ref", base, "--reporter", "github"], {
       cwd: root, encoding: "utf8", timeout: 10_000,
-      env: { PATH: process.env.PATH!, GITHUB_ACTIONS: "true", GITHUB_REPOSITORY: "owner/repo", GITHUB_STEP_SUMMARY: summary },
+      env: { PATH: process.env.PATH!, HUNCH_CONFIG_DIR: "/nonexistent/hunch-test-config", GITHUB_ACTIONS: "true", GITHUB_REPOSITORY: "owner/repo", GITHUB_STEP_SUMMARY: summary },
     });
     expect(result.status).toBe(0);
     expect(result.stderr).not.toContain("UNTRUSTED");

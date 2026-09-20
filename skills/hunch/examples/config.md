@@ -364,7 +364,6 @@ stdout:
   "path": "--rule",
   "valid": true,
   "settings": {
-    "provider": "gateway",
     "model": "jev-1.13.0",
     "zeroDataRetention": true,
     "extends": [],

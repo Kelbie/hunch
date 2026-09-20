@@ -4,6 +4,7 @@ import { Command } from "commander";
 import {
   check,
   clientFromEnv,
+  providerFor,
   collectSources,
   FACETS,
   DEFAULT_IGNORE,
@@ -349,7 +350,7 @@ export async function main() {
 function jevClient(config: Parameters<typeof clientFromEnv>[0]): JevClient {
   let client: Promise<JevClient> | undefined;
   const build = async () => {
-    if (config.provider === "gateway") await useVercelLink();
+    if (providerFor(config) === "gateway") await useVercelLink();
     return clientFromEnv(config);
   };
   return { evaluate: async (req) => (await (client ??= build())).evaluate(req) };

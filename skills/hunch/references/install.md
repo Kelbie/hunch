@@ -139,8 +139,16 @@ Hunch takes the first of these that is set:
 
 | Provider | Credential | Config |
 | --- | --- | --- |
-| Vercel AI Gateway (default) | `AI_GATEWAY_API_KEY`, or Vercel OIDC: on Vercel, after `vercel link`, or after `auth login --vercel` | nothing |
-| TypeSafe directly | `TYPESAFE_API_KEY` | `provider: "typesafe"` |
+| Vercel AI Gateway | `AI_GATEWAY_API_KEY`, or Vercel OIDC: on Vercel, after `vercel link`, or after `auth login --vercel` | nothing, or `provider: "gateway"` to hold every run to it |
+| TypeSafe directly | `TYPESAFE_API_KEY` | nothing, or `provider: "typesafe"` to hold every run to it |
+
+A config that names no `provider` uses what the machine is signed in with: TypeSafe directly when a
+`TYPESAFE_API_KEY` is found and no `AI_GATEWAY_API_KEY` is, otherwise the Gateway. So after
+`auth login --provider typesafe`, Hunch runs in any repository, with or without a Hunch config, and
+nothing passes through Vercel. The hosted App and CI hold no TypeSafe key, so they are unaffected.
+A config that names `provider: "gateway"` is obeyed and needs Gateway credentials; `hunch config`
+shows which provider a run will use. `zeroDataRetention` is a Gateway setting and does nothing on a
+direct TypeSafe run.
 
 No config at all is fine for a trial: `check --rule id="sentence"` ([check.md](check.md)).
 

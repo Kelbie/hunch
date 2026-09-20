@@ -53,7 +53,7 @@ fail-on-error = true
 | `overrides` | `[[overrides]]` | `[]` | `{ files, rules }`: different levels or rules for some paths |
 | `failOnError` | `fail-on-error` | `false` | `check` exits 1 (and the check fails) when an `error` rule reports |
 | `task` | `task` | `"pr"` | `"pr"` sends the PR title and description to every question as `task`; `"none"` sends nothing |
-| `provider` | `provider` | `"gateway"` | `"gateway"` (Vercel AI Gateway) or `"typesafe"` (direct) |
+| `provider` | `provider` | unset | `"gateway"` (Vercel AI Gateway) or `"typesafe"` (direct). Unset uses the signed-in credentials: TypeSafe when only a `TYPESAFE_API_KEY` is found, otherwise the Gateway ([install.md](install.md#model-access)) |
 | `model` | `model` | `"jev-1.13.0"` | the TypeSafe model id, used by `provider: "typesafe"`. Gateway always serves `typesafe-ai/jev` |
 | `zeroDataRetention` | `zero-data-retention` | `true` | ask Gateway to route only to zero-retention providers; see below |
 | `skills` | `skills` | every installed skill | Agent Skills to compile into `hunch.lock`; `[]` for none |

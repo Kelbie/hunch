@@ -13,6 +13,7 @@ import {
   type Question,
   type RepoReader,
   type WireQuestion,
+  providerFor,
 } from "../../core/src/index.js";
 
 /**
@@ -157,6 +158,13 @@ function table(header: string[], rows: string[][], max = 40): string {
   return all.map((r) => `  ${r.map((c, i) => (i === r.length - 1 ? c : c.padEnd(widths[i]!))).join("  ")}`.trimEnd()).join("\n");
 }
 
+/** Zero data retention is something the Gateway enforces, so it is only claimed for a Gateway run. */
+function providerLine(s: ConfigReport["settings"]): string {
+  return providerFor(s) === "typesafe"
+    ? `typesafe (${s.model}), directly${s.provider ? "" : ": the key signed in here"}`
+    : `gateway (typesafe-ai/jev); zero data retention ${s.zeroDataRetention ? "enforced" : "not enforced"}`;
+}
+
 export function configText(report: ConfigReport): string {
   const s = report.settings;
   const out: string[] = [];
@@ -164,7 +172,7 @@ export function configText(report: ConfigReport): string {
   for (const p of report.problems) out.push(`  ✗ ${p}`);
   out.push("");
   out.push(table(["SETTING", "VALUE"], [
-    ["provider", `${s.provider}${s.provider === "typesafe" ? ` (${s.model})` : " (typesafe-ai/jev)"}; zero data retention ${s.zeroDataRetention ? "enforced" : "not enforced"}`],
+    ["provider", providerLine(s)],
     ["presets", s.extends.join(", ") || "none"],
     ["include", s.include.join(", ")],
     ["ignore", s.ignore.join(", ") || "nothing beyond lockfiles, minified files and node_modules"],

@@ -149,7 +149,11 @@ export type SkillSource = z.output<typeof skillSourceSchema>;
 export const configSchema = z.strictObject({
   /** TypeSafe model id (direct provider). The gateway currently serves `typesafe-ai/jev` only. */
   model: z.string().default("jev-1.13.0"),
-  provider: z.enum(["gateway", "typesafe"]).default("gateway"),
+  /**
+   * Omit to use what the machine is signed in with: TypeSafe directly when `TYPESAFE_API_KEY` is
+   * set, otherwise the Gateway. Name one to hold every run to it.
+   */
+  provider: z.enum(["gateway", "typesafe"]).optional(),
   zeroDataRetention: z.boolean().default(true),
   extends: z.array(z.string()).default([]),
   include: z.array(z.string()).default(["**/*"]),
