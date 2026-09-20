@@ -46,6 +46,21 @@ TypeSafe's `confidence` for choice and score is a statistic over the distributio
 
 If guidance compilation uses a separate text-generating model, `anthropic/claude-sonnet-5` is a valid Gateway model today. Compilation incurs separate usage and is not a Jev capability. [Sonnet 5 model page](https://vercel.com/ai-gateway/models/claude-sonnet-5)
 
+## Credentials for a CLI run anywhere (2026-09-20)
+
+Until 0.15.0 the CLI found credentials only in the process environment, in `.env` files in the working directory, or through a `.vercel/project.json` in or above it. A person who authenticated by `vercel link` and had no key could therefore run Hunch in exactly one directory, and an agent running it elsewhere met the AI SDK's "No authentication provided".
+
+What comparable tools do:
+
+- **One per-user file, written by a login command.** `gh auth login` keeps tokens in the system credential store and falls back to plain text in `~/.config/gh/hosts.yml`; `--with-token` reads the token from standard input. [gh auth login](https://cli.github.com/manual/gh_auth_login) The Stripe CLI writes `~/.config/stripe/config.toml` from `stripe login`. [Stripe CLI login](https://docs.stripe.com/cli/login) npm keeps `_authToken` in the per-user `~/.npmrc`. [npmrc](https://docs.npmjs.com/cli/configuring-npm/npmrc) AWS reads `~/.aws/credentials`. [AWS CLI files](https://docs.aws.amazon.com/cli/latest/userguide/cli-configure-files.html)
+- **Location.** `$XDG_CONFIG_HOME`, defaulting to `~/.config`. [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/)
+- **Precedence.** Environment variables override the stored file in gh, AWS and npm, so CI and per-project overrides keep working.
+- **No secret in argv.** Arguments are visible in process listings and saved in shell history; gh and `docker login --password-stdin` take secrets on standard input for that reason. [docker login](https://docs.docker.com/reference/cli/docker/login/)
+
+Hunch follows that: `hunch auth login` writes `~/.config/hunch/credentials` (mode 0600, directory 0700), read after the environment and the project's `.env` files. An OS keychain was not used: it needs a native dependency, which `npx` installs cannot rely on, and gh itself falls back to a file. Only `AI_GATEWAY_API_KEY` and `TYPESAFE_API_KEY` are ever exported from the file, so editing it cannot inject `NODE_OPTIONS` or a proxy.
+
+For keyless Vercel users, `@vercel/oidc` 3.2.0 (the version `@ai-sdk/gateway` 4.0.85 depends on) accepts `getVercelOidcToken({ project, team })` and then mints a token from the Vercel CLI login without reading `.vercel/project.json`; this was read in the installed source, and the token is left in `VERCEL_OIDC_TOKEN`, which the Gateway provider reads first. `hunch auth login --vercel` stores only the project and team ids and mints per run. Verified live on 2026-09-20: a `check` completed from a directory with no `.env` and no `.vercel`, using only the stored project. Not verified: Windows paths, and a Vercel CLI that keeps its login in the system keyring (newer `@vercel/oidc` versions shell out to `vercel project token` for that case; 3.2.0 does not).
+
 ## Skills and repository guidance
 
 The Agent Skills specification defines a directory containing `SKILL.md` with YAML metadata and Markdown instructions. It permits additional resources and describes progressive loading. It does not define a universal GitHub shorthand resolver, review policy language, or arbitrary-script execution requirement. Hunch should consume bounded text; a linked script is not authorization to execute it. [Agent Skills specification](https://agentskills.io/specification)

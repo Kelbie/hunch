@@ -51,8 +51,9 @@ A request carries every question for one hunk, plus one more request per distinc
 matters on a large branch is `budget.maxRequests`, not money: anything past the budget is skipped
 and the review is marked partial. Raise the budget rather than accept a partial review.
 
-A key is needed only when something is actually sent: `AI_GATEWAY_API_KEY`, `TYPESAFE_API_KEY`
-(with `provider: "typesafe"`), or Vercel OIDC.
+Credentials are needed only when something is actually sent, so `--dry-run` works without them.
+An authentication error means this machine has not signed in: see
+[Model access](install.md#model-access) (`auth login`, once, for every directory).
 
 ## Reading the result
 

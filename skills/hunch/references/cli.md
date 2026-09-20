@@ -200,6 +200,55 @@ Examples:
   hunch eval fixtures --rule api/errors="Error responses keep their code field." --reporter json
 ```
 
+## `hunch auth login`
+
+save a key to your user config directory; asks with a hidden prompt at a terminal
+
+| Flag | Default | Means |
+| --- | --- | --- |
+| `--provider <name>` |  | gateway (Vercel AI Gateway) or typesafe; skips the question |
+| `--with-token` |  | read the key from standard input instead of prompting |
+| `--vercel` |  | no key: sign in to the AI Gateway through your Vercel CLI login and one Vercel project |
+| `--project <id\|slug>` |  | with --vercel: the project, instead of the one linked in this directory |
+| `--team <id\|slug>` |  | with --vercel: the team that owns the project |
+
+```text
+The key is never taken from an argument: arguments are visible in shell history and process lists.
+It is stored owner-only, and only fills in a key the environment and the project's .env files
+left unset, so a project can still use its own.
+
+--vercel stores no secret. It remembers which Vercel project to request a short-lived token for,
+so the sign-in that works inside a "vercel link"ed directory works in every directory. It needs
+"vercel login", and is checked before anything is stored.
+
+Examples:
+  hunch auth login                                     choose a provider, paste the key
+  hunch auth login --provider gateway --with-token < key.txt
+  pbpaste | hunch auth login --with-token              from the clipboard, on macOS
+  hunch auth login --vercel                            run inside a directory linked with vercel link
+  hunch auth login --vercel --project my-app --team my-team
+```
+
+## `hunch auth status`
+
+say which keys hunch can see from here and where each comes from, never the key
+
+| Flag | Default | Means |
+| --- | --- | --- |
+| `--reporter <format>` | `text` | text or json |
+
+```text
+Exits 1 when there is no key and no Vercel project, linked here or stored, to sign in with.
+```
+
+## `hunch auth logout`
+
+delete stored keys and the stored Vercel project; the environment and .env files are not touched
+
+| Flag | Default | Means |
+| --- | --- | --- |
+| `--provider <name>` |  | only gateway, typesafe or vercel |
+
 ## `hunch app register`
 
 register a GitHub App from a manifest, in your browser

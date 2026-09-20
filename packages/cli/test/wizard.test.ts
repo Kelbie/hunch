@@ -92,8 +92,10 @@ test("presets name what a project is, and general means recommended alone", () =
 });
 
 test("local setup asks for a key, and a blank answer defers instead of storing nothing", async () => {
-  const withKey = scripted([...newConfig("local"), "gateway", "sk-live-value", ...policyDefaults]);
-  expect(await askWizard(withKey.io, context())).toMatchObject({ target: "local", key: { kind: "gateway", value: "sk-live-value" } });
+  const withKey = scripted([...newConfig("local"), "gateway", "sk-live-value", "user", ...policyDefaults]);
+  expect(await askWizard(withKey.io, context())).toMatchObject({ target: "local", key: { kind: "gateway", value: "sk-live-value", scope: "user" } });
+  const pinned = scripted([...newConfig("local"), "typesafe", "ts-key", "project", ...policyDefaults]);
+  expect(await askWizard(pinned.io, context())).toMatchObject({ key: { kind: "typesafe", value: "ts-key", scope: "project" } });
   const blank = scripted([...newConfig("local"), "gateway", "   ", ...policyDefaults]);
   expect(await askWizard(blank.io, context())).toMatchObject({ key: { kind: "later" } });
 });
@@ -109,7 +111,7 @@ test("a key already reachable by check is not asked for again", async () => {
 });
 
 test("cancelling any question abandons the whole setup, so nothing half-configured is written", async () => {
-  const full = [["recommended"], "", "", "local", "gateway", "sk", "enforce", false, true, "A rule.", "project/a", true, true];
+  const full = [["recommended"], "", "", "local", "gateway", "sk", "user", "enforce", false, true, "A rule.", "project/a", true, true];
   for (let i = 0; i < full.length; i++) {
     const answers = [...full.slice(0, i), null];
     expect(await askWizard(scripted(answers).io, context({ guidance: true }))).toBeNull();
@@ -179,7 +181,8 @@ test("next steps are ordered and name the base-branch requirement the README als
   expect(actions).toContain("is set as a repository secret");
   expect(actions).toContain(".github/workflows/hunch.yml");
   expect(actions).not.toContain("hunch.lock");
-  expect(nextSteps("local", { configFile: "hunch.toml", compiled: false, secretSet: false, keyDeferred: true })).toContain("export AI_GATEWAY_API_KEY");
+  expect(nextSteps("local", { configFile: "hunch.toml", compiled: false, secretSet: false, keyDeferred: true })).toContain("hunch auth login");
+  expect(nextSteps("local", { configFile: "hunch.toml", compiled: false, secretSet: false, keyDeferred: false, keyPath: "~/.config/hunch/credentials" })).toContain("~/.config/hunch/credentials");
 });
 
 test("piped or CI runs are never interactive, so scripted installs keep the flag behaviour", () => {

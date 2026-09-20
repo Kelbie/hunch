@@ -7,7 +7,9 @@ import { defaultAnswers, PRESET_NAMES, type ConfigAnswers, type PresetName } fro
 /** Where reviews run. The App needs nothing in the repository beyond a committed config. */
 export type Target = "local" | "app" | "actions";
 export type Preset = "ts" | "rust" | "general";
-export type KeyChoice = { kind: "gateway" | "typesafe"; value: string } | { kind: "later" };
+/** `user` stores the key once for every directory; `project` keeps it in this repository's `.env.local`. */
+export type KeyScope = "user" | "project";
+export type KeyChoice = { kind: "gateway" | "typesafe"; value: string; scope: KeyScope } | { kind: "later" };
 
 export const INSTALL_URL = "https://github.com/apps/hunch-review/installations/new";
 
@@ -166,7 +168,7 @@ export async function askTarget(io: WizardIo): Promise<Target | null> {
   return value as Target | null;
 }
 
-/** Keys already reachable by `check`, in the order bin.ts loads them. */
+/** Keys already reachable by `check`. A key from `hunch auth login` is in `env` by the time this runs. */
 export function existingKey(root: string, env: NodeJS.ProcessEnv = process.env): "AI_GATEWAY_API_KEY" | "TYPESAFE_API_KEY" | null {
   for (const name of ["AI_GATEWAY_API_KEY", "TYPESAFE_API_KEY"] as const) {
     if (env[name]) return name;
@@ -193,7 +195,16 @@ export async function askKey(io: WizardIo): Promise<KeyChoice | null> {
   const value = await io.password({ message: provider === "gateway" ? "Paste your AI Gateway key" : "Paste your TypeSafe key" });
   if (value === null) return null;
   if (!value.trim()) return { kind: "later" };
-  return { kind: provider as "gateway" | "typesafe", value: value.trim() };
+  const scope = await io.select({
+    message: "Where should the key be kept?",
+    initialValue: "user",
+    options: [
+      { value: "user", label: "For every project on this machine", hint: "your user config directory; hunch then works in any directory" },
+      { value: "project", label: "Only this project", hint: ".env.local, ignored by git" },
+    ],
+  });
+  if (scope === null) return null;
+  return { kind: provider as "gateway" | "typesafe", value: value.trim(), scope: scope as KeyScope };
 }
 
 /**
@@ -284,7 +295,7 @@ export function installSkill(root: string, run = spawnSync): boolean {
 }
 
 /** What to do next, in order, for the path chosen. Mirrors the README so the two cannot drift. */
-export function nextSteps(target: Target, opts: { configFile: string; compiled: boolean; secretSet: boolean; keyDeferred: boolean }): string {
+export function nextSteps(target: Target, opts: { configFile: string; compiled: boolean; secretSet: boolean; keyDeferred: boolean; keyPath?: string }): string {
   const commit = `git add ${opts.configFile}${opts.compiled ? " hunch.lock" : ""}`;
   if (target === "app") {
     return [
@@ -302,7 +313,7 @@ export function nextSteps(target: Target, opts: { configFile: string; compiled: 
     ].join("\n\n");
   }
   return [
-    opts.keyDeferred ? "1. Export your model key:\n   export AI_GATEWAY_API_KEY=…" : "1. Your key is in .env.local (ignored by git).",
+    opts.keyDeferred ? "1. Store your model key, once for every project:\n   npx @kelbie/hunch auth login" : `1. Your key is in ${opts.keyPath ?? ".env.local (ignored by git)"}.`,
     "2. Review this branch:\n   npx @kelbie/hunch check",
   ].join("\n\n");
 }

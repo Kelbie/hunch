@@ -12,7 +12,8 @@ npx skills add Kelbie/hunch
 
 The [Agent Skill](https://github.com/Kelbie/hunch/blob/main/skills/hunch/SKILL.md) explains when to search, how to phrase a question, and how
 to verify the results. No project config is needed for an ad hoc search. Requires Node 22+, Git,
-and provider authentication; the default provider uses `AI_GATEWAY_API_KEY`.
+and provider authentication: run `npx @kelbie/hunch auth login` once and Hunch works in every
+directory (`--vercel` reuses a Vercel CLI login instead of a key).
 
 These commands require 0.13.0. For unreleased `main`, run `bun run hunch` from this checkout.
 

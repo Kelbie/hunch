@@ -1,11 +1,11 @@
 ---
 name: hunch
 description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, compile guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
-argument-hint: "[install|config|rules|compile|check|find|doctor|eval|operator] [what you want]"
+argument-hint: "[install|auth|config|rules|compile|check|find|doctor|eval|operator] [what you want]"
 allowed-tools: Bash(npx @kelbie/hunch *) Bash(npx hunch *) Bash(hunch *) Bash(bun run hunch *)
-compatibility: Node 22+ and git. gh for doctor and find --prs. A model key only for check, find and eval.
+compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
 metadata:
-  version: "0.14.0"
+  version: "0.15.0"
 ---
 
 # Hunch
@@ -31,7 +31,7 @@ Work out the command prefix before running anything.
 | has a global `hunch` matching this skill version | `hunch <command>` |
 | anything else | `npx @kelbie/hunch <command>` (latest from npm; no install needed) |
 
-Check `--version` before using new options: condition mode and `review`/`abstain` configuration
+Check `--version` before using new options: `auth` requires 0.15.0. Condition mode and `review`/`abstain` configuration
 require 0.13.0. Correct compiled path scopes and rule budgets above 64 require 0.13.1. A policy whose rules exceed one request is split across requests, instead of having the excess skipped, from 0.14.0. The main-branch skill can precede npm publication; use a matching installed build
 or the Hunch source checkout in that case. Do not silently change a project's pinned dependency.
 
@@ -51,6 +51,7 @@ With no verb, pick one from the request and say which you picked.
 | `compile` | turn AGENTS.md and Agent Skills into review questions in `hunch.lock` | `compile` | [compile.md](references/compile.md) |
 | `check` | review a branch, staged changes, a PR or whole files | `check` | [check.md](references/check.md) |
 | `find` | search existing behavior or gather context for a change | `find` | [find.md](references/find.md) |
+| `auth` | sign in once so Hunch runs in every directory, or see why it cannot authenticate | `auth login`, `auth status` | [install.md](references/install.md#model-access) |
 | `doctor` | explain why a PR got no review | `doctor` | [doctor.md](references/doctor.md) |
 | `eval` | measure a rule's precision and recall on labelled diffs | `eval` | [eval.md](references/eval.md) |
 | `operator` | run your own deployment of the GitHub App | `app register`, `app connect` | [operator.md](references/operator.md) |
@@ -74,6 +75,7 @@ against it.
 | an existing behavior to locate | candidates across the repository | `find "<condition>" --mode condition` |
 | a change to make | code worth reading first | `find "<task>"` |
 | a PR with no review | the reason | `doctor` |
+| an authentication error, or no key on this machine | Hunch to work in any directory | `auth status`, then the user runs `auth login` ([Model access](references/install.md#model-access)) |
 | a noisy rule | fewer false positives | [rules.md](references/rules.md#tuning), then `eval` |
 | a rule that must block merges | it enforced | `"error"` + `failOnError: true` + a required check: [rules.md](references/rules.md#blocking-merges) |
 | no `origin` remote | to review a branch | `check --base main` (the default base is `origin/main`) |
@@ -113,8 +115,10 @@ The same on every command.
   repeated context and provider retries. Do not promise a fixed price or latency. Report usage
   from the run; respect the user's budget and provider quotas. `--concurrency` changes throughput,
   not recall. Fewer questions can reduce token usage. Compilation uses a separate coding agent.
-- **Keys never go in config.** `AI_GATEWAY_API_KEY` or `TYPESAFE_API_KEY` belongs in the environment,
-  `.env.local` (git-ignored) or a repository secret. Never echo a key, or put one in argv.
+- **Keys never go in config.** `auth login` stores `AI_GATEWAY_API_KEY` or `TYPESAFE_API_KEY` once
+  per machine, outside every repository; the environment, `.env.local` (git-ignored) and a
+  repository secret also work. Never echo a key, put one in argv, or ask for one in the
+  conversation: the user runs `auth login` themselves.
 - **Policy comes from the base branch.** The App and the Actions workflow read the config and
   `hunch.lock` from the PR's base commit. A config change takes effect after it merges, so the PR
   that adds or changes Hunch is not reviewed by its own rules.
@@ -143,4 +147,5 @@ Edit `hunch.config.ts` or `hunch.toml` directly; `init` only creates it. After e
 | `hunch.config.ts` or `hunch.toml` | `init`, then people and agents | yes, to the default branch |
 | `hunch.lock` | `compile` | yes, after reading it: it is the policy |
 | `.github/workflows/hunch.yml` | `init --target actions` | yes, for the Actions path |
-| `.env.local` | the `init` wizard, when given a key | never; `init` adds it to `.gitignore` |
+| `.env.local` | the `init` wizard, when asked to keep the key in this project only | never; `init` adds it to `.gitignore` |
+| `~/.config/hunch/credentials` | `auth login` and the `init` wizard | it is outside the repository; owner-only |

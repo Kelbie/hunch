@@ -26,13 +26,14 @@
     },
     "packages/cli": {
       "name": "@kelbie/hunch",
-      "version": "0.9.0",
+      "version": "0.14.0",
       "bin": {
         "hunch": "dist/bin.js",
       },
       "dependencies": {
         "@ai-sdk/gateway": "4.0.85",
         "@clack/prompts": "1.8.1",
+        "@vercel/oidc": "3.2.0",
         "ai": "7.0.105",
         "commander": "^15.0.0",
         "oxc-parser": "0.150.0",

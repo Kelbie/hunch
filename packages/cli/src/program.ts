@@ -53,6 +53,7 @@ import { VERSION } from "./version.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 import { diagnose, parseRemote, report } from "./doctor.js";
+import { applyCredentials, authHint, credentialsPath, keyNameFor, keySources, linkedVercelProject, looselyPermitted, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, mintVercelToken, useVercelLink, KEY_NAMES, type KeyName, type Provider, type VercelLink } from "./credentials.js";
 import { askWizard, clackIo, detectPreset, existingKey, ghReady, hasGuidance, installSkill, interactive, nextSteps, presetsFor, setRepoSecret, SKILL_INSTALL, writeKey, type Target, type WizardAnswers } from "./setup/wizard.js";
 
 
@@ -243,6 +244,46 @@ Examples:
   hunch eval fixtures --rule api/errors="Error responses keep their code field." --reporter json`)
     .action((dir: string, opts: Opts) => runEval(root(), dir, { config: opts.config, rules: opts.rule, root: root(), reporter: opts.reporter }));
 
+  const auth = program
+    .command("auth")
+    .description("store a model key once, so hunch works in every directory");
+  auth
+    .command("login")
+    .description("save a key to your user config directory; asks with a hidden prompt at a terminal")
+    .option("--provider <name>", "gateway (Vercel AI Gateway) or typesafe; skips the question")
+    .option("--with-token", "read the key from standard input instead of prompting", false)
+    .option("--vercel", "no key: sign in to the AI Gateway through your Vercel CLI login and one Vercel project", false)
+    .option("--project <id|slug>", "with --vercel: the project, instead of the one linked in this directory")
+    .option("--team <id|slug>", "with --vercel: the team that owns the project")
+    .addHelpText("after", `
+The key is never taken from an argument: arguments are visible in shell history and process lists.
+It is stored owner-only, and only fills in a key the environment and the project's .env files
+left unset, so a project can still use its own.
+
+--vercel stores no secret. It remembers which Vercel project to request a short-lived token for,
+so the sign-in that works inside a "vercel link"ed directory works in every directory. It needs
+"vercel login", and is checked before anything is stored.
+
+Examples:
+  hunch auth login                                     choose a provider, paste the key
+  hunch auth login --provider gateway --with-token < key.txt
+  pbpaste | hunch auth login --with-token              from the clipboard, on macOS
+  hunch auth login --vercel                            run inside a directory linked with vercel link
+  hunch auth login --vercel --project my-app --team my-team`)
+    .action((opts: Opts) => runAuthLogin(opts, root()));
+  auth
+    .command("status")
+    .description("say which keys hunch can see from here and where each comes from, never the key")
+    .option("--reporter <format>", "text or json", "text")
+    .addHelpText("after", `
+Exits 1 when there is no key and no Vercel project, linked here or stored, to sign in with.`)
+    .action((opts: Opts) => runAuthStatus(opts, root()));
+  auth
+    .command("logout")
+    .description("delete stored keys and the stored Vercel project; the environment and .env files are not touched")
+    .option("--provider <name>", "only gateway, typesafe or vercel")
+    .action((opts: Opts) => runAuthLogout(opts));
+
   const app = program
     .command("app")
     .description("register and connect your own deployment of the GitHub App");
@@ -268,6 +309,8 @@ Examples:
 Model access (no key is ever written to your config):
   AI_GATEWAY_API_KEY   Vercel AI Gateway, the default provider
   TYPESAFE_API_KEY     TypeSafe directly, with provider = "typesafe" in your config
+Looked up in the environment, then .env files in the working directory, then the key saved by
+"hunch auth login", which works in every directory.
 
 Docs: https://github.com/Kelbie/hunch`);
   return program;
@@ -284,9 +327,127 @@ const flagsOf = (opts: Opts): string[] =>
     return v === true ? [flag] : [flag, String(v)];
   });
 
+/** Names filled from the user's stored credentials on this run, for `auth status` to report. */
+let storedKeys: KeyName[] = [];
+
 export async function main() {
   loadEnvFiles();
-  await buildProgram().parseAsync(process.argv);
+  storedKeys = applyCredentials();
+  try {
+    await buildProgram().parseAsync(process.argv);
+  } catch (e) {
+    const hint = authHint(e instanceof Error ? e.message : String(e));
+    if (!hint) throw e;
+    // The SDK's own text explains how to sign up with the provider, not how to give Hunch the key.
+    throw new Error(`${String(e instanceof Error ? e.message : e).split("\n")[0]}\n\n${hint}`);
+  }
+}
+
+/**
+ * Built on the first question, so a dry run or an empty diff needs no credentials. With no key
+ * and no Vercel project linked here, the one stored by `hunch auth login --vercel` signs in first.
+ */
+function jevClient(config: Parameters<typeof clientFromEnv>[0]): JevClient {
+  let client: Promise<JevClient> | undefined;
+  const build = async () => {
+    if (config.provider === "gateway") await useVercelLink();
+    return clientFromEnv(config);
+  };
+  return { evaluate: async (req) => (await (client ??= build())).evaluate(req) };
+}
+
+const PROVIDERS: Provider[] = ["gateway", "typesafe"];
+
+async function readStdin(): Promise<string> {
+  let text = "";
+  for await (const chunk of process.stdin) text += chunk;
+  return text;
+}
+
+/** Proves the Vercel CLI login can mint a token for the project before remembering it; nothing is stored on failure. */
+async function loginWithVercel(link: VercelLink) {
+  let path: string;
+  try {
+    // A token already in the environment may belong to another project, and would be handed back as is.
+    delete process.env.VERCEL_OIDC_TOKEN;
+    await mintVercelToken(link);
+    path = saveVercelLink(link);
+  } catch (e) { return fail((e as Error).message); }
+  console.error(`hunch: Vercel sign-in works for ${link.project}; remembered it in ${path}. No secret was stored: each run asks your Vercel CLI login for a short-lived token.`);
+  if (process.env.AI_GATEWAY_API_KEY) console.error("hunch: AI_GATEWAY_API_KEY is also set, and a key is used before the Vercel project.");
+}
+
+async function runAuthLogin(opts: Opts, root: string) {
+  if (opts.provider && !PROVIDERS.includes(opts.provider)) return fail(`Unknown --provider ${opts.provider}; choose gateway or typesafe`);
+  if ((opts.project || opts.team) && !opts.vercel) return fail("--project and --team go with --vercel.");
+  if (opts.vercel) {
+    if (opts.provider || opts.withToken) return fail("--vercel stores no key; drop --provider and --with-token.");
+    const link = opts.project ? { project: opts.project as string, ...(opts.team ? { team: opts.team as string } : {}) } : linkedVercelProject(root);
+    if (!link) return fail("no Vercel project is linked here. Run this inside a directory linked with `vercel link`, or pass --project and --team.");
+    return loginWithVercel(link);
+  }
+  let provider = opts.provider as Provider | "vercel" | undefined;
+  let value: string;
+  if (opts.withToken) {
+    if (process.stdin.isTTY) return fail("--with-token reads the key from standard input; pipe it in, or drop the flag to be asked.");
+    value = await readStdin();
+    provider ??= "gateway";
+  } else {
+    if (!interactive()) return fail("no terminal to ask at. Pipe the key in: hunch auth login --with-token < file");
+    const io = clackIo();
+    provider ??= await io.select({
+      message: "Which model provider is this key for?",
+      initialValue: "gateway",
+      options: [
+        { value: "gateway", label: "Vercel AI Gateway", hint: "AI_GATEWAY_API_KEY, from API Keys → Create key" },
+        { value: "typesafe", label: "TypeSafe directly", hint: "TYPESAFE_API_KEY" },
+        { value: "vercel", label: "Vercel AI Gateway, without a key", hint: "your Vercel CLI login and the project linked in this directory" },
+      ],
+    }) as Provider | "vercel" | null ?? undefined;
+    if (!provider) return fail("login cancelled; nothing was stored.");
+    if (provider === "vercel") {
+      const link = linkedVercelProject(root);
+      return link ? loginWithVercel(link) : fail("no Vercel project is linked here. Run this inside a directory linked with `vercel link`, or pass --vercel --project and --team.");
+    }
+    const answer = await io.password({ message: provider === "gateway" ? "Paste your AI Gateway key" : "Paste your TypeSafe key" });
+    if (answer === null) return fail("login cancelled; nothing was stored.");
+    value = answer;
+  }
+  const name = keyNameFor(provider as Provider);
+  let path: string;
+  try { path = saveCredential(name, value); }
+  catch (e) { return fail((e as Error).message); }
+  console.error(`hunch: stored ${name} in ${path} (owner-only). It was not checked against the provider; the next check or find will be.`);
+  if (process.env[name] && !storedKeys.includes(name) && process.env[name] !== value.trim()) {
+    console.error(`hunch: ${name} is also set in the environment or a .env file here, and that one wins in this directory.`);
+  }
+}
+
+function runAuthStatus(opts: Opts, root: string) {
+  if (!["text", "json"].includes(opts.reporter)) return fail("Unknown --reporter for auth status; use text or json");
+  const path = credentialsPath();
+  const sources = keySources(process.env, storedKeys);
+  const linked = linkedVercelProject(root) !== null;
+  const stored = readVercelLink(path);
+  const loose = looselyPermitted(path);
+  const found = KEY_NAMES.some((n) => sources[n] !== "missing");
+  if (opts.reporter === "json") console.log(JSON.stringify({ credentialsFile: path, keys: sources, vercelLinked: linked, vercelProject: stored, credentialsFileReadableByOthers: loose }, null, 2));
+  else {
+    const say = { environment: "set, from the environment or a .env file here", stored: `set, from ${path}`, missing: "not set" };
+    for (const n of KEY_NAMES) console.log(`${n.padEnd(20)} ${say[sources[n]]}`);
+    console.log(`${"Vercel project".padEnd(20)} ${linked ? "linked in this directory; the AI Gateway signs in through it (not verified)"
+      : stored ? `${stored.project}${stored.team ? ` (${stored.team})` : ""}, from ${path}; used when no key is set (not verified)` : "none"}`);
+    if (loose) console.log(`warning: ${path} is readable by other users. Run: chmod 600 ${path}`);
+    if (!found && !linked && !stored) console.log("\nNothing to sign in with. Run `hunch auth login` to store a key, or `hunch auth login --vercel`, once for every directory.");
+  }
+  process.exitCode = found || linked || stored ? 0 : 1;
+}
+
+function runAuthLogout(opts: Opts) {
+  if (opts.provider && ![...PROVIDERS, "vercel"].includes(opts.provider)) return fail(`Unknown --provider ${opts.provider}; choose gateway, typesafe or vercel`);
+  const removed: string[] = opts.provider === "vercel" ? [] : removeCredentials(opts.provider ? [keyNameFor(opts.provider)] : KEY_NAMES);
+  if ((!opts.provider || opts.provider === "vercel") && removeVercelLink()) removed.push("the Vercel project");
+  console.error(removed.length ? `hunch: removed ${removed.join(" and ")} from ${credentialsPath()}.` : "hunch: nothing stored to remove.");
 }
 
 
@@ -298,11 +459,17 @@ async function finishWizard(root: string, answers: WizardAnswers, opts: { file: 
   const io = clackIo();
   const key = answers.key;
   let keyDeferred = key.kind === "later";
+  let keyPath: string | undefined;
   if (key.kind !== "later") {
-    const name = key.kind === "gateway" ? "AI_GATEWAY_API_KEY" : "TYPESAFE_API_KEY";
+    const name = keyNameFor(key.kind);
     try {
-      const path = writeKey(root, name, key.value);
-      console.error(`hunch: wrote ${name} to ${path.replace(`${root}/`, "")} (git-ignored).`);
+      if (key.scope === "user") {
+        keyPath = saveCredential(name, key.value);
+        console.error(`hunch: stored ${name} in ${keyPath} (owner-only); hunch now works in every directory.`);
+      } else {
+        const path = writeKey(root, name, key.value);
+        console.error(`hunch: wrote ${name} to ${path.replace(`${root}/`, "")} (git-ignored).`);
+      }
     } catch (e) {
       keyDeferred = true;
       console.error(`hunch: ${e instanceof Error ? e.message : String(e)}`);
@@ -318,7 +485,7 @@ async function finishWizard(root: string, answers: WizardAnswers, opts: { file: 
     console.error("hunch: run `npx @kelbie/hunch compile` to turn AGENTS.md and skills into review questions, then commit hunch.lock.");
     compiled = existsSync(join(root, LOCK_FILE));
   }
-  io.note(nextSteps(answers.target, { configFile: opts.file, compiled, secretSet, keyDeferred }), "Next");
+  io.note(nextSteps(answers.target, { configFile: opts.file, compiled, secretSet, keyDeferred, keyPath }), "Next");
   io.outro("Hunch is configured.");
 }
 
@@ -380,7 +547,7 @@ async function runEval(root: string, dir: string, inline: { config?: string[]; r
     s[k]++;
     stats.set(rule, s);
   };
-  const client = clientFromEnv(loaded.config);
+  const client = jevClient(loaded.config);
   const fixtures: { file: string; expected: string[]; fired: string[] }[] = [];
   for (const f of files) {
     const text = readFileSync(join(root, dir, f), "utf8");
@@ -481,14 +648,13 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     return;
   }
   // Created on first request, so a diff with nothing to review needs no API key.
-  let client: JevClient | undefined;
   const result = await check({
     config,
     hunks,
     task,
     lock,
     only,
-    client: { evaluate: (req) => (client ??= clientFromEnv(config)).evaluate(req) },
+    client: jevClient(config),
     readFile: (p) => repo.read(p),
     readChangedFile: opts.diff ? undefined : opts.staged ? (p) => readStagedFile(root, p) : (p) => changedSource.read(p),
     onProgress: (d, t) => opts.reporter === "text" && process.stderr.write(`\r  checked ${d}/${t} hunks`),
@@ -590,8 +756,7 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   if (!hunks.length && !skipped.length) return fail("nothing in scope to search; check `include` and the paths you passed.");
   console.error(`hunch: searching ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}`);
 
-  let client: JevClient | undefined;
-  const jev = { evaluate: (req: Parameters<JevClient["evaluate"]>[0]) => (client ??= clientFromEnv(config)).evaluate(req) };
+  const jev = jevClient(config);
 
   // Asked first: if this work is already open as a pull request, the person should hear it
   // before reading a hundred lines of code they may not need to touch.
@@ -673,6 +838,7 @@ async function runCompile(opts: Opts, root: string, repo: RepoReader) {
   if (!choice) return fail("compile cancelled.");
   const model = compilerId(choice, config.compileModel);
   console.error(`hunch: compiling ${docs.length} source(s) with ${describeChoice(choice, config.compileModel)}`);
+  if (choice.agent === "gateway") await useVercelLink();
   const lock = await compileSources(docs, {
     extractor: extractorFor(choice, config),
     model,
