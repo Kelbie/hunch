@@ -19,7 +19,7 @@ function repo(files: Record<string, string>) {
 }
 
 function hunch(cwd: string, ...args: string[]) {
-  const r = spawnSync("bun", [BIN, ...args], { cwd, encoding: "utf8", env: { PATH: process.env.PATH! } });
+  const r = spawnSync("bun", [BIN, ...args], { cwd, encoding: "utf8", env: { PATH: process.env.PATH!, HUNCH_CONFIG_DIR: "/nonexistent/hunch-test-config" } });
   return { out: r.stdout, err: r.stderr, status: r.status };
 }
 

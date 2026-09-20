@@ -178,11 +178,22 @@ export class JevError extends Error {
 }
 
 /** Picks a provider from config + environment. */
+type ProviderChoice = { provider?: "gateway" | "typesafe" };
+
+/**
+ * The provider a run uses. A config that names one is obeyed. One that does not leaves it to the
+ * credentials at hand, so a person signed in with a TypeSafe key can review a repository that has
+ * no Hunch config, while the hosted App and CI, which hold no such key, stay on the Gateway.
+ */
+export function providerFor(cfg: ProviderChoice, env: Record<string, string | undefined> = process.env): "gateway" | "typesafe" {
+  return cfg.provider ?? (env.TYPESAFE_API_KEY && !env.AI_GATEWAY_API_KEY ? "typesafe" : "gateway");
+}
+
 export function clientFromEnv(
-  cfg: { provider: "gateway" | "typesafe"; zeroDataRetention: boolean },
+  cfg: ProviderChoice & { zeroDataRetention: boolean },
   env: Record<string, string | undefined> = process.env,
 ): JevClient {
-  if (cfg.provider === "typesafe") {
+  if (providerFor(cfg, env) === "typesafe") {
     const apiKey = env.TYPESAFE_API_KEY;
     if (!apiKey) throw new Error("provider = typesafe needs TYPESAFE_API_KEY");
     return typesafeClient({ apiKey });

@@ -10,7 +10,7 @@ const BIN = join(import.meta.dir, "../src/bin.ts");
 const CONFIG = "export default { include: ['src/**'] };\n";
 
 function hunch(cwd: string, ...args: string[]) {
-  const r = spawnSync("bun", [BIN, "check", "--reporter", "json", ...args], { cwd, encoding: "utf8", env: { PATH: process.env.PATH! } });
+  const r = spawnSync("bun", [BIN, "check", "--reporter", "json", ...args], { cwd, encoding: "utf8", env: { PATH: process.env.PATH!, HUNCH_CONFIG_DIR: "/nonexistent/hunch-test-config" } });
   const out = r.stdout.trim() ? JSON.parse(r.stdout) : null;
   return { hunks: out?.stats.hunks as number, files: [...new Set<string>(out?.findings.map((f: { file: string }) => f.file) ?? [])], stderr: r.stderr, status: r.status };
 }
@@ -58,10 +58,10 @@ test("the PR that adds Hunch is skipped with a notice, not failed, when its base
     writeFileSync(join(root, "hunch.config.ts"), CONFIG);
     git(root, ["add", "."]);
     git(root, ["-c", "user.name=T", "-c", "user.email=t@example.invalid", "commit", "--quiet", "-m", "add hunch"]);
-    const r = spawnSync("bun", [BIN, "check", "--base", base, "--head", "HEAD", "--policy-ref", base, "--reporter", "github"], { cwd: root, encoding: "utf8", env: { PATH: process.env.PATH! } });
+    const r = spawnSync("bun", [BIN, "check", "--base", base, "--head", "HEAD", "--policy-ref", base, "--reporter", "github"], { cwd: root, encoding: "utf8", env: { PATH: process.env.PATH!, HUNCH_CONFIG_DIR: "/nonexistent/hunch-test-config" } });
     expect(r.status).toBe(0);
     expect(r.stdout).toContain("::notice title=Hunch::Hunch isn't set up on the base branch yet");
     // Without a trusted base policy flag, a missing config is still an error.
-    expect(spawnSync("bun", [BIN, "check", "--base", base], { cwd: mkdtempSync(join(tmpdir(), "hunch-none-")), encoding: "utf8", env: { PATH: process.env.PATH! } }).status).not.toBe(0);
+    expect(spawnSync("bun", [BIN, "check", "--base", base], { cwd: mkdtempSync(join(tmpdir(), "hunch-none-")), encoding: "utf8", env: { PATH: process.env.PATH!, HUNCH_CONFIG_DIR: "/nonexistent/hunch-test-config" } }).status).not.toBe(0);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
