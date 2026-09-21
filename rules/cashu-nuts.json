@@ -7,9 +7,11 @@
   ],
   "task": "none",
   "budget": {
-    "maxHunks": 300,
-    "maxRequests": 300,
-    "timeoutSeconds": 600
+    "maxHunks": 100000,
+    "maxRulesPerHunk": 1024,
+    "maxRequests": 200000,
+    "concurrency": 16,
+    "timeoutSeconds": 43200
   },
   "rules": {
     "nuts/name-mismatch": {

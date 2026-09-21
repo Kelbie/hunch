@@ -97,8 +97,8 @@ From the repository you want reviewed:
 
 ```sh
 npm install -D @kelbie/hunch
-npx @kelbie/hunch init --target app
-# If using skills or AGENTS.md: npx @kelbie/hunch compile (uses your local Claude Code or Codex)
+npx -y --min-release-age=0 @kelbie/hunch init --target app
+# If using skills or AGENTS.md: npx -y --min-release-age=0 @kelbie/hunch compile (uses your local Claude Code or Codex)
 ```
 
 Use `--preset rust`, `--preset ts`, `--preset ts,rust` or `--preset general` to choose explicitly. Commit the config and any reviewed `hunch.lock` to the PR base branch. You don't need `--target actions` or an Actions model secret when using the App.

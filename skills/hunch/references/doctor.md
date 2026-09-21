@@ -5,7 +5,7 @@ using the `gh` login. Real output: [examples/doctor.md](../examples/doctor.md).
 
 | Check | Fails when | Fix it prints |
 | --- | --- | --- |
-| Config in working tree | no `hunch.config.ts` or `hunch.toml` locally | `npx @kelbie/hunch init` |
+| Config in working tree | no `hunch.config.ts` or `hunch.toml` locally | `npx -y --min-release-age=0 @kelbie/hunch init` |
 | GitHub remote | `origin` isn't on github.com (the check is then unknown, and doctor stops) | only local review applies |
 | Repository access | `gh` can't read the repository | `gh auth login` |
 | Config on `<default branch>` | the config isn't on the default branch, where reviews read it | commit and merge it |

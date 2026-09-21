@@ -8,7 +8,7 @@
 ### What would be compiled?
 
 ```sh
-npx @kelbie/hunch compile --dry-run
+npx -y --min-release-age=0 @kelbie/hunch compile --dry-run
 ```
 
 Exit code **0**.
@@ -29,7 +29,7 @@ hunch: dry run, nothing compiled. 2 of 2 source(s) would be compiled.
 An agent must say which compiler to use.
 
 ```sh
-npx @kelbie/hunch compile
+npx -y --min-release-age=0 @kelbie/hunch compile
 ```
 
 Exit code **2**.
@@ -46,7 +46,7 @@ hunch: choose a compiler with --with claude, --with codex or --with gateway.
 ### Nothing to compile
 
 ```sh
-npx @kelbie/hunch compile --dry-run
+npx -y --min-release-age=0 @kelbie/hunch compile --dry-run
 ```
 
 Exit code **2**.
@@ -54,7 +54,7 @@ Exit code **2**.
 stderr:
 
 ```text
-hunch: no skills, AGENTS.md or docs found to compile.
+hunch: no skills, AGENTS.md or docs found to compile. Add an AGENTS.md, install a skill (`npx skills add <owner/repo>`), or list files under `docs` in the Hunch config; then run `npx @kelbie/hunch compile` again.
 ```
 
 <!-- /case -->

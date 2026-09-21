@@ -12,23 +12,24 @@ npx skills add Kelbie/hunch
 
 The [Agent Skill](skills/hunch/SKILL.md) explains when to search, how to phrase a question, and how
 to verify the results. No project config is needed for an ad hoc search. Requires Node 22+, Git,
-and provider authentication: run `npx @kelbie/hunch auth login` once and Hunch works in every
+and provider authentication: run `npx -y --min-release-age=0 @kelbie/hunch auth login` once and Hunch works in every
 directory (`--vercel` reuses a Vercel CLI login instead of a key).
-
-These commands require 0.13.0. For unreleased `main`, run `bun run hunch` from this checkout.
 
 ```sh
 # Gather implementation, callers, contracts, tests and precedents for a change.
-npx @kelbie/hunch find "add cancellation to file uploads"
+npx -y --min-release-age=0 @kelbie/hunch find "add cancellation to file uploads"
 
 # Look for an existing behavior, regardless of its names.
-npx @kelbie/hunch find "Does this code turn a failed operation into a successful result?" --mode condition
+npx -y --min-release-age=0 @kelbie/hunch find "Does this code turn a failed operation into a successful result?" --mode condition
 
 # Get structured evidence for an agent; include every above-threshold match.
-npx @kelbie/hunch find "Does this code retry a side effect?" --mode condition --top 0 --reporter json
+npx -y --min-release-age=0 @kelbie/hunch find "Does this code retry a side effect?" --mode condition --top 0 --reporter json
+
+# Review any repository against a published rule pack: no config, no clone.
+npx -y --min-release-age=0 @kelbie/hunch check --all --pack cashu-conformance --dry-run
 
 # Review a branch with a one-off rule.
-npx @kelbie/hunch check --rule errors="Preserve failures that callers need to handle."
+npx -y --min-release-age=0 @kelbie/hunch check --rule errors="Preserve failures that callers need to handle."
 ```
 
 Use `rg` for exact symbols and text. Use Hunch when the behavior may have many implementations
@@ -36,11 +37,11 @@ or names. Read the returned source and follow its dependencies before drawing a 
 
 ## Recurring audits
 
-Run `npx @kelbie/hunch init` to configure plain-English or typed questions. Run them locally with
+Run `npx -y --min-release-age=0 @kelbie/hunch init` to configure plain-English or typed questions. Run them locally with
 `check`, across whole files with `check --all`, or on pull requests through GitHub Actions or the
 GitHub App. PR policy comes from the immutable base commit.
 
-[Installation](skills/hunch/references/install.md) · [Writing rules](skills/hunch/references/rules.md) ·
+[Installation](skills/hunch/references/install.md) · [Rule packs](skills/hunch/references/packs.md) · [Writing rules](skills/hunch/references/rules.md) ·
 [Configuration](skills/hunch/references/config.md) · [CLI reference](skills/hunch/references/cli.md)
 
 ## What the results mean

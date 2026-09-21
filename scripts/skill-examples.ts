@@ -176,7 +176,7 @@ interface Case {
   title: string;
   /** What the example shows, in a sentence, for an agent choosing which one to read. */
   note?: string;
-  /** The command as a person would type it, without `npx @kelbie/hunch`. */
+  /** The command as a person would type it, without `npx -y --min-release-age=0 @kelbie/hunch`. */
   args: string[];
   setup: () => string;
   /** Needs a model key, gh or a compiling agent. */
@@ -219,7 +219,7 @@ function run(c: Case): { block: string } {
       "",
       ...(c.note ? [c.note, ""] : []),
       "```sh",
-      `npx @kelbie/hunch ${c.args.map(quote).join(" ")}`,
+      `npx -y --min-release-age=0 @kelbie/hunch ${c.args.map(quote).join(" ")}`,
       "```",
       "",
       `Exit code **${r.status}**.${c.live ? ` Captured from a real run with hunch ${VERSION} on ${new Date().toISOString().slice(0, 10)}; model output varies between runs.` : ""}`,
@@ -351,7 +351,7 @@ function render(page: Page): string {
   const blocks = page.cases.map((c) => {
     if (c.live && !live) {
       return previous.get(c.id) ?? [
-        `<!-- case: ${c.id} -->`, `### ${c.title}`, "", "```sh", `npx @kelbie/hunch ${c.args.map(quote).join(" ")}`, "```", "",
+        `<!-- case: ${c.id} -->`, `### ${c.title}`, "", "```sh", `npx -y --min-release-age=0 @kelbie/hunch ${c.args.map(quote).join(" ")}`, "```", "",
         `Not captured yet: this needs ${c.needs ?? "a model key, because it calls Jev"}. Run \`bun scripts/skill-examples.ts --live\` where that is available.`, "<!-- /case -->",
       ].join("\n");
     }

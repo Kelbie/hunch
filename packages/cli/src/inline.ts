@@ -1,13 +1,17 @@
 import { readFileSync } from "node:fs";
 import { isAbsolute, join } from "node:path";
-import { applyPresets, ConfigError, loadConfig, mergeRules, parseConfig, ruleEntrySchema, type Config, type RepoReader } from "../../core/src/index.js";
+import { applyPresets, ConfigError, loadConfig, loadPacks, mergeRules, parseConfig, ruleEntrySchema, type Config, type PackFetcher, type RepoReader } from "../../core/src/index.js";
 
 /** Where the config came from (a config file, `--config` or `--rule`) and the resolved config. */
-export interface ResolvedConfig { path: string; config: Config }
+export interface ResolvedConfig { path: string; config: Config; /** Rule packs this run fetched, as `owner/repo/name@ref`. */ packs?: string[] }
 
 export interface InlineOptions {
   /** `--config`, repeatable: JSON text, a path to a JSON file, or `-` for stdin. Later ones win. */
   config?: string[];
+  /** `--pack name`, repeatable: rule packs from a repository's `rules/` folder. All of them apply. */
+  packs?: string[];
+  /** Fetches a pack; tests pass their own. */
+  fetchPack?: PackFetcher;
   /** `--rule id=text`, repeatable: plain-English rules at `warn`. */
   rules?: string[];
   /** Reads stdin; tests pass a string. */
@@ -17,14 +21,19 @@ export interface InlineOptions {
 }
 
 /**
- * The config for a run: `--config` replaces the repository's config file, and
- * `--rule` adds to whichever config applies. A repository that never installed
+ * The config for a run: `--pack` and `--config` replace the repository's config file, a `--config`
+ * layering over the packs, and `--rule` adds to whichever config applies. A repository that never installed
  * Hunch has no hunch.lock, so inline configs don't pick up skills or AGENTS.md
  * unless they ask for them.
  */
 export async function resolveConfig(repo: RepoReader, opts: InlineOptions): Promise<ResolvedConfig | null> {
   let loaded: ResolvedConfig | null;
-  if (opts.config?.length) loaded = { path: "--config", config: inlineConfig(opts.config.map((arg) => readConfigArg(arg, opts.stdin, opts.root)).reduce(layer, {})) };
+  if (opts.packs?.length) {
+    const packs = await loadPacks(opts.packs, opts.fetchPack);
+    const config = inlineConfig([packs.settings, ...(opts.config ?? []).map((arg) => readConfigArg(arg, opts.stdin, opts.root))].reduce(layer, {}));
+    loaded = { path: `--pack ${opts.packs.join(", ")}`, config: { ...config, rules: mergeRules(packs.rules, config.rules) }, packs: packs.sources };
+  }
+  else if (opts.config?.length) loaded = { path: "--config", config: inlineConfig(opts.config.map((arg) => readConfigArg(arg, opts.stdin, opts.root)).reduce(layer, {})) };
   else loaded = await loadConfig(repo);
   if (!opts.rules?.length) return loaded;
   const base: ResolvedConfig = loaded ?? { path: "--rule", config: inlineConfig({}) };

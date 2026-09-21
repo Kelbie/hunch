@@ -15,12 +15,13 @@ Reviews changed lines, or whole files, against the rules. Real output:
 | whole files, not a diff | `check --all [paths…]`, or `--all --head <ref>` for a branch |
 | only some paths | add them as arguments: `check src/payments` |
 | one or two rules | `--only payments/retry-safety,tests/weakened` |
+| published rules, in a repository with no Hunch config | `--pack cashu-conformance`, repeatable: [packs.md](packs.md) |
 | rules without a config file | `--rule id="sentence"` (repeatable), or `--config rules.json` / `--config '{…}'` / `--config -` |
 | context for the questions | `--task "what the change is for"`. In Actions it comes from the PR automatically |
 
 `--diff`, `--staged` and `--head` are mutually exclusive. `--all` refuses `--base`, `--diff` and
-`--staged`. A `--config` replaces the repository's config file, and `--rule` adds to whichever config
-applies. An inline config selects no skills or AGENTS.md unless it asks for them.
+`--staged`. A `--pack` or `--config` replaces the repository's config file, a `--config` layering
+over the packs, and `--rule` adds to whichever config applies. An inline config selects no skills or AGENTS.md unless it asks for them.
 
 ## Context and precise locations
 
@@ -142,7 +143,8 @@ prints a notice and exits 0.
 
 | stderr | Fix |
 | --- | --- |
-| `no hunch.config.ts or hunch.toml found` | `init`, or pass `--rule`/`--config` |
+| `no hunch.config.ts or hunch.toml here` | the message lists the three commands: `--pack`, `--rule`, or `init` |
+| `Zero Data Retention (ZDR) is only available…` | the message lists the choices; the user decides between a TypeSafe key and `zeroDataRetention: false` |
 | `--base origin/main is not a commit in this repository` | no `origin` remote, or it isn't fetched: pass `--base main` (or the branch you started from), or `git fetch origin` |
 | `--only: no rule …` | `hunch config` lists the ids |
 | `hunch.lock is stale for: …` (a notice) | `compile`, then commit `hunch.lock` |

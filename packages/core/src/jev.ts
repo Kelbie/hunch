@@ -190,6 +190,16 @@ export function isAuthError(error: unknown): boolean {
   return /No authentication provided|authentication failed|needs TYPESAFE_API_KEY|Invalid API key|HTTP 401|HTTP 403/i.test(message);
 }
 
+/**
+ * A refusal that every request will meet alike: nobody is signed in, the account has no credit, or
+ * it cannot honour the data-retention policy asked of it. A run ends on the first one instead of
+ * repeating it.
+ */
+export function isSetupError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return isAuthError(error) || /Zero Data Retention|\bZDR\b|HTTP 402|insufficient (credit|funds|balance)/i.test(message);
+}
+
 type ProviderChoice = { provider?: "gateway" | "typesafe" };
 
 /**

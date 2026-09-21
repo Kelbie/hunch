@@ -8,7 +8,7 @@
 ### Not a GitHub repository
 
 ```sh
-npx @kelbie/hunch doctor
+npx -y --min-release-age=0 @kelbie/hunch doctor
 ```
 
 Exit code **0**.

@@ -10,7 +10,7 @@
 Exit 1 is the answer "no", not a crash.
 
 ```sh
-npx @kelbie/hunch auth status
+npx -y --min-release-age=0 @kelbie/hunch auth status
 ```
 
 Exit code **1**.
@@ -33,7 +33,7 @@ Nothing to sign in with. Run `hunch auth login` to store a key, or `hunch auth l
 The key arrives on standard input, as in `hunch auth login --with-token < key.txt`, never as an argument. At a terminal, plain `hunch auth login` asks with a hidden prompt instead.
 
 ```sh
-npx @kelbie/hunch auth login --with-token
+npx -y --min-release-age=0 @kelbie/hunch auth login --with-token
 ```
 
 Exit code **0**.
@@ -52,7 +52,7 @@ hunch: stored AI_GATEWAY_API_KEY in ~/.config/hunch/credentials (owner-only). It
 An agent cannot answer a hidden prompt, and should not hold the key: ask the user to run `auth login` themselves.
 
 ```sh
-npx @kelbie/hunch auth login
+npx -y --min-release-age=0 @kelbie/hunch auth login
 ```
 
 Exit code **2**.
@@ -60,7 +60,7 @@ Exit code **2**.
 stderr:
 
 ```text
-hunch: no terminal to ask at. Pipe the key in: hunch auth login --with-token < file
+hunch: no terminal to ask at. Pipe the key in: `npx @kelbie/hunch auth login --provider typesafe --with-token < file` (or --provider gateway).
 ```
 
 <!-- /case -->
@@ -69,7 +69,7 @@ hunch: no terminal to ask at. Pipe the key in: hunch auth login --with-token < f
 ### Signed in, from any directory
 
 ```sh
-npx @kelbie/hunch auth status
+npx -y --min-release-age=0 @kelbie/hunch auth status
 ```
 
 Exit code **0**.
@@ -88,7 +88,7 @@ Vercel project       none
 ### The same, for a script
 
 ```sh
-npx @kelbie/hunch auth status --reporter json
+npx -y --min-release-age=0 @kelbie/hunch auth status --reporter json
 ```
 
 Exit code **0**.
@@ -114,7 +114,7 @@ stdout:
 ### --vercel outside a linked directory
 
 ```sh
-npx @kelbie/hunch auth login --vercel
+npx -y --min-release-age=0 @kelbie/hunch auth login --vercel
 ```
 
 Exit code **2**.
@@ -131,7 +131,7 @@ hunch: no Vercel project is linked here. Run this inside a directory linked with
 ### Sign out
 
 ```sh
-npx @kelbie/hunch auth logout
+npx -y --min-release-age=0 @kelbie/hunch auth logout
 ```
 
 Exit code **0**.

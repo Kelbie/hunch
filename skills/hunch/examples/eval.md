@@ -8,7 +8,7 @@
 ### No fixtures
 
 ```sh
-npx @kelbie/hunch eval fixtures
+npx -y --min-release-age=0 @kelbie/hunch eval fixtures
 ```
 
 Exit code **2**.

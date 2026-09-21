@@ -1,6 +1,6 @@
 import { describeChunk, languageOf, roleOf } from "./context.js";
 import type { Hunk } from "./diff.js";
-import { isAuthError, OUTAGE_FAILURES, validateAnswers, type Answer, type JevClient } from "./jev.js";
+import { isSetupError, OUTAGE_FAILURES, validateAnswers, type Answer, type JevClient } from "./jev.js";
 
 /**
  * Semantic retrieval over existing code: ask a condition or gather context for a change.
@@ -186,7 +186,7 @@ export async function find(input: FindInput): Promise<FindResult> {
     } catch (e) {
       // Not being signed in is not a chunk that failed: every chunk would, so the sweep ends here
       // with the provider's own error instead of a thousand identical notices.
-      if (isAuthError(e)) { authError ??= e; return; }
+      if (isSetupError(e)) { authError ??= e; return; }
       failures.push(`${hunk.file}:${hunk.newStart} (invalid answer, provider unavailable or rate limited)`);
       if (++failuresInARow >= OUTAGE_FAILURES) outage = true;
       input.onProgress?.(++done, input.hunks.length);

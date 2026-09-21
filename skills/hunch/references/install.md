@@ -57,7 +57,7 @@ Examples, with their real output and the files written: [examples/init.md](../ex
 ## GitHub App
 
 ```sh
-npx @kelbie/hunch init --target app                 # or the wizard
+npx -y --min-release-age=0 @kelbie/hunch init --target app                 # or the wizard
 git add hunch.config.ts                             # and hunch.lock, if compiled
 git commit -m "Review PRs with Hunch" && git push   # to the default branch
 ```
@@ -77,7 +77,7 @@ Drafts are skipped until marked ready for review. If no review appears, run `doc
 ## GitHub Actions
 
 ```sh
-npx @kelbie/hunch init --target actions
+npx -y --min-release-age=0 @kelbie/hunch init --target actions
 gh secret set AI_GATEWAY_API_KEY          # the user pastes the key; never pass it as an argument
 ```
 
@@ -101,9 +101,9 @@ itself) and prints a notice, rather than failing, when the secret is absent.
 ## Local
 
 ```sh
-npx @kelbie/hunch auth login      # once per machine; see Model access
-npx @kelbie/hunch init --target local
-npx @kelbie/hunch check
+npx -y --min-release-age=0 @kelbie/hunch auth login      # once per machine; see Model access
+npx -y --min-release-age=0 @kelbie/hunch init --target local
+npx -y --min-release-age=0 @kelbie/hunch check
 ```
 
 ## Model access
@@ -124,13 +124,15 @@ else `~/.config/hunch/credentials` (`%APPDATA%\hunch\credentials` on Windows).
 
 **As an agent, never handle the key.** When a run fails with an authentication error, run
 `auth status`, then ask the user to run `auth login` in their own terminal (in Claude Code:
-`! npx @kelbie/hunch auth login`). Do not ask them to paste a key into the conversation, and do
+`! npx -y --min-release-age=0 @kelbie/hunch auth login`). Do not ask them to paste a key into the conversation, and do
 not pass one as an argument. `auth login --vercel` stores no secret, so an agent may run it when
 the user asks for that path.
 
 With nothing to sign in with, `check`, `find` and `compile --with gateway` stop before the first
-request and print how to sign in (exit 2). An invalid or expired key stops the run on the first
-refusal, the same way. Neither is reported as a provider outage or as chunks that failed.
+request and print how to sign in (exit 2). An invalid or expired key, an account with no credit
+(`HTTP 402`) and a plan that cannot enforce zero data retention each stop the run on the first
+refusal, and the message lists the commands that fix it. None is reported as a provider outage or as
+chunks that failed. Relay those commands to the user; do not retry, install anything or ask for a key.
 
 Hunch takes the first of these that is set:
 
@@ -154,7 +156,8 @@ A config that names `provider: "gateway"` is obeyed and needs Gateway credential
 shows which provider a run will use. `zeroDataRetention` is a Gateway setting and does nothing on a
 direct TypeSafe run.
 
-No config at all is fine for a trial: `check --rule id="sentence"` ([check.md](check.md)).
+No config at all is fine: `check --all --pack cashu-conformance` reviews against published rules
+([packs.md](packs.md)), and `check --rule id="sentence"` tries one of your own ([check.md](check.md)).
 
 ## On pull requests
 
@@ -175,6 +178,5 @@ These happened installing Hunch on real repositories. Check for them.
 | The App can't be installed on an organisation | a private App can only be installed on the account that owns it | install the hosted App, or register your own with `--organization` or `--public` ([operator.md](operator.md)) |
 | Every Actions run fails on config options | the workflow pinned an older `Kelbie/hunch@v…` that rejects newer options | re-run `init --target actions` in a fresh checkout, or update the `uses:` tag to the CLI's version |
 | Every review fails at the provider | `zeroDataRetention` is enforced on a Vercel Hobby account | the user decides whether to set `zeroDataRetention: false` |
-| `npx @kelbie/hunch` fails with `ENOVERSIONS: No versions available` | the user's npm has `min-release-age` (or `before`) set, and every Hunch version is newer than it allows; earlier runs worked from npx's cache | `npx --min-release-age=0 @kelbie/hunch …`, or `npm install -g @kelbie/hunch --min-release-age=0`. Leave their `.npmrc` alone: the setting guards every other package |
-| `find` reports every chunk as "provider unavailable or rate limited" with 0 scored (before 0.18.1) | nobody is signed in; older versions did not say so | `auth status`, then the user runs `auth login` |
+| `npx -y --min-release-age=0 @kelbie/hunch` fails with `ENOVERSIONS: No versions available` | the user's npm has `min-release-age` (or `before`) set, and every Hunch version is newer than it allows; earlier runs worked from npx's cache | `npx --min-release-age=0 @kelbie/hunch …`, or `npm install -g @kelbie/hunch --min-release-age=0`. Leave their `.npmrc` alone: the setting guards every other package |
 | Config was changed on a PR but reviews ignore it | reviews use the base branch's config | merge it; then `/hunch recheck` |

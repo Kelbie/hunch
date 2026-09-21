@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, statSync, writeFileSync, existsSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { applyCredentials, authHint, credentialsPath, keySources, linkedVercelProject, looselyPermitted, mintVercelToken, readCredentials, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, useVercelLink } from "../src/credentials.js";
+import { applyCredentials, authHint, nextStep, credentialsPath, keySources, linkedVercelProject, looselyPermitted, mintVercelToken, readCredentials, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, useVercelLink } from "../src/credentials.js";
 
 const dir = (prefix = "hunch-cred-") => mkdtempSync(join(tmpdir(), prefix));
 const BIN = join(import.meta.dir, "../src/bin.ts");
@@ -170,3 +170,17 @@ test("login never stores a guess: no terminal, a bad provider, a key in the wron
   expect(unlinked.stderr).toContain("vercel link");
   expect(existsSync(join(config, "credentials"))).toBe(false);
 }, 60_000);
+
+test("a failure Hunch recognises names the command to run next, so an agent can recover from it", () => {
+  const signIn = nextStep("AI Gateway authentication failed: No authentication provided.")!;
+  expect(signIn).toContain("npx @kelbie/hunch auth login --provider typesafe");
+  expect(signIn).toContain("must not ask for the key");
+  const zdr = nextStep("Zero Data Retention (ZDR) is only available for Pro and Enterprise plans. Current plan: hobby.")!;
+  expect(zdr).toContain("npx @kelbie/hunch auth login --provider typesafe");
+  expect(zdr).toContain(`--config '{"zeroDataRetention":false}'`);
+  expect(zdr).toContain("do not make it for them");
+  expect(nextStep("Command failed: git ls-files\nfatal: not a git repository (or any of the parent directories): .git")).toContain("--cwd <dir>");
+  expect(nextStep("Jev request failed (HTTP 402). Check provider credentials, quota and availability.")).toContain("no credit or quota left");
+  // A rate limit is not something a command fixes, so nothing is invented for it.
+  expect(nextStep("Jev request failed (HTTP 429).")).toBeNull();
+});

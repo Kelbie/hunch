@@ -2,7 +2,7 @@ import picomatch from "picomatch";
 import { hunkContext } from "./context.js";
 import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
 import { inScope as scopeFilter } from "./full.js";
-import { isAuthError, OUTAGE_FAILURES, validateAnswers, type Answer, type JevClient, type WireQuestion } from "./jev.js";
+import { isSetupError, OUTAGE_FAILURES, validateAnswers, type Answer, type JevClient, type WireQuestion } from "./jev.js";
 import { localizeFinding } from "./localize.js";
 import type { CompiledRule, Lock } from "./lock.js";
 import type { Config, Level, Question, RuleEntry } from "./schema.js";
@@ -340,7 +340,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
           if (input.signal?.aborted) continue;
           firstError ??= e;
           // Not being signed in fails every request alike, so it ends the review with that error.
-          if (e instanceof ContractError || isAuthError(e)) throw e;
+          if (e instanceof ContractError || isSetupError(e)) throw e;
           failed.push({ hunk, state, rules: batch });
           // A provider that has answered nothing yet gets less patience: that is a bad key or a
           // refused policy far more often than bad luck.

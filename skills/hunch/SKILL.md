@@ -1,11 +1,11 @@
 ---
 name: hunch
 description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, compile guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
-argument-hint: "[install|auth|config|rules|compile|check|find|doctor|eval|operator] [what you want]"
-allowed-tools: Bash(npx @kelbie/hunch *) Bash(npx hunch *) Bash(hunch *) Bash(bun run hunch *)
+argument-hint: "[install|auth|config|rules|packs|compile|check|find|doctor|eval|operator] [what you want]"
+allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
 metadata:
-  version: "0.18.1"
+  version: "0.19.0"
 ---
 
 # Hunch
@@ -22,18 +22,21 @@ edit. A negative result does not establish that the behavior is absent.
 
 ## Running it
 
-Work out the command prefix before running anything.
+Run every command as:
 
-| The repository… | Run Hunch as |
-| --- | --- |
-| is `Kelbie/hunch` itself | `bun run hunch <command>` |
-| has `@kelbie/hunch` in `package.json` | `npx hunch <command>` (the pinned local copy) |
-| has a global `hunch` matching this skill version | `hunch <command>` |
-| anything else | `npx @kelbie/hunch <command>` (latest from npm; no install needed) |
+```sh
+npx -y --min-release-age=0 @kelbie/hunch <command>
+```
 
-Check `--version` before using new options: an unauthenticated `find` stops at once with the sign-in steps from 0.18.1; before that it reports every chunk as "provider unavailable or rate limited", which means nobody is signed in when `scored` is 0. choosing TypeSafe from the signed-in key when the config names no provider requires 0.18.0; before that, pass `--config '{"provider":"typesafe"}'` or set it in the config. a review that survives provider failures, outages and Ctrl-C with its findings requires 0.17.0; before that, one failed request discards the whole run, so review a large repository path by path. `review.compiledScope`, budgets above 10,000 requests and a dry run that counts every request require 0.16.0. `auth` requires 0.15.0. Condition mode and `review`/`abstain` configuration
-require 0.13.0. Correct compiled path scopes and rule budgets above 64 require 0.13.1. A policy whose rules exceed one request is split across requests, instead of having the excess skipped, from 0.14.0. The main-branch skill can precede npm publication; use a matching installed build
-or the Hunch source checkout in that case. Do not silently change a project's pinned dependency.
+Inside the `Kelbie/hunch` checkout itself, use `bun run hunch <command>` instead. Commands in this
+skill are written without the prefix: `check --all` means
+`npx -y --min-release-age=0 @kelbie/hunch check --all`.
+
+The prefix is the path that fails least. It needs no install, always runs the current release, and
+never stops on a confirmation prompt. `--min-release-age=0` matters on machines whose npm refuses
+packages newer than a few days: without it npx answers `ENOVERSIONS: No versions available`. An npm
+that does not know the flag ignores it, at most with a warning. Do not install Hunch globally or
+add it to a project to work around a failed command; read the error, which names the command to run.
 
 Every command takes `--cwd <dir>` and `--help`. The complete list of flags with their defaults is in
 [references/cli.md](references/cli.md), which is generated from the CLI, so trust it over memory.
@@ -50,6 +53,7 @@ With no verb, pick one from the request and say which you picked.
 | `rules` | turn "flag changes that…" into a rule, or tune one that is noisy or silent | `config --explain`, `check --only` | [rules.md](references/rules.md) |
 | `compile` | turn AGENTS.md and Agent Skills into review questions in `hunch.lock` | `compile` | [compile.md](references/compile.md) |
 | `check` | review a branch, staged changes, a PR or whole files | `check` | [check.md](references/check.md) |
+| `packs` | review any repository against published rules, with no setup | `check --all --pack <name>` | [packs.md](references/packs.md) |
 | `find` | search existing behavior or gather context for a change | `find` | [find.md](references/find.md) |
 | `auth` | sign in once so Hunch runs in every directory, or see why it cannot authenticate | `auth login`, `auth status` | [install.md](references/install.md#model-access) |
 | `doctor` | explain why a PR got no review | `doctor` | [doctor.md](references/doctor.md) |
@@ -63,7 +67,8 @@ against it.
 
 | The user has | and wants | Run |
 | --- | --- | --- |
-| no Hunch config | to try it on this branch | `check --rule id="sentence"` |
+| no Hunch config | to review against published rules, e.g. the Cashu NUTs | `check --all --pack cashu-conformance` ([packs.md](references/packs.md)) |
+| no Hunch config | to try one rule on this branch | `check --rule id="sentence"` |
 | no Hunch config | Hunch on every PR | `init`, then follow [install.md](references/install.md) |
 | a config | to review this branch | `check` (against `origin/main`), or `check --base main` |
 | a config | to review only what is staged | `check --staged` |
