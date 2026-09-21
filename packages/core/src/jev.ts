@@ -98,9 +98,15 @@ type GatewayAnswer =
   | { type: "choice"; choice: string; probabilities?: Record<string, number> }
   | { type: "score"; score: number; probabilities?: Record<string, number> };
 
-/** TypeSafe's own REST API: POST https://api.typesafe.ai/v1/systemone. */
+/** TypeSafe's own API, which serves Jev at `/systemone`. */
+const TYPESAFE_BASE_URL = "https://api.typesafe.ai/v1";
+
+/**
+ * The System One REST API: POST `<baseUrl>/systemone`. TypeSafe serves it themselves, and so do
+ * resellers who carry Jev; `baseUrl` is the whole difference between them.
+ */
 export function typesafeClient(opts: { apiKey: string; baseUrl?: string; fetch?: typeof fetch }): JevClient {
-  const base = opts.baseUrl ?? "https://api.typesafe.ai/v1";
+  const base = opts.baseUrl ?? TYPESAFE_BASE_URL;
   const doFetch = opts.fetch ?? fetch;
   return {
     async evaluate(req) {
@@ -211,6 +217,29 @@ export function providerFor(cfg: ProviderChoice, env: Record<string, string | un
   return cfg.provider ?? (env.TYPESAFE_API_KEY && !env.AI_GATEWAY_API_KEY ? "typesafe" : "gateway");
 }
 
+/**
+ * Where the direct provider sends its requests. OpenRouter serves Jev at `/systemone` too and
+ * speaks the same System One shape, so redirecting the base url is all it takes to pay for Jev
+ * with an OpenRouter key rather than a TypeSafe or Vercel one.
+ *
+ * Read from the environment and never from repo config: this decides where a repository's source
+ * code is sent, and config travels with the very pull request being reviewed.
+ */
+export function typesafeBaseUrl(env: Record<string, string | undefined> = process.env): string {
+  const raw = env.TYPESAFE_BASE_URL?.trim();
+  if (!raw) return TYPESAFE_BASE_URL;
+  let parsed: URL;
+  try {
+    parsed = new URL(raw);
+  } catch {
+    throw new Error(`TYPESAFE_BASE_URL must be an absolute http(s) url, not ${JSON.stringify(raw)}`);
+  }
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:")
+    throw new Error(`TYPESAFE_BASE_URL must be an absolute http(s) url, not ${JSON.stringify(raw)}`);
+  // A url copied from a browser often keeps its trailing slash; `/systemone` must not double it.
+  return raw.replace(/\/+$/, "");
+}
+
 export function clientFromEnv(
   cfg: ProviderChoice & { zeroDataRetention: boolean },
   env: Record<string, string | undefined> = process.env,
@@ -218,7 +247,7 @@ export function clientFromEnv(
   if (providerFor(cfg, env) === "typesafe") {
     const apiKey = env.TYPESAFE_API_KEY;
     if (!apiKey) throw new Error("provider = typesafe needs TYPESAFE_API_KEY");
-    return typesafeClient({ apiKey });
+    return typesafeClient({ apiKey, baseUrl: typesafeBaseUrl(env) });
   }
   // No key check here: the AI SDK also authenticates through a linked Vercel project
   // (`.vercel/project.json` + Vercel CLI login), and `hunch compile` relies on the same

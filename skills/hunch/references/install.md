@@ -147,6 +147,7 @@ Hunch takes the first of these that is set:
 | --- | --- | --- |
 | Vercel AI Gateway | `AI_GATEWAY_API_KEY`, or Vercel OIDC: on Vercel, after `vercel link`, or after `auth login --vercel` | nothing, or `provider: "gateway"` to hold every run to it |
 | TypeSafe directly | `TYPESAFE_API_KEY` | nothing, or `provider: "typesafe"` to hold every run to it |
+| Jev through a reseller | `TYPESAFE_API_KEY` holding that account's key, and `TYPESAFE_BASE_URL` | `provider: "typesafe"`, and `model` spelled the way that reseller spells it |
 
 A config that names no `provider` uses what the machine is signed in with: TypeSafe directly when a
 `TYPESAFE_API_KEY` is found and no `AI_GATEWAY_API_KEY` is, otherwise the Gateway. So after
@@ -155,6 +156,13 @@ nothing passes through Vercel. The hosted App and CI hold no TypeSafe key, so th
 A config that names `provider: "gateway"` is obeyed and needs Gateway credentials; `hunch config`
 shows which provider a run will use. `zeroDataRetention` is a Gateway setting and does nothing on a
 direct TypeSafe run.
+
+`TYPESAFE_BASE_URL` points the direct provider at something other than `https://api.typesafe.ai/v1`.
+OpenRouter carries Jev and serves it at `/systemone` in the same System One shape, so an OpenRouter
+key and `TYPESAFE_BASE_URL=https://openrouter.ai/api/v1` reach Jev with no TypeSafe or Vercel
+account; name the model as OpenRouter does, `model: "typesafe/jev-1.13"`. It is read from the
+environment alone and never from config, because it decides where your source code is sent and
+config travels with the pull request being reviewed.
 
 No config at all is fine: `check --all --pack nuts-spec` reviews against published rules
 ([packs.md](packs.md)), and `check --rule id="sentence"` tries one of your own ([check.md](check.md)).

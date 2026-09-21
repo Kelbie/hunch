@@ -4,6 +4,7 @@ import { Command } from "commander";
 import {
   check,
   clientFromEnv,
+  typesafeBaseUrl,
   providerFor,
   collectSources,
   FACETS,
@@ -312,6 +313,7 @@ Exits 1 when there is no key and no Vercel project, linked here or stored, to si
 Model access (no key is ever written to your config):
   AI_GATEWAY_API_KEY   Vercel AI Gateway, the default provider
   TYPESAFE_API_KEY     TypeSafe directly, with provider = "typesafe" in your config
+  TYPESAFE_BASE_URL    a reseller that serves Jev, e.g. https://openrouter.ai/api/v1
 Looked up in the environment, then .env files in the working directory, then the key saved by
 "hunch auth login", which works in every directory.
 
@@ -359,6 +361,9 @@ export async function main() {
  * and no Vercel project linked here, the one stored by `hunch auth login --vercel` signs in first.
  */
 function jevClient(config: Parameters<typeof clientFromEnv>[0]): JevClient {
+  // A base url that is not a url is a mistake in the environment, not a provider refusal. Reading
+  // it now turns it into one message, before the sweep, instead of a chunk-by-chunk outage.
+  if (providerFor(config) === "typesafe") typesafeBaseUrl();
   let client: Promise<JevClient> | undefined;
   const build = async () => {
     if (providerFor(config) === "gateway") {

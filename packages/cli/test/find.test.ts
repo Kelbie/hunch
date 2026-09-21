@@ -122,3 +122,16 @@ test("check dry-run counts configured diff windows", () => {
     expect(result.stdout).toContain("3 hunk(s): 3 question(s) in 3 request(s)");
   });
 });
+
+test("a base url that is not a url stops the run and names the variable, instead of looking like an outage", () => {
+  withRepo({ "src/flow.ts": "a();\nb();\n" }, root => {
+    const result = spawnSync("bun", [BIN, "find", "x", "--top", "0"], {
+      cwd: root, encoding: "utf8", timeout: 10_000,
+      env: { PATH: process.env.PATH!, HUNCH_CONFIG_DIR: "/nonexistent/hunch-test-config", TYPESAFE_API_KEY: "k", TYPESAFE_BASE_URL: "nope" },
+    });
+    expect(result.status).toBe(2);
+    expect(result.stderr).toContain("TYPESAFE_BASE_URL");
+    // A mistake in the environment must not be dressed up as the provider going down and retried.
+    expect(result.stdout).not.toContain("stopped answering");
+  });
+});
