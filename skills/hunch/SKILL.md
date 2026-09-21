@@ -5,7 +5,7 @@ argument-hint: "[install|auth|config|rules|packs|compile|check|find|doctor|eval|
 allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
 metadata:
-  version: "0.19.0"
+  version: "0.19.1"
 ---
 
 # Hunch
@@ -67,7 +67,7 @@ against it.
 
 | The user has | and wants | Run |
 | --- | --- | --- |
-| no Hunch config | to review against published rules, e.g. the Cashu NUTs | `check --all --pack cashu-conformance` ([packs.md](references/packs.md)) |
+| no Hunch config | to review against published rules, e.g. the Cashu NUTs | `check --all --pack nuts-spec` ([packs.md](references/packs.md)) |
 | no Hunch config | to try one rule on this branch | `check --rule id="sentence"` |
 | no Hunch config | Hunch on every PR | `init`, then follow [install.md](references/install.md) |
 | a config | to review this branch | `check` (against `origin/main`), or `check --base main` |

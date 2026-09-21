@@ -6,7 +6,7 @@ import { ConfigError, parseConfig, type Config } from "./schema.js";
  * published in `skills/`. It lets a repository that never installed Hunch be reviewed against a
  * shared policy, by name, without cloning anything.
  *
- *   "cashu-nuts"                 rules/cashu-nuts.json in Kelbie/hunch
+ *   "nuts-spec"                 rules/nuts-spec.json in Kelbie/hunch
  *   "owner/repo/name"            rules/name.json in owner/repo, on its default branch
  *   "owner/repo/name@v2"         the same, at a tag, branch or commit
  */
@@ -27,7 +27,7 @@ export function parsePackSpec(spec: string): PackSpec {
   const [target = "", ref = "HEAD", ...extra] = spec.trim().split("@");
   const parts = target.split("/");
   const ok = !extra.length && (parts.length === 1 || parts.length === 3) && parts.every((p) => SEGMENT.test(p) && !/^\.+$/.test(p)) && /^[\w./-]+$/.test(ref) && !ref.includes("..");
-  if (!ok) throw new ConfigError(`--pack "${spec.slice(0, 80)}" should be a pack name (cashu-nuts), or owner/repo/name, optionally with @ref.`);
+  if (!ok) throw new ConfigError(`--pack "${spec.slice(0, 80)}" should be a pack name (nuts-spec), or owner/repo/name, optionally with @ref.`);
   const [owner, repo, name] = parts.length === 3 ? parts : [...OFFICIAL_PACKS.split("/"), parts[0]!];
   return { repo: `${owner}/${repo}`, name: name!, ref, path: `${PACK_DIR}/${name}.json` };
 }

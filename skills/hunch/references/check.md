@@ -15,7 +15,7 @@ Reviews changed lines, or whole files, against the rules. Real output:
 | whole files, not a diff | `check --all [paths…]`, or `--all --head <ref>` for a branch |
 | only some paths | add them as arguments: `check src/payments` |
 | one or two rules | `--only payments/retry-safety,tests/weakened` |
-| published rules, in a repository with no Hunch config | `--pack cashu-conformance`, repeatable: [packs.md](packs.md) |
+| published rules, in a repository with no Hunch config | `--pack nuts-spec`, repeatable: [packs.md](packs.md) |
 | rules without a config file | `--rule id="sentence"` (repeatable), or `--config rules.json` / `--config '{…}'` / `--config -` |
 | context for the questions | `--task "what the change is for"`. In Actions it comes from the PR automatically |
 

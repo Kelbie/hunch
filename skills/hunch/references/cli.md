@@ -29,7 +29,7 @@ review the lines this branch changed, against your rules
 | `--reporter <format>` | `text` | text, markdown, json, sarif or github |
 | `--code` |  | print the changed lines under each finding |
 | `--dry-run` |  | count files, hunks and questions without calling Jev |
-| `--pack <name>` |  | rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply |
+| `--pack <name>` |  | rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply |
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
 | `--only <ids>` |  | ask only these rules, comma-separated; to try a rule you just wrote |
@@ -119,7 +119,7 @@ check the config is valid and show the rules it applies; never edits it
 | `--file <path>` |  | show only the rules asked about this file, overrides applied |
 | `--explain <rule>` |  | print exactly what one rule asks Jev, and when it reports |
 | `--reporter <format>` | `text` | text or json |
-| `--pack <name>` |  | rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply |
+| `--pack <name>` |  | rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply |
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
 
@@ -190,7 +190,7 @@ measure each rule's precision and recall on labelled .diff examples
 
 | Flag | Default | Means |
 | --- | --- | --- |
-| `--pack <name>` |  | rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply |
+| `--pack <name>` |  | rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply |
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
 | `--reporter <format>` | `text` | text or json |

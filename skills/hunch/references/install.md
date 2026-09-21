@@ -156,7 +156,7 @@ A config that names `provider: "gateway"` is obeyed and needs Gateway credential
 shows which provider a run will use. `zeroDataRetention` is a Gateway setting and does nothing on a
 direct TypeSafe run.
 
-No config at all is fine: `check --all --pack cashu-conformance` reviews against published rules
+No config at all is fine: `check --all --pack nuts-spec` reviews against published rules
 ([packs.md](packs.md)), and `check --rule id="sentence"` tries one of your own ([check.md](check.md)).
 
 ## On pull requests

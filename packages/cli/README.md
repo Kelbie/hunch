@@ -26,7 +26,7 @@ npx -y --min-release-age=0 @kelbie/hunch find "Does this code turn a failed oper
 npx -y --min-release-age=0 @kelbie/hunch find "Does this code retry a side effect?" --mode condition --top 0 --reporter json
 
 # Review any repository against a published rule pack: no config, no clone.
-npx -y --min-release-age=0 @kelbie/hunch check --all --pack cashu-conformance --dry-run
+npx -y --min-release-age=0 @kelbie/hunch check --all --pack nuts-spec --dry-run
 
 # Review a branch with a one-off rule.
 npx -y --min-release-age=0 @kelbie/hunch check --rule errors="Preserve failures that callers need to handle."
