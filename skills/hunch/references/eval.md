@@ -30,9 +30,9 @@ that shouldn't (a safe retry, an equivalent assertion). Hunch's own pairs are in
 ## Running it
 
 ```sh
-npx @kelbie/hunch eval fixtures                                      # the repository's rules
-npx @kelbie/hunch eval fixtures --rule payments/idempotent="…"      # trial a rule without a config
-npx @kelbie/hunch eval fixtures --reporter json
+npx -y --min-release-age=0 @kelbie/hunch eval fixtures                                      # the repository's rules
+npx -y --min-release-age=0 @kelbie/hunch eval fixtures --rule payments/idempotent="…"      # trial a rule without a config
+npx -y --min-release-age=0 @kelbie/hunch eval fixtures --reporter json
 ```
 
 Each fixture is one real review, so eval costs as much as reviewing those diffs. It refuses

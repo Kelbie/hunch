@@ -8,7 +8,7 @@ The shop repository's `feature` branch changes a payment retry to mint a new ide
 ### What would this cost?
 
 ```sh
-npx @kelbie/hunch check --base main --dry-run
+npx -y --min-release-age=0 @kelbie/hunch check --base main --dry-run
 ```
 
 Exit code **0**.
@@ -25,7 +25,7 @@ hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 15 question(s) in 3 reques
 ### Try one rule
 
 ```sh
-npx @kelbie/hunch check --base main --only payments/retry-safety --dry-run
+npx -y --min-release-age=0 @kelbie/hunch check --base main --only payments/retry-safety --dry-run
 ```
 
 Exit code **0**.
@@ -42,7 +42,7 @@ hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 1 question(s) in 1 request
 ### Whole files, not just the change
 
 ```sh
-npx @kelbie/hunch check --all src/payments --dry-run
+npx -y --min-release-age=0 @kelbie/hunch check --all src/payments --dry-run
 ```
 
 Exit code **0**.
@@ -65,7 +65,7 @@ hunch: dry run, nothing sent. 1 file(s) as 1 hunk(s): 7 question(s) in 2 request
 ### No config: rules on the command line
 
 ```sh
-npx @kelbie/hunch check --base main --rule payments/idempotent="Every retry of one payment reuses its idempotency key." --dry-run
+npx -y --min-release-age=0 @kelbie/hunch check --base main --rule payments/idempotent="Every retry of one payment reuses its idempotency key." --dry-run
 ```
 
 Exit code **0**.
@@ -82,7 +82,7 @@ hunch: dry run, nothing sent. 2 file(s) as 2 hunk(s): 2 question(s) in 2 request
 ### No config and no rules
 
 ```sh
-npx @kelbie/hunch check --base main
+npx -y --min-release-age=0 @kelbie/hunch check --base main
 ```
 
 Exit code **2**.
@@ -90,7 +90,10 @@ Exit code **2**.
 stderr:
 
 ```text
-hunch: no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`, or pass rules with --config or --rule.
+hunch: no hunch.config.ts or hunch.toml here, and no rules were passed. Run one of:
+  npx @kelbie/hunch check --all --pack cashu-nuts        review with a published rule pack; repeat --pack for several
+  npx @kelbie/hunch check --rule id="A plain sentence."   try one rule of your own
+  npx @kelbie/hunch init                                 set Hunch up in this repository
 ```
 
 <!-- /case -->

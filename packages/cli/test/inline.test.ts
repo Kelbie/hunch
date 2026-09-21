@@ -68,3 +68,25 @@ test("a --config file path is relative to where the run was told it started, not
   // Without the root it is read from the process directory, where it does not exist.
   await expect(resolveConfig(repo, { config: ["rules.json"] })).rejects.toThrow("can't read");
 });
+
+test("--pack reviews an unconfigured repository; --config and --rule still layer over it", async () => {
+  const packs: Record<string, object> = {
+    "rules/spec.json": { include: ["**/*.md"], budget: { maxRequests: 500 }, rules: { "spec/rfc2119": ["warn", "Lowercase requirement word?"] } },
+    "rules/code.json": { include: ["**/*.ts"], rules: { "code/verify": ["error", "Signature checked over the wrong message?"] } },
+  };
+  const r = (await resolveConfig(repoWith({}), {
+    packs: ["spec", "acme/policy/code@v1"],
+    config: ['{"budget":{"concurrency":2},"rules":{"spec/rfc2119":"off"}}'],
+    rules: ["mine/extra=Anything else?"],
+    fetchPack: async ({ path }) => (packs[path] ? JSON.stringify(packs[path]) : null),
+  }))!;
+  expect(r.packs).toEqual(["Kelbie/hunch/spec@HEAD", "acme/policy/code@v1"]);
+  expect(r.config.include).toEqual(["**/*.md", "**/*.ts"]);
+  // The pack's budget stands where --config says nothing, and --config wins where it speaks.
+  expect(r.config.budget).toMatchObject({ maxRequests: 500, concurrency: 2 });
+  // A bare level silences a pack rule without restating its question.
+  expect(r.config.rules["spec/rfc2119"]).toMatchObject({ level: "off", question: { files: ["**/*.md"] } });
+  expect(r.config.rules["code/verify"]).toMatchObject({ level: "error", source: "pack:acme/policy/code", question: { files: ["**/*.ts"] } });
+  expect(r.config.rules["mine/extra"]?.level).toBe("warn");
+  expect(r.config.skills).toEqual([]);
+});

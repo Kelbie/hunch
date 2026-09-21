@@ -53,7 +53,7 @@ import { VERSION } from "./version.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 import { diagnose, parseRemote, report } from "./doctor.js";
-import { applyCredentials, authHint, credentialsPath, keyNameFor, keySources, linkedVercelProject, looselyPermitted, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, mintVercelToken, useVercelLink, KEY_NAMES, type KeyName, type Provider, type VercelLink } from "./credentials.js";
+import { applyCredentials, nextStep, credentialsPath, keyNameFor, keySources, linkedVercelProject, looselyPermitted, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, mintVercelToken, useVercelLink, KEY_NAMES, type KeyName, type Provider, type VercelLink } from "./credentials.js";
 import { askWizard, clackIo, detectPreset, existingKey, ghReady, hasGuidance, installSkill, interactive, nextSteps, presetsFor, setRepoSecret, SKILL_INSTALL, writeKey, type Target, type WizardAnswers } from "./setup/wizard.js";
 
 
@@ -103,6 +103,7 @@ export function buildProgram(): Command {
     .option("--reporter <format>", "text, markdown, json, sarif or github", process.env.GITHUB_ACTIONS ? "github" : "text")
     .option("--code", "print the changed lines under each finding", false)
     .option("--dry-run", "count files, hunks and questions without calling Jev", false)
+    .option("--pack <name>", "rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .option("--only <ids>", "ask only these rules, comma-separated; to try a rule you just wrote")
@@ -178,6 +179,7 @@ Examples:
     .option("--file <path>", "show only the rules asked about this file, overrides applied")
     .option("--explain <rule>", "print exactly what one rule asks Jev, and when it reports")
     .option("--reporter <format>", "text or json", "text")
+    .option("--pack <name>", "rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .addHelpText("after", `
@@ -233,6 +235,7 @@ Examples:
     .command("eval")
     .description("measure each rule's precision and recall on labelled .diff examples")
     .argument("<dir>", "directory of .diff fixtures")
+    .option("--pack <name>", "rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .option("--reporter <format>", "text or json", "text")
@@ -242,7 +245,7 @@ Each fixture is a .diff whose first line is "# expect: rule-a, rule-b" (the rule
 Examples:
   hunch eval examples/presets
   hunch eval fixtures --rule api/errors="Error responses keep their code field." --reporter json`)
-    .action((dir: string, opts: Opts) => runEval(root(), dir, { config: opts.config, rules: opts.rule, root: root(), reporter: opts.reporter }));
+    .action((dir: string, opts: Opts) => runEval(root(), dir, { packs: opts.pack, config: opts.config, rules: opts.rule, root: root(), reporter: opts.reporter }));
 
   const auth = program
     .command("auth")
@@ -316,6 +319,14 @@ Docs: https://github.com/Kelbie/hunch`);
   return program;
 }
 
+/** What to run when a repository has no Hunch config: each line is a whole command. */
+const NO_CONFIG = [
+  "no hunch.config.ts or hunch.toml here, and no rules were passed. Run one of:",
+  "  npx @kelbie/hunch check --all --pack cashu-nuts        review with a published rule pack; repeat --pack for several",
+  "  npx @kelbie/hunch check --rule id=\"A plain sentence.\"   try one rule of your own",
+  "  npx @kelbie/hunch init                                 set Hunch up in this repository",
+].join("\n");
+
 /** Repeatable options collect rather than overwrite, so `--rule a --rule b` keeps both. */
 const collect = (value: string, previous: string[] = []) => [...previous, value];
 
@@ -336,7 +347,7 @@ export async function main() {
   try {
     await buildProgram().parseAsync(process.argv);
   } catch (e) {
-    const hint = authHint(e instanceof Error ? e.message : String(e));
+    const hint = nextStep(e instanceof Error ? e.message : String(e));
     if (!hint) throw e;
     // The SDK's own text explains how to sign up with the provider, not how to give Hunch the key.
     throw new Error(`${String(e instanceof Error ? e.message : e).split("\n")[0]}\n\n${hint}`);
@@ -398,7 +409,7 @@ async function runAuthLogin(opts: Opts, root: string) {
     value = await readStdin();
     provider ??= "gateway";
   } else {
-    if (!interactive()) return fail("no terminal to ask at. Pipe the key in: hunch auth login --with-token < file");
+    if (!interactive()) return fail("no terminal to ask at. Pipe the key in: `npx @kelbie/hunch auth login --provider typesafe --with-token < file` (or --provider gateway).");
     const io = clackIo();
     provider ??= await io.select({
       message: "Which model provider is this key for?",
@@ -536,16 +547,16 @@ function prTaskFromEvent(): string | undefined {
  * (rules that SHOULD fire; any other rule firing counts as a false positive).
  * Prints precision/recall per rule so thresholds can be tuned before `error`.
  */
-async function runEval(root: string, dir: string, inline: { config?: string[]; rules?: string[]; root?: string; reporter?: string }) {
+async function runEval(root: string, dir: string, inline: { packs?: string[]; config?: string[]; rules?: string[]; root?: string; reporter?: string }) {
   if (!["text", "json"].includes(inline.reporter ?? "text")) return fail("Unknown --reporter for eval; use text or json");
   const repo = localRepo(root);
   const loaded = await resolveConfig(repo, inline);
-  if (!loaded) return fail("no hunch config found.");
+  if (!loaded) return fail(NO_CONFIG);
   const files = readdirSync(join(root, dir)).filter((f) => f.endsWith(".diff")).sort();
   if (!files.length) return fail("No .diff fixtures found");
   const lock = readLock(root);
   const stale = await staleSources(lock, loaded.config, repo);
-  if (stale.length) return fail("Compile current guidance before evaluating fixtures");
+  if (stale.length) return fail(`${staleNotice(lock, stale)} Then run eval again.`);
   const stats = new Map<string, { tp: number; fp: number; fn: number }>();
   const bump = (rule: string, k: "tp" | "fp" | "fn") => {
     const s = stats.get(rule) ?? { tp: 0, fp: 0, fn: 0 };
@@ -586,7 +597,7 @@ function fail(msg: string) {
 
 
 async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoReader) {
-  const loaded = await resolveConfig(repo, { config: opts.config, rules: opts.rule, root });
+  const loaded = await resolveConfig(repo, { packs: opts.pack, config: opts.config, rules: opts.rule, root });
   if (!loaded && opts.policyRef) {
     // The PR that adds Hunch: its base has no config yet, so there is no trusted policy to apply.
     console.log(opts.reporter === "github"
@@ -594,9 +605,10 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
       : "hunch: no config on the base branch yet; nothing to review.");
     return;
   }
-  if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`, or pass rules with --config or --rule.");
+  if (!loaded) return fail(NO_CONFIG);
+  if (loaded.packs) console.error(`hunch: rules from ${loaded.packs.join(", ")}`);
   const { config } = loaded;
-  if (!["text", "markdown", "json", "sarif", "github"].includes(opts.reporter!)) return fail("Unknown reporter");
+  if (!["text", "markdown", "json", "sarif", "github"].includes(opts.reporter!)) return fail(`Unknown --reporter ${opts.reporter}; use text, markdown, json, sarif or github`);
   const only = opts.only ? String(opts.only).split(",").map((id) => id.trim()).filter(Boolean) : undefined;
   const under = underPaths(paths);
   let diff = "";
@@ -838,7 +850,7 @@ async function runCompile(opts: Opts, root: string, repo: RepoReader) {
   if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
   const { config } = loaded;
   const docs = await collectSources(config, repo);
-  if (!docs.length) return fail("no skills, AGENTS.md or docs found to compile.");
+  if (!docs.length) return fail("no skills, AGENTS.md or docs found to compile. Add an AGENTS.md, install a skill (`npx skills add <owner/repo>`), or list files under `docs` in the Hunch config; then run `npx @kelbie/hunch compile` again.");
   const previous = readLock(root);
   if (opts.dryRun) {
     const byId = new Map((previous?.sources ?? []).map((s) => [s.id, s]));
@@ -875,8 +887,8 @@ async function runCompile(opts: Opts, root: string, repo: RepoReader) {
 
 async function runConfig(opts: Opts, root: string, repo: RepoReader) {
   if (!["text", "json"].includes(opts.reporter)) return fail("Unknown --reporter for config; use text or json");
-  const loaded = await resolveConfig(repo, { config: opts.config, rules: opts.rule, root });
-  if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`, or pass rules with --config or --rule.");
+  const loaded = await resolveConfig(repo, { packs: opts.pack, config: opts.config, rules: opts.rule, root });
+  if (!loaded) return fail(NO_CONFIG);
   const lockText = await repo.read(LOCK_FILE);
   const lock = lockText ? parseLock(lockText) : null;
   if (opts.explain) {

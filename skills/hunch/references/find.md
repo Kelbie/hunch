@@ -48,9 +48,9 @@ the change depends on), `caller` (consumer affected), `test` (coverage of the ar
    or answer the user's question.
 
 ```sh
-npx @kelbie/hunch find "Does this code discard a failed write?" --mode condition --top 0 --reporter json
-npx @kelbie/hunch find "add upload cancellation" --reporter markdown > /tmp/hunch-context.md
-npx @kelbie/hunch find "add upload cancellation" --head main --dry-run
+npx -y --min-release-age=0 @kelbie/hunch find "Does this code discard a failed write?" --mode condition --top 0 --reporter json
+npx -y --min-release-age=0 @kelbie/hunch find "add upload cancellation" --reporter markdown > /tmp/hunch-context.md
+npx -y --min-release-age=0 @kelbie/hunch find "add upload cancellation" --head main --dry-run
 ```
 
 Keep redirected output outside the repository to avoid searching a previous report on the next run.

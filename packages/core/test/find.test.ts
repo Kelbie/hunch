@@ -148,6 +148,11 @@ test("a sweep nobody is signed in for stops at once with the provider's error, n
   expect(n).toBeLessThanOrEqual(4);
 });
 
+test("an account that cannot honour the retention policy ends the sweep with that refusal, not an outage", async () => {
+  const refused = { async evaluate(): Promise<never> { throw new Error("Zero Data Retention (ZDR) is only available for Pro and Enterprise plans."); } };
+  await expect(find({ ...base, hunks: chunks(...Array.from({ length: 40 }, (_, i) => `f${i}.ts`)), budget: { concurrency: 2 }, client: refused })).rejects.toThrow("Zero Data Retention");
+});
+
 test("a provider outage ends the sweep early and says so, keeping what was scored", async () => {
   let n = 0;
   const res = await find({

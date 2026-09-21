@@ -10,7 +10,7 @@
 A `package.json` means TypeScript: `hunch.config.ts` with the recommended and TypeScript presets.
 
 ```sh
-npx @kelbie/hunch init --yes
+npx -y --min-release-age=0 @kelbie/hunch init --yes
 ```
 
 Exit code **0**.
@@ -39,7 +39,7 @@ export default defineConfig({
 ### A Rust crate gets TOML
 
 ```sh
-npx @kelbie/hunch init --yes
+npx -y --min-release-age=0 @kelbie/hunch init --yes
 ```
 
 Exit code **0**.
@@ -66,7 +66,7 @@ ignore = ["target/**"]
 A mixed repository, reviewed by the GitHub App, on Vercel Hobby, with one rule of its own.
 
 ```sh
-npx @kelbie/hunch init --preset ts,rust --target app --include "src/**" --no-zero-data-retention --fail-on-error --rule api/stable-errors="Error responses keep their code field, because clients branch on it."
+npx -y --min-release-age=0 @kelbie/hunch init --preset ts,rust --target app --include "src/**" --no-zero-data-retention --fail-on-error --rule api/stable-errors="Error responses keep their code field, because clients branch on it."
 ```
 
 Exit code **0**.
@@ -117,7 +117,7 @@ export default defineConfig({
 Writes the workflow as well. It pins the Action to the version that wrote it.
 
 ```sh
-npx @kelbie/hunch init --preset general --target actions
+npx -y --min-release-age=0 @kelbie/hunch init --preset general --target actions
 ```
 
 Exit code **0**.
@@ -181,7 +181,7 @@ jobs:
           ref: ${{ github.event.pull_request.base.sha }}
           fetch-depth: 0
           persist-credentials: false
-      - uses: Kelbie/hunch@v0.18.1
+      - uses: Kelbie/hunch@v0.19.0
         with:
           base: ${{ github.event.pull_request.base.sha }}
           head: ${{ github.event.pull_request.head.sha }}
@@ -197,7 +197,7 @@ jobs:
 init never rewrites a config. Edit the file instead, then run `hunch config`.
 
 ```sh
-npx @kelbie/hunch init --yes
+npx -y --min-release-age=0 @kelbie/hunch init --yes
 ```
 
 Exit code **2**.

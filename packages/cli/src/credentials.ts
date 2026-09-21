@@ -179,10 +179,37 @@ export function authHint(message: string): string | null {
   if (/hunch auth login/.test(message)) return null;
   if (!isAuthError(message)) return null;
   return [
-    "Hunch has no working model key here. Store one once, for every directory:",
-    "  hunch auth login                       asks for the key with a hidden prompt",
-    "  hunch auth login --with-token < file   reads it from standard input, for agents and scripts",
-    "  hunch auth login --vercel              no key: reuse your Vercel CLI login, from a linked project",
-    "or export AI_GATEWAY_API_KEY or TYPESAFE_API_KEY. `hunch auth status` shows what is found.",
+    "Hunch has no working model key here. Store one once, for every directory. The person runs one of:",
+    "  npx @kelbie/hunch auth login --provider typesafe      asks for a TypeSafe key with a hidden prompt",
+    "  npx @kelbie/hunch auth login --provider gateway       asks for a Vercel AI Gateway key",
+    "  npx @kelbie/hunch auth login --with-token < file      reads the key from standard input, for scripts",
+    "  npx @kelbie/hunch auth login --vercel                 no key: reuse a Vercel CLI login, from a linked project",
+    "or export TYPESAFE_API_KEY or AI_GATEWAY_API_KEY. `npx @kelbie/hunch auth status` shows what is found.",
+    "An agent must not ask for the key in conversation or pass it as an argument.",
   ].join("\n");
+}
+
+/**
+ * What to run next for a failure Hunch recognises, or null. Errors reach people and agents alike,
+ * and an agent can only recover from one that names the command.
+ */
+export function nextStep(message: string): string | null {
+  const auth = authHint(message);
+  if (auth) return auth;
+  if (/Zero Data Retention|\bZDR\b/i.test(message)) return [
+    "This Vercel plan cannot enforce zero data retention, which Hunch asks the Gateway for by default. The person chooses one:",
+    "  npx @kelbie/hunch auth login --provider typesafe      use a TypeSafe key instead; nothing passes through the Gateway",
+    "  add --config '{\"zeroDataRetention\":false}'             accept Gateway routing without it, for this run (with --pack or --config)",
+    "  set zeroDataRetention: false in the Hunch config       the same, for a configured repository",
+    "Turning it off is a data-handling decision; do not make it for them.",
+  ].join("\n");
+  if (/HTTP 402|insufficient (credit|funds|balance)/i.test(message)) return [
+    "The model provider refused the request for payment: the account behind this key has no credit or quota left. The person does one of:",
+    "  add credit to the provider account the key belongs to, then run the same command again",
+    "  npx @kelbie/hunch auth status                         see which key is in use, and from where",
+    "  npx @kelbie/hunch auth login --provider typesafe      sign in with a different TypeSafe key (or --provider gateway)",
+    "Nothing was reviewed. Add --dry-run to size a run before paying for it.",
+  ].join("\n");
+  if (/not a git repository/i.test(message)) return "Hunch reads files through git. Run it inside a git repository, or pass --cwd <dir>. For a folder that is not one: `git init && git add -A`, then run it again.";
+  return null;
 }

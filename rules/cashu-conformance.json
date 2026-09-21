@@ -30,7 +30,6 @@
     "**/gen/**"
   ],
   "task": "none",
-  "failOnError": false,
   "review": {
     "contextLines": 40,
     "chunkLines": 160,
@@ -40,11 +39,11 @@
     "maxLocalizationRequests": 32
   },
   "budget": {
-    "maxHunks": 4000,
+    "maxHunks": 100000,
     "maxRulesPerHunk": 1024,
-    "concurrency": 8,
-    "maxRequests": 4000,
-    "timeoutSeconds": 3600
+    "maxRequests": 200000,
+    "concurrency": 16,
+    "timeoutSeconds": 43200
   },
   "rules": {
     "nut00/hash-to-curve-domain-separator": {

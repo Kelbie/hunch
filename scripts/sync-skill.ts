@@ -66,7 +66,7 @@ export function renderCliReference(): string {
     "",
     "# Hunch CLI reference",
     "",
-    "Every command, argument and flag, with its default. Run any of them as `npx @kelbie/hunch <command>`.",
+    "Every command, argument and flag, with its default. Run any of them as `npx -y --min-release-age=0 @kelbie/hunch <command>`.",
     "Unknown flags are refused, and each command lists its own with `--help`.",
     "",
     "| Global flag | Means |",

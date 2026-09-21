@@ -8,7 +8,7 @@
 ### Plan a condition sweep with overlapping windows
 
 ```sh
-npx @kelbie/hunch find "Does this code retry a payment with a new idempotency key?" --mode condition --chunk-lines 80 --overlap-lines 10 --top 0 --dry-run
+npx -y --min-release-age=0 @kelbie/hunch find "Does this code retry a payment with a new idempotency key?" --mode condition --chunk-lines 80 --overlap-lines 10 --top 0 --dry-run
 ```
 
 Exit code **0**.
@@ -112,7 +112,7 @@ stdout:
 ### What would a search cost?
 
 ```sh
-npx @kelbie/hunch find "make payment retries configurable" --dry-run
+npx -y --min-release-age=0 @kelbie/hunch find "make payment retries configurable" --dry-run
 ```
 
 Exit code **0**.
@@ -129,7 +129,7 @@ hunch: dry run, nothing sent. 3 file(s) as 3 chunk(s): 3 request(s), 15 question
 ### No config
 
 ```sh
-npx @kelbie/hunch find "make payment retries configurable" --dry-run
+npx -y --min-release-age=0 @kelbie/hunch find "make payment retries configurable" --dry-run
 ```
 
 Exit code **0**.

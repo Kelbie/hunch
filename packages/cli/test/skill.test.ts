@@ -62,7 +62,7 @@ function commandLines(text: string): string[] {
   for (let c of candidates) {
     // Drop a trailing comment, redirect or pipe, but not the `>` of a `<placeholder>`.
     c = c.replace(/\s+#.*$/, "").replace(/\s+(?:\d?>|\|)\s.*$/, "").trim();
-    const m = /^(?:npx @kelbie\/hunch(?:@[\w.]+)?|npx hunch|bun run hunch|hunch)\s+(.*)$/.exec(c);
+    const m = /^(?:npx (?:-y )?(?:--min-release-age=0 )?@kelbie\/hunch(?:@[\w.]+)?|bun run hunch|hunch)\s+(.*)$/.exec(c);
     const rest = m ? m[1]! : c;
     const first = rest.split(/\s+/)[0]!;
     if (!COMMANDS.has(first)) continue;
@@ -174,7 +174,7 @@ test("every relative link in the skill and README lands on a file and heading th
 test("every verb the skill routes to has its reference and captured examples", () => {
   const skill = readFileSync(join(SKILL, "SKILL.md"), "utf8");
   const verbs = [...skill.matchAll(/^\| `(\w+)` \| .* \| \[(\w+)\.md\]\(references\/\w+\.md\) \|$/gm)].map((m) => ({ verb: m[1]!, ref: m[2]! }));
-  expect(verbs.map((v) => v.verb)).toEqual(["install", "config", "rules", "compile", "check", "find", "doctor", "eval", "operator"]);
+  expect(verbs.map((v) => v.verb)).toEqual(["install", "config", "rules", "compile", "check", "packs", "find", "doctor", "eval", "operator"]);
   for (const { ref } of verbs) expect(existsSync(join(SKILL, "references", `${ref}.md`))).toBe(true);
   for (const command of ["init", "config", "check", "find", "compile", "doctor", "eval"]) expect(existsSync(join(SKILL, "examples", `${command}.md`))).toBe(true);
   // Every CLI command is reachable from the skill.

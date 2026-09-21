@@ -8,7 +8,7 @@ Every example runs in the same small shop repository, whose `hunch.config.ts` us
 ### Is the config valid, and which rules are on?
 
 ```sh
-npx @kelbie/hunch config
+npx -y --min-release-age=0 @kelbie/hunch config
 ```
 
 Exit code **0**.
@@ -56,7 +56,7 @@ See exactly what one rule asks: hunch config --explain <rule>
 The config selects a skill and AGENTS.md, but there is no `hunch.lock` yet, so a review would be incomplete. Only the first lines are the point here.
 
 ```sh
-npx @kelbie/hunch config
+npx -y --min-release-age=0 @kelbie/hunch config
 ```
 
 Exit code **2**.
@@ -105,7 +105,7 @@ See exactly what one rule asks: hunch config --explain <rule>
 Overrides and each rule's `files` are applied; rules turned off are left out.
 
 ```sh
-npx @kelbie/hunch config --file src/api/errors.test.ts
+npx -y --min-release-age=0 @kelbie/hunch config --file src/api/errors.test.ts
 ```
 
 Exit code **0**.
@@ -146,7 +146,7 @@ See exactly what one rule asks: hunch config --explain <rule>
 ### What a plain-English rule actually asks
 
 ```sh
-npx @kelbie/hunch config --explain api/stable-errors
+npx -y --min-release-age=0 @kelbie/hunch config --explain api/stable-errors
 ```
 
 Exit code **0**.
@@ -185,7 +185,7 @@ Criteria:
 ### What a noul rule asks
 
 ```sh
-npx @kelbie/hunch config --explain tests/weakened
+npx -y --min-release-age=0 @kelbie/hunch config --explain tests/weakened
 ```
 
 Exit code **0**.
@@ -223,7 +223,7 @@ Criteria:
 ### What a choice rule asks
 
 ```sh
-npx @kelbie/hunch config --explain payments/retry-safety
+npx -y --min-release-age=0 @kelbie/hunch config --explain payments/retry-safety
 ```
 
 Exit code **0**.
@@ -262,7 +262,7 @@ Criteria:
 ### What a score rule asks
 
 ```sh
-npx @kelbie/hunch config --explain tests/specific
+npx -y --min-release-age=0 @kelbie/hunch config --explain tests/specific
 ```
 
 Exit code **0**.
@@ -302,7 +302,7 @@ Criteria:
 The rule id `docs/contradictory-coment` does not exist, and the `reference` file is missing.
 
 ```sh
-npx @kelbie/hunch config
+npx -y --min-release-age=0 @kelbie/hunch config
 ```
 
 Exit code **2**.
@@ -352,7 +352,7 @@ See exactly what one rule asks: hunch config --explain <rule>
 For an agent: `valid`, `problems`, `settings`, `rules` and `overrides`.
 
 ```sh
-npx @kelbie/hunch config --reporter json --rule api/pagination="List endpoints keep returning a next cursor."
+npx -y --min-release-age=0 @kelbie/hunch config --reporter json --rule api/pagination="List endpoints keep returning a next cursor."
 ```
 
 Exit code **0**.
