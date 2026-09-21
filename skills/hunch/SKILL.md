@@ -5,7 +5,7 @@ argument-hint: "[install|auth|config|rules|compile|check|find|doctor|eval|operat
 allowed-tools: Bash(npx @kelbie/hunch *) Bash(npx hunch *) Bash(hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
 metadata:
-  version: "0.18.0"
+  version: "0.18.1"
 ---
 
 # Hunch
@@ -31,7 +31,7 @@ Work out the command prefix before running anything.
 | has a global `hunch` matching this skill version | `hunch <command>` |
 | anything else | `npx @kelbie/hunch <command>` (latest from npm; no install needed) |
 
-Check `--version` before using new options: choosing TypeSafe from the signed-in key when the config names no provider requires 0.18.0; before that, pass `--config '{"provider":"typesafe"}'` or set it in the config. a review that survives provider failures, outages and Ctrl-C with its findings requires 0.17.0; before that, one failed request discards the whole run, so review a large repository path by path. `review.compiledScope`, budgets above 10,000 requests and a dry run that counts every request require 0.16.0. `auth` requires 0.15.0. Condition mode and `review`/`abstain` configuration
+Check `--version` before using new options: an unauthenticated `find` stops at once with the sign-in steps from 0.18.1; before that it reports every chunk as "provider unavailable or rate limited", which means nobody is signed in when `scored` is 0. choosing TypeSafe from the signed-in key when the config names no provider requires 0.18.0; before that, pass `--config '{"provider":"typesafe"}'` or set it in the config. a review that survives provider failures, outages and Ctrl-C with its findings requires 0.17.0; before that, one failed request discards the whole run, so review a large repository path by path. `review.compiledScope`, budgets above 10,000 requests and a dry run that counts every request require 0.16.0. `auth` requires 0.15.0. Condition mode and `review`/`abstain` configuration
 require 0.13.0. Correct compiled path scopes and rule budgets above 64 require 0.13.1. A policy whose rules exceed one request is split across requests, instead of having the excess skipped, from 0.14.0. The main-branch skill can precede npm publication; use a matching installed build
 or the Hunch source checkout in that case. Do not silently change a project's pinned dependency.
 

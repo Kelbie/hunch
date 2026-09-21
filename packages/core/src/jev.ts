@@ -178,6 +178,18 @@ export class JevError extends Error {
 }
 
 /** Picks a provider from config + environment. */
+/** This many failures in a row, with no answer between them, is an outage rather than bad luck. */
+export const OUTAGE_FAILURES = 8;
+
+/**
+ * Whether a provider failure means "nobody is signed in" rather than "try again". No amount of
+ * further sending mends it, so a run stops on the first one and says how to sign in.
+ */
+export function isAuthError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return /No authentication provided|authentication failed|needs TYPESAFE_API_KEY|Invalid API key|HTTP 401|HTTP 403/i.test(message);
+}
+
 type ProviderChoice = { provider?: "gateway" | "typesafe" };
 
 /**

@@ -350,7 +350,12 @@ export async function main() {
 function jevClient(config: Parameters<typeof clientFromEnv>[0]): JevClient {
   let client: Promise<JevClient> | undefined;
   const build = async () => {
-    if (providerFor(config) === "gateway") await useVercelLink();
+    if (providerFor(config) === "gateway") {
+      await useVercelLink();
+      // Nothing to sign in with: say so before the first request, not after a thousand refusals.
+      if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN && !linkedVercelProject(process.cwd()))
+        throw new Error("No authentication provided: no model key or Vercel project is signed in on this machine.");
+    }
     return clientFromEnv(config);
   };
   return { evaluate: async (req) => (await (client ??= build())).evaluate(req) };
