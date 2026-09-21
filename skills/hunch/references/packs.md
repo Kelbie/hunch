@@ -5,8 +5,8 @@ repository against one, with no Hunch config, no clone and nothing to install. F
 [cli.md](cli.md#hunch-check).
 
 ```sh
-npx -y --min-release-age=0 @kelbie/hunch check --all --pack cashu-conformance --dry-run
-npx -y --min-release-age=0 @kelbie/hunch check --all --pack cashu-conformance --reporter json --code > audit.json
+npx -y --min-release-age=0 @kelbie/hunch check --all --pack nuts-spec --dry-run
+npx -y --min-release-age=0 @kelbie/hunch check --all --pack nuts-spec --reporter json --code > audit.json
 ```
 
 Run the dry run first: it sends nothing, and prints how many chunks, questions and requests the
@@ -19,7 +19,7 @@ The same spellings `npx skills add` uses for a skill.
 
 | `--pack` | Reads |
 | --- | --- |
-| `cashu-nuts` | `rules/cashu-nuts.json` in `Kelbie/hunch`, the official packs |
+| `nuts-spec` | `rules/nuts-spec.json` in `Kelbie/hunch`, the official packs |
 | `owner/repo/name` | `rules/name.json` in `owner/repo`, on its default branch |
 | `owner/repo/name@v2` | the same at a tag, branch or commit; pin one for a review that must be repeatable |
 
@@ -27,14 +27,13 @@ GitHub serves a branch's files from a cache for about five minutes, so a pack ed
 may still load as it was. A commit (`name@<sha>`) or a tag is exact.
 
 A private repository needs `GITHUB_TOKEN`. The run prints where its rules came from:
-`hunch: rules from Kelbie/hunch/cashu-conformance@HEAD`.
+`hunch: rules from Kelbie/hunch/nuts-spec@HEAD`.
 
 ## Official packs
 
 | Pack | Reviews | Rules |
 | --- | --- | --- |
-| `cashu-conformance` | a Cashu wallet, mint or library, in any of 12 languages, against NUT-00 to NUT-30 and the error codes | 320 |
-| `cashu-nuts` | the NUTs specification text itself: `NN.md`, `tests/`, `suppl/`, `error_codes.md` | 11 |
+| `nuts-spec` | a Cashu wallet, mint or library, in any of 12 languages, against the Cashu NUTs specification: NUT-00 to NUT-30 and the error codes | 320 |
 
 Browse them at <https://github.com/Kelbie/hunch/tree/main/rules>.
 
@@ -43,7 +42,7 @@ Browse them at <https://github.com/Kelbie/hunch/tree/main/rules>.
 Repeat `--pack`; every pack applies.
 
 ```sh
-npx -y --min-release-age=0 @kelbie/hunch check --all --pack cashu-conformance --pack acme/policy/payments@v2
+npx -y --min-release-age=0 @kelbie/hunch check --all --pack nuts-spec --pack acme/policy/payments@v2
 ```
 
 - Each pack's rules are asked only of the files that pack's `include` names, so a markdown pack
@@ -63,8 +62,8 @@ skills or AGENTS.md. Layer over it:
 | change a limit | `--config '{"budget":{"concurrency":4}}'` |
 | ask one more thing | `--rule mine/extra="A plain sentence."` |
 | run a few rules | `--only nut11/locktime-boundary,nut12/blindsignature-dleq-shape` |
-| see every rule a pack asks | `config --pack cashu-conformance`, then `config --pack cashu-conformance --explain <id>` |
-| review part of the repository | paths at the end: `check --all --pack cashu-conformance src/wallet` |
+| see every rule a pack asks | `config --pack nuts-spec`, then `config --pack nuts-spec --explain <id>` |
+| review part of the repository | paths at the end: `check --all --pack nuts-spec src/wallet` |
 
 Without `--all`, `check --pack <name>` reviews only what this branch changed against `origin/main`.
 

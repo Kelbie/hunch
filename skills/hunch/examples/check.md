@@ -91,7 +91,7 @@ stderr:
 
 ```text
 hunch: no hunch.config.ts or hunch.toml here, and no rules were passed. Run one of:
-  npx @kelbie/hunch check --all --pack cashu-nuts        review with a published rule pack; repeat --pack for several
+  npx @kelbie/hunch check --all --pack nuts-spec        review with a published rule pack; repeat --pack for several
   npx @kelbie/hunch check --rule id="A plain sentence."   try one rule of your own
   npx @kelbie/hunch init                                 set Hunch up in this repository
 ```

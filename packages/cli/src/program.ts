@@ -103,7 +103,7 @@ export function buildProgram(): Command {
     .option("--reporter <format>", "text, markdown, json, sarif or github", process.env.GITHUB_ACTIONS ? "github" : "text")
     .option("--code", "print the changed lines under each finding", false)
     .option("--dry-run", "count files, hunks and questions without calling Jev", false)
-    .option("--pack <name>", "rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
+    .option("--pack <name>", "rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .option("--only <ids>", "ask only these rules, comma-separated; to try a rule you just wrote")
@@ -179,7 +179,7 @@ Examples:
     .option("--file <path>", "show only the rules asked about this file, overrides applied")
     .option("--explain <rule>", "print exactly what one rule asks Jev, and when it reports")
     .option("--reporter <format>", "text or json", "text")
-    .option("--pack <name>", "rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
+    .option("--pack <name>", "rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .addHelpText("after", `
@@ -235,7 +235,7 @@ Examples:
     .command("eval")
     .description("measure each rule's precision and recall on labelled .diff examples")
     .argument("<dir>", "directory of .diff fixtures")
-    .option("--pack <name>", "rules from a pack: a name (cashu-nuts) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
+    .option("--pack <name>", "rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .option("--reporter <format>", "text or json", "text")
@@ -322,7 +322,7 @@ Docs: https://github.com/Kelbie/hunch`);
 /** What to run when a repository has no Hunch config: each line is a whole command. */
 const NO_CONFIG = [
   "no hunch.config.ts or hunch.toml here, and no rules were passed. Run one of:",
-  "  npx @kelbie/hunch check --all --pack cashu-nuts        review with a published rule pack; repeat --pack for several",
+  "  npx @kelbie/hunch check --all --pack nuts-spec        review with a published rule pack; repeat --pack for several",
   "  npx @kelbie/hunch check --rule id=\"A plain sentence.\"   try one rule of your own",
   "  npx @kelbie/hunch init                                 set Hunch up in this repository",
 ].join("\n");

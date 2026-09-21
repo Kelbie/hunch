@@ -16,10 +16,10 @@ const fetcher: PackFetcher = async ({ repo, ref, path }) => {
 
 describe("rule packs", () => {
   test.each([
-    ["cashu-nuts", { repo: "Kelbie/hunch", name: "cashu-nuts", ref: "HEAD", path: "rules/cashu-nuts.json" }],
+    ["nuts-spec", { repo: "Kelbie/hunch", name: "nuts-spec", ref: "HEAD", path: "rules/nuts-spec.json" }],
     ["acme/policy/payments", { repo: "acme/policy", name: "payments", ref: "HEAD", path: "rules/payments.json" }],
     ["acme/policy/payments@v2", { repo: "acme/policy", name: "payments", ref: "v2", path: "rules/payments.json" }],
-    ["cashu-nuts@0123abc", { repo: "Kelbie/hunch", name: "cashu-nuts", ref: "0123abc" }],
+    ["nuts-spec@0123abc", { repo: "Kelbie/hunch", name: "nuts-spec", ref: "0123abc" }],
   ] as const)("names a pack the way `skills add` names a skill: %p", (spec, expected) => {
     expect(parsePackSpec(spec)).toMatchObject(expected);
   });
@@ -59,12 +59,12 @@ describe("rule packs", () => {
   test("every official pack in rules/ loads, alone and all together", async () => {
     const dir = join(import.meta.dir, "../../../rules");
     const names = readdirSync(dir).filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
-    expect(names).toContain("cashu-conformance");
+    expect(names).toContain("nuts-spec");
     const local: PackFetcher = async ({ path }) => readFileSync(join(dir, "..", path), "utf8");
     for (const name of names) expect(Object.keys((await loadPacks([name], local)).rules).length).toBeGreaterThan(0);
     const all = await loadPacks(names, local);
-    // Run together, a specification rule still reviews only the specification's files.
-    expect(all.rules["nuts/rfc2119"]!.question!.files).toEqual(["[0-9X][0-9X].md", "tests/**/*.md", "suppl/**/*.md", "error_codes.md"]);
+    // Run together, each rule still reviews only the files its own pack names.
+    expect(all.rules["errors/codes-used-as-specified"]!.question!.files).toContain("**/*.ts");
     expect(all.settings.budget.maxRequests).toBeGreaterThanOrEqual(100_000);
   });
 });
