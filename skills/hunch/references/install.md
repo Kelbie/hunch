@@ -128,6 +128,10 @@ else `~/.config/hunch/credentials` (`%APPDATA%\hunch\credentials` on Windows).
 not pass one as an argument. `auth login --vercel` stores no secret, so an agent may run it when
 the user asks for that path.
 
+With nothing to sign in with, `check`, `find` and `compile --with gateway` stop before the first
+request and print how to sign in (exit 2). An invalid or expired key stops the run on the first
+refusal, the same way. Neither is reported as a provider outage or as chunks that failed.
+
 Hunch takes the first of these that is set:
 
 1. the real environment: `AI_GATEWAY_API_KEY` or `TYPESAFE_API_KEY`;
@@ -171,4 +175,6 @@ These happened installing Hunch on real repositories. Check for them.
 | The App can't be installed on an organisation | a private App can only be installed on the account that owns it | install the hosted App, or register your own with `--organization` or `--public` ([operator.md](operator.md)) |
 | Every Actions run fails on config options | the workflow pinned an older `Kelbie/hunch@v…` that rejects newer options | re-run `init --target actions` in a fresh checkout, or update the `uses:` tag to the CLI's version |
 | Every review fails at the provider | `zeroDataRetention` is enforced on a Vercel Hobby account | the user decides whether to set `zeroDataRetention: false` |
+| `npx @kelbie/hunch` fails with `ENOVERSIONS: No versions available` | the user's npm has `min-release-age` (or `before`) set, and every Hunch version is newer than it allows; earlier runs worked from npx's cache | `npx --min-release-age=0 @kelbie/hunch …`, or `npm install -g @kelbie/hunch --min-release-age=0`. Leave their `.npmrc` alone: the setting guards every other package |
+| `find` reports every chunk as "provider unavailable or rate limited" with 0 scored (before 0.18.1) | nobody is signed in; older versions did not say so | `auth status`, then the user runs `auth login` |
 | Config was changed on a PR but reviews ignore it | reviews use the base branch's config | merge it; then `/hunch recheck` |

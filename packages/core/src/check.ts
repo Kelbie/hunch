@@ -2,7 +2,7 @@ import picomatch from "picomatch";
 import { hunkContext } from "./context.js";
 import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
 import { inScope as scopeFilter } from "./full.js";
-import { validateAnswers, type Answer, type JevClient, type WireQuestion } from "./jev.js";
+import { isAuthError, OUTAGE_FAILURES, validateAnswers, type Answer, type JevClient, type WireQuestion } from "./jev.js";
 import { localizeFinding } from "./localize.js";
 import type { CompiledRule, Lock } from "./lock.js";
 import type { Config, Level, Question, RuleEntry } from "./schema.js";
@@ -74,8 +74,6 @@ const REQUEST_CHAR_LIMIT = 80_000;
 /** An answer that breaks the provider contract. Asking again would not mend it, so it fails the review. */
 class ContractError extends Error {}
 
-/** This many failures in a row, with no answer between them, is an outage rather than bad luck. */
-const OUTAGE_FAILURES = 8;
 /** Before anything has been answered, this many failures end the review with the provider's error. */
 const FIRST_FAILURES = 3;
 
@@ -341,7 +339,8 @@ export async function check(input: CheckInput): Promise<CheckResult> {
           input.onRequestError?.(e);
           if (input.signal?.aborted) continue;
           firstError ??= e;
-          if (e instanceof ContractError) throw e;
+          // Not being signed in fails every request alike, so it ends the review with that error.
+          if (e instanceof ContractError || isAuthError(e)) throw e;
           failed.push({ hunk, state, rules: batch });
           // A provider that has answered nothing yet gets less patience: that is a bad key or a
           // refused policy far more often than bad luck.

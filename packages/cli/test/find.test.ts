@@ -69,16 +69,27 @@ test.each(invalidOptions)("CLI refuses invalid search options %j before evaluati
   });
 });
 
-test("CLI preserves the query and scope in JSON when the provider is unavailable", () => {
-  withRepo({ "src/a.ts": "write();", "src/yarn.lock": "excluded" }, root => {
-    const query = "Does this code discard a failed write?";
-    const result = hunch(root, ["find", query, "--mode", "condition", "--top", "0", "--chunk-lines", "4", "--overlap-lines", "1", "--reporter", "json"]);
+test("in a repository with no Hunch config and nobody signed in, nothing is sent and the sign-in steps are shown", () => {
+  withRepo({ "hunch.config.ts": "export default {};", "src/a.ts": "write();" }, root => {
+    rmSync(join(root, "hunch.config.ts"));
+    const result = hunch(root, ["find", "p2pk code"]);
     expect(result.status).toBe(2);
-    const report = JSON.parse(result.stdout);
-    expect(report).toMatchObject({ query, mode: "condition", complete: false, matches: [], stats: { chunks: 1, requests: 1, scored: 0 } });
-    expect(report.scope).toMatchObject({ include: ["src/**"], paths: [], chunkLines: 4, overlapLines: 1, skippedFiles: [], revision: "working-tree" });
-    expect(report.scope.ignore).toContain("**/yarn.lock");
-    expect(report.notices.join(" ")).toContain("src/a.ts:1");
+    expect(result.stderr).toContain("No authentication provided");
+    expect(result.stderr).toContain("hunch auth login");
+    expect(result.stdout + result.stderr).not.toContain("provider unavailable or rate limited");
+  });
+});
+
+test("with nobody signed in, find says how to sign in at once instead of reporting every chunk as a provider failure", () => {
+  withRepo({ "src/a.ts": "write();", "src/b.ts": "read();" }, root => {
+    const result = hunch(root, ["find", "Does this code discard a failed write?", "--mode", "condition", "--reporter", "json"]);
+    expect(result.status).toBe(2);
+    // The fixture names TypeSafe; with the Gateway the message is "No authentication provided".
+    expect(result.stderr).toContain("needs TYPESAFE_API_KEY");
+    expect(result.stderr).toContain("hunch auth login");
+    // Not a report: a search that never ran has no result to mistake for "nothing found".
+    expect(result.stdout).toBe("");
+    expect(result.stderr).not.toContain("could not be searched");
   });
 });
 

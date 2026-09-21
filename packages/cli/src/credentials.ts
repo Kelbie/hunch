@@ -2,6 +2,7 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, sta
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { getVercelOidcToken } from "@vercel/oidc";
+import { isAuthError } from "../../core/src/index.js";
 
 /** The only names the store will ever hold or hand to the environment. */
 export const KEY_NAMES = ["AI_GATEWAY_API_KEY", "TYPESAFE_API_KEY"] as const;
@@ -176,12 +177,12 @@ export function keySources(env: Record<string, string | undefined>, applied: rea
  */
 export function authHint(message: string): string | null {
   if (/hunch auth login/.test(message)) return null;
-  if (!/No authentication provided|authentication failed|needs TYPESAFE_API_KEY|Invalid API key|HTTP 401|HTTP 403/i.test(message)) return null;
+  if (!isAuthError(message)) return null;
   return [
     "Hunch has no working model key here. Store one once, for every directory:",
     "  hunch auth login                       asks for the key with a hidden prompt",
     "  hunch auth login --with-token < file   reads it from standard input, for agents and scripts",
     "  hunch auth login --vercel              no key: reuse your Vercel CLI login, from a linked project",
-    "or export AI_GATEWAY_API_KEY (TYPESAFE_API_KEY with provider = \"typesafe\"). `hunch auth status` shows what is found.",
+    "or export AI_GATEWAY_API_KEY or TYPESAFE_API_KEY. `hunch auth status` shows what is found.",
   ].join("\n");
 }

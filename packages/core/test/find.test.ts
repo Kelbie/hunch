@@ -139,6 +139,34 @@ test("each facet keeps its own best, so a generous facet cannot crowd out the re
   ]);
 });
 
+test("a sweep nobody is signed in for stops at once with the provider's error, not 980 failed chunks", async () => {
+  let n = 0;
+  const unauthenticated = { async evaluate(): Promise<never> { n++; throw new Error("AI Gateway authentication failed: No authentication provided."); } };
+  await expect(find({ ...base, hunks: chunks(...Array.from({ length: 40 }, (_, i) => `f${i}.ts`)), budget: { concurrency: 4 }, client: unauthenticated }))
+    .rejects.toThrow("No authentication provided");
+  // Only what was already in flight; never the whole sweep.
+  expect(n).toBeLessThanOrEqual(4);
+});
+
+test("a provider outage ends the sweep early and says so, keeping what was scored", async () => {
+  let n = 0;
+  const res = await find({
+    ...base,
+    hunks: chunks(...Array.from({ length: 60 }, (_, i) => `f${i}.ts`)),
+    budget: { concurrency: 1 },
+    client: {
+      async evaluate(req) {
+        if (++n > 2) throw new Error("Service temporarily unavailable");
+        return { answers: Object.fromEntries(Object.keys(req.questions).map((id) => [id, { type: "noul" as const, p: id === "edit" ? 0.9 : 0 }])), usage: { inputTokens: 1 }, modelId: "jev-test" };
+      },
+    },
+  });
+  expect(res.matches.map((m) => m.file)).toEqual(["f0.ts", "f1.ts"]);
+  expect(res.complete).toBe(false);
+  expect(res.notices.join(" ")).toContain("provider stopped answering");
+  expect(n).toBeLessThan(15);
+});
+
 test("one failed chunk costs that chunk, not the sweep", async () => {
   let n = 0;
   const res = await find({

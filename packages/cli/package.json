@@ -1,6 +1,6 @@
 {
   "name": "@kelbie/hunch",
-  "version": "0.18.0",
+  "version": "0.18.1",
   "description": "Search code by behavior and review changes against plain-English rules with TypeSafe's Jev.",
   "type": "module",
   "bin": {
