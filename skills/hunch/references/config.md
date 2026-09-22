@@ -53,13 +53,14 @@ fail-on-error = true
 | `overrides` | `[[overrides]]` | `[]` | `{ files, rules }`: different levels or rules for some paths |
 | `failOnError` | `fail-on-error` | `false` | `check` exits 1 (and the check fails) when an `error` rule reports |
 | `task` | `task` | `"pr"` | `"pr"` sends the PR title and description to every question as `task`; `"none"` sends nothing |
-| `provider` | `provider` | unset | `"gateway"` (Vercel AI Gateway) or `"typesafe"` (direct). Unset uses the signed-in credentials: TypeSafe when only a `TYPESAFE_API_KEY` is found, otherwise the Gateway ([install.md](install.md#model-access)) |
+| `provider` | `provider` | unset | `"gateway"` (Vercel AI Gateway) or `"typesafe"` (direct). Unset uses the signed-in credentials: TypeSafe when only a `TYPESAFE_API_KEY` is found, otherwise the Gateway ([setup.md](setup.md#model-access)) |
 | `model` | `model` | `"jev-1.13.0"` | the TypeSafe model id, used by `provider: "typesafe"`. Gateway always serves `typesafe-ai/jev` |
 | `zeroDataRetention` | `zero-data-retention` | `true` | ask Gateway to route only to zero-retention providers; see below |
+| `packs` | `[[packs]]` | `[]` | published rule packs to review against: `"nuts-spec"`, `"owner/repo/name@v2"`, or `{ pack, rules }` to keep only some ids. `hunch install` copies them into `hunch.lock` ([packs.md](packs.md#packs-in-the-config)) |
 | `skills` | `skills` | every installed skill | Agent Skills to compile into `hunch.lock`; `[]` for none |
 | `agentsMd` | `agents-md` | `true` | compile root and nested `AGENTS.md` |
 | `docs` | `docs` | `[]` | extra Markdown files to compile, e.g. a style guide |
-| `compileModel` | `compile-model` | `"anthropic/claude-sonnet-5"` | model for `compile --with gateway` only |
+| `compileModel` | `compile-model` | `"anthropic/claude-sonnet-5"` | model for `install --with gateway` only |
 | `budget` | `[budget]` | see [budget](#budget) | per-run limits |
 | `review` | `[review]` | see [review context](#review-context) | chunk size, source context and optional localization |
 | `unit` | `unit` | `"hunk"` | reserved; only `"hunk"` exists |
@@ -186,19 +187,20 @@ There is no silent fallback: an enforced setting that can't be met fails the rev
 retention off is the user's decision. Record it in the config with a comment, as this repository's
 own config does.
 
-`compile --with gateway` uses `compileModel` through Gateway, under the same retention setting.
+`install --with gateway` uses `compileModel` through Gateway, under the same retention setting.
 
 ## Guidance
 
-`skills`, `agentsMd` and `docs` select what `compile` turns into `hunch.lock`; see
-[compile.md](compile.md). They do nothing until compiled, and a stale lock makes reviews partial.
+`packs`, `skills`, `agentsMd` and `docs` all feed `hunch.lock`, which `hunch install` writes; see
+[install.md](install.md). Packs are copied verbatim; guidance is compiled by an agent. None of them
+does anything until installed, and a stale lock makes reviews partial.
 
 | `skills` value | Selects |
 | --- | --- |
 | omitted | every skill in `.agents/skills/*`, then `.claude/skills/*` |
 | `[]` | none |
 | `"./.agents/skills/api-style"` or `"./skills/*"` | local directories |
-| `"owner/repo"` or `{ repo: "owner/repo", skill: "name", ref: "v1" }` | skills from GitHub, pinned in the lock at compile time |
+| `"owner/repo"` or `{ repo: "owner/repo", skill: "name", ref: "v1" }` | skills from GitHub, pinned in the lock at install time |
 | `"https://github.com/owner/repo/tree/ref/path"` | one skill by URL; use the object form when `ref` contains `/` |
 
 ## Validate
@@ -208,7 +210,7 @@ Run `hunch config` after every edit. It exits 2 on:
 - a schema error (unknown key, wrong type, threshold outside 0–1);
 - a level for a rule id nothing defines;
 - a `reference` file that doesn't exist;
-- a `hunch.lock` that is stale for the selected guidance.
+- a `hunch.lock` that is stale for the selected packs or guidance.
 
 `hunch config --file <path>` lists the rules asked about one file. `--reporter json` gives `valid`,
 `problems`, `settings`, `rules` and `overrides` for you to read programmatically.
@@ -220,3 +222,5 @@ Run `hunch config` after every edit. It exits 2 on:
 | `@hunch/cli` (0.3.0 preview) | install `@kelbie/hunch` and import the helpers from it. The loader still accepts `@hunch/cli` imports |
 | 0.1 rule ids | `entropy/weakened-test` → `tests/weakened-test`, `entropy/stale-comment` → `docs/contradictory-comment`. Delete overrides for the removed style and off-task rules |
 | `init --github`, `--ts`, `--rust`, `--general` | `init --target actions`, `--preset ts\|rust\|general` (`--github` still works) |
+| 0.19 `hunch compile` | `hunch install`, which also copies the packs `packs` names. `compile` and `i` are aliases, so existing scripts keep working |
+| 0.19 `check --pack` or `--config` in a repository that has a config | these now replace the whole policy, `hunch.lock` included, so compiled guidance and installed packs are no longer also asked. `--rule` still only adds |

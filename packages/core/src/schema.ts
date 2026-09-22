@@ -146,6 +146,22 @@ export const skillSourceSchema = z.union([
 ]);
 export type SkillSource = z.output<typeof skillSourceSchema>;
 
+/**
+ * A published rule pack this repository reviews against, named the way `--pack` names one.
+ * `rules` keeps only the ids it lists, by exact id or glob (`nut11/*`), for a project that wants a
+ * few checks from a large specification pack rather than all of it.
+ */
+export const packSourceSchema = z.union([
+  z.string(), // "nuts-spec", "owner/repo/name", "owner/repo/name@v2"
+  z.strictObject({ pack: z.string(), rules: z.array(z.string().min(1)).min(1).optional() }),
+]);
+export type PackSource = z.output<typeof packSourceSchema>;
+
+/** The `--pack`-style spec of a configured pack, whichever shape the config used. */
+export const packSpec = (src: PackSource): string => (typeof src === "string" ? src : src.pack);
+/** The id patterns the config selected, or undefined for the whole pack. */
+export const packSelection = (src: PackSource): string[] | undefined => (typeof src === "string" ? undefined : src.rules);
+
 export const configSchema = z.strictObject({
   /** TypeSafe model id (direct provider). The gateway currently serves `typesafe-ai/jev` only. */
   model: z.string().default("jev-1.13.0"),
@@ -163,11 +179,13 @@ export const configSchema = z.strictObject({
   task: z.enum(["pr", "none"]).default("pr"),
   /** Omit to use every installed skill; `[]` selects none. */
   skills: z.array(skillSourceSchema).optional(),
+  /** Published rule packs to review against. `hunch install` copies their rules into hunch.lock. */
+  packs: z.array(packSourceSchema).default([]),
   /** Compile root + nested AGENTS.md into rules. */
   agentsMd: z.boolean().default(true),
   /** Extra repo docs to compile into rules (e.g. a style guide AGENTS.md links to). */
   docs: z.array(z.string()).default([]),
-  /** LLM used only by `hunch compile --with gateway`. PR runs use Jev alone. */
+  /** LLM used only by `hunch install --with gateway`. PR runs use Jev alone. */
   compileModel: z.string().default("anthropic/claude-sonnet-5"),
   /** Fail the check run when an `error` finding is reported. */
   failOnError: z.boolean().default(false),

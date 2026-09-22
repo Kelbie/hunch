@@ -29,10 +29,10 @@ review the lines this branch changed, against your rules
 | `--reporter <format>` | `text` | text, markdown, json, sarif or github |
 | `--code` |  | print the changed lines under each finding |
 | `--dry-run` |  | count files, hunks and questions without calling Jev |
-| `--pack <name>` |  | rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply |
+| `--pack <name>` |  | rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable |
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
-| `--only <ids>` |  | ask only these rules, comma-separated; to try a rule you just wrote |
+| `--only <ids>` |  | ask only these rules: ids or globs, comma-separated (nut11/*) |
 | `--policy-ref <ref>` |  | read config and lock from this ref (the App uses the base commit) |
 
 ```text
@@ -47,6 +47,8 @@ Examples:
   hunch check --rule api/errors="Keep the code field on error responses."
   hunch check --config rules.json --reporter json
   hunch check --only api/errors --dry-run     what one rule would cost on this branch
+  hunch check --all --pack nuts-spec --only "nut11/*"
+  hunch check --all --pack "nuts-spec#nut11/*,nut12/*"   the same, chosen as the pack is named
 ```
 
 ## `hunch find`
@@ -89,9 +91,9 @@ Examples:
   hunch find "add a rate limit" > /tmp/hunch-context.md      Markdown, to hand to a coding agent
 ```
 
-## `hunch compile`
+## `hunch install`
 
-turn skills and AGENTS.md into review questions, saved in hunch.lock
+write hunch.lock: copy the configured packs, and compile skills and AGENTS.md into questions
 
 | Flag | Default | Means |
 | --- | --- | --- |
@@ -99,15 +101,20 @@ turn skills and AGENTS.md into review questions, saved in hunch.lock
 | `--effort <level>` |  | how hard the agent should think |
 | `--model <name>` |  | model for the compiling agent |
 | `--force` |  | recompile sources that have not changed |
-| `--dry-run` |  | list the sources and whether each changed since hunch.lock, without compiling |
+| `--packs-only` |  | copy the packs and leave the compiled rules as they are |
+| `--dry-run` |  | list the packs and sources, and what changed since hunch.lock, without writing it |
 | `--reporter <format>` | `text` | text or json |
 
 ```text
+Packs are copied verbatim and need no agent; only prose guidance (skills, AGENTS.md, docs) is
+compiled, and only when it changed. A config with packs alone installs with no agent at all.
+
 Examples:
-  hunch compile                  asks which installed agent to use
-  hunch compile --dry-run        what would be compiled, and what is unchanged
-  hunch compile --with claude
-  hunch compile --force          rebuild every source
+  hunch install                  packs, then asks which installed agent to compile guidance with
+  hunch install --dry-run        what would be copied and compiled, and what is unchanged
+  hunch install --packs-only     refresh the packs without touching the compiled rules
+  hunch install --with claude
+  hunch install --force          rebuild every source
 ```
 
 ## `hunch config`
@@ -119,7 +126,7 @@ check the config is valid and show the rules it applies; never edits it
 | `--file <path>` |  | show only the rules asked about this file, overrides applied |
 | `--explain <rule>` |  | print exactly what one rule asks Jev, and when it reports |
 | `--reporter <format>` | `text` | text or json |
-| `--pack <name>` |  | rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply |
+| `--pack <name>` |  | rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable |
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
 
@@ -190,7 +197,7 @@ measure each rule's precision and recall on labelled .diff examples
 
 | Flag | Default | Means |
 | --- | --- | --- |
-| `--pack <name>` |  | rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply |
+| `--pack <name>` |  | rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable |
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
 | `--reporter <format>` | `text` | text or json |

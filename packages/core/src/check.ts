@@ -4,7 +4,7 @@ import { estimateTokens, type Hunk, windowHunk } from "./diff.js";
 import { inScope as scopeFilter } from "./full.js";
 import { isSetupError, OUTAGE_FAILURES, validateAnswers, type Answer, type JevClient, type WireQuestion } from "./jev.js";
 import { localizeFinding } from "./localize.js";
-import type { CompiledRule, Lock } from "./lock.js";
+import { lockRuleIds, type CompiledRule, type Lock } from "./lock.js";
 import type { Config, Level, Question, RuleEntry } from "./schema.js";
 
 export interface Finding {
@@ -109,13 +109,13 @@ export async function check(input: CheckInput): Promise<CheckResult> {
     return referenceCache.get(path)!;
   };
 
-  if (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length)) {
-    notices.push("No review rules configured. Add plain-English rules or compile project guidance.");
+  if (!Object.keys(config.rules).length && !lockRuleIds(input.lock).length) {
+    notices.push("No review rules configured. Add plain-English rules, name a pack, or install project guidance.");
   }
   for (const source of input.lock?.sources ?? []) {
     if (source.notChecked.length) info.push(`${source.id}: ${plural(source.notChecked.length, "guidance item")} can't be checked one change at a time; see notChecked in hunch.lock.`);
   }
-  let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !input.lock?.sources.some((s) => s.rules.length));
+  let incomplete = stats.skippedHunks > 0 || deleted.length > 0 || (!Object.keys(config.rules).length && !lockRuleIds(input.lock).length);
   const deadline = input.plan ? Infinity : Date.now() + config.budget.timeoutSeconds * 1000;
   const budgetSpent = () => !input.plan && (reservedRequests >= config.budget.maxRequests || Date.now() >= deadline);
   // A request that fails is set aside and asked once more after everything else, by when a brief
@@ -389,7 +389,7 @@ export function batchWithinRequestLimit<T extends { question: Question }>(
   return batches;
 }
 
-/** Effective rules for one file: config + presets + overrides + compiled skill rules. `only` keeps just those ids. */
+/** Effective rules for one file: config + presets + overrides + pack and compiled rules. `only` keeps the ids or globs it names. */
 export function rulesFor(file: string, config: Config, lock?: Lock | null, only?: readonly string[]) {
   const entries = new Map(Object.entries(config.rules));
   for (const o of config.overrides) {
@@ -401,15 +401,25 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null, only?
   }
 
   const jev: ActiveRule[] = [];
+  const locked = new Set(lockRuleIds(lock));
   for (const [id, e] of entries) {
     if (e.level === "off") continue;
     if (e.question?.files && !picomatch(e.question.files, { dot: true })(file)) continue;
     if (e.question) jev.push({ id, level: e.level, question: e.question, source: e.source ?? "config" });
-    else if (!id.includes("*") && !/^(skill|agents-md|doc)\//.test(id)) throw new Error(`rule "${id}" has no question`);
+    // A bare level re-levels a rule defined elsewhere: in the lock, or under a prefix the lock owns
+    // once it is compiled. Anything else is a typo that would otherwise pass silently.
+    else if (!id.includes("*") && !locked.has(id) && !/^(skill|agents-md|doc|pack)\//.test(id)) throw new Error(`rule "${id}" has no question`);
+  }
+
+  for (const rule of packPolicy(lock, entries)) {
+    if (rule.level === "off") continue;
+    if (rule.question.files && !picomatch(rule.question.files, { dot: true })(file)) continue;
+    jev.push({ id: rule.id, level: rule.level, question: rule.question, source: rule.source });
   }
 
   const applicableAgentSources = (lock?.sources ?? []).filter((s) => s.kind === "agents-md" && (!s.scope || file.startsWith(`${s.scope}/`)));
   const deepestAgent = applicableAgentSources.sort((a, b) => b.scope.length - a.scope.length)[0]?.id;
+  const already = new Set(jev.map((r) => r.id));
   for (const src of lock?.sources ?? []) {
     if (src.kind === "agents-md" && src.id !== deepestAgent) continue;
     if (src.scope && !(file === src.scope || file.startsWith(`${src.scope}/`))) continue;
@@ -417,20 +427,44 @@ export function rulesFor(file: string, config: Config, lock?: Lock | null, only?
       if (r.appliesTo.length && !r.appliesTo.some((pattern) =>
         picomatch(pattern, { dot: true, matchBase: !pattern.includes("/") })(file))) continue;
       const level = compiledLevel(entries, r.id);
-      if (level === "off" || entries.get(r.id)?.question) continue;
+      if (level === "off" || already.has(r.id)) continue;
       jev.push({ id: r.id, level, compiled: true, source: src.id, question: compiledQuestion(r) });
     }
   }
-  return { jev: only ? jev.filter((r) => only.includes(r.id)) : jev };
+  return { jev: only ? jev.filter((r) => matchesAny(r.id, only)) : jev };
 }
 
+/** An id or a glob, so `--only nut11/*` selects what `"nut11/*": "off"` would re-level. */
+export const matchesAny = (id: string, patterns: readonly string[]): boolean =>
+  patterns.some((p) => p === id || (p.includes("*") && picomatch.isMatch(id, p)));
+
 /**
- * Compiled rules default to warn; config may re-level them by id or glob (e.g. "skill/seo/*": "off").
+ * The level for a rule the config did not write: the config's own entry for that id, else the most
+ * specific glob entry that matches it (e.g. "skill/seo/*": "off"), else the rule's own level.
  */
-function compiledLevel(entries: Map<string, RuleEntry>, id: string): Level {
-  let level: Level = "warn";
+function levelFor(entries: Map<string, RuleEntry>, id: string, fallback: Level): Level {
+  let level = fallback;
   for (const [pat, e] of entries) if (!e.question && pat.includes("*") && picomatch.isMatch(id, pat)) level = e.level;
   return entries.get(id)?.level ?? level;
+}
+
+/** Compiled rules default to warn, because a compiler's guess about severity is not the author's. */
+const compiledLevel = (entries: Map<string, RuleEntry>, id: string): Level => levelFor(entries, id, "warn");
+
+/**
+ * Rules copied from a pack into the lock. Unlike compiled rules these were written as rules by the
+ * pack's author, so they keep their own level and their own question; the config can still re-level
+ * or switch one off by id or glob, or replace its question entirely.
+ */
+function packPolicy(lock: Lock | null | undefined, entries: Map<string, RuleEntry>): PolicyRule[] {
+  const rows: PolicyRule[] = [];
+  for (const pack of lock?.packs ?? []) {
+    for (const [id, rule] of Object.entries(pack.rules)) {
+      if (entries.get(id)?.question) continue; // the config wrote its own question for this id
+      rows.push({ id, level: levelFor(entries, id, rule.level), question: rule.question, source: `pack:${pack.origin}`, compiled: false });
+    }
+  }
+  return rows;
 }
 
 /** The compiler infers `appliesTo` and `when`; `everywhere` trusts the question over that guess. */
@@ -470,9 +504,11 @@ export function policyRules(config: Config, lock?: Lock | null): PolicyRule[] {
   const entries = new Map(Object.entries(config.rules));
   const rows: PolicyRule[] = [];
   for (const [id, e] of entries) if (e.question) rows.push({ id, level: e.level, question: e.question, source: e.source ?? "config", compiled: false });
+  rows.push(...packPolicy(lock, entries));
+  const taken = new Set(rows.map((r) => r.id));
   for (const src of lock?.sources ?? []) {
     for (const r of src.rules.map((rule) => scoped(config, rule))) {
-      if (entries.get(r.id)?.question) continue;
+      if (taken.has(r.id)) continue;
       rows.push({ id: r.id, level: compiledLevel(entries, r.id), question: compiledQuestion(r), source: src.id, compiled: true, scope: src.scope || undefined, appliesTo: r.appliesTo.length ? r.appliesTo : undefined });
     }
   }

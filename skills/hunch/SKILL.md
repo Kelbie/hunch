@@ -1,11 +1,11 @@
 ---
 name: hunch
-description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, compile guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
-argument-hint: "[install|auth|config|rules|packs|compile|check|find|doctor|eval|operator] [what you want]"
+description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, install rule packs and compiled guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
+argument-hint: "[setup|auth|config|rules|packs|install|check|find|doctor|eval|operator] [what you want]"
 allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
 metadata:
-  version: "0.19.1"
+  version: "0.20.0"
 ---
 
 # Hunch
@@ -48,14 +48,14 @@ With no verb, pick one from the request and say which you picked.
 
 | Verb | Use it to | Runs | Read |
 | --- | --- | --- | --- |
-| `install` | set Hunch up in a repository: App, Actions or local | `init`, `doctor` | [install.md](references/install.md) |
+| `setup` | set Hunch up in a repository: App, Actions or local | `init`, `doctor` | [setup.md](references/setup.md) |
 | `config` | see, validate or change settings: scope, presets, levels, budget, provider | `config` | [config.md](references/config.md) |
 | `rules` | turn "flag changes that…" into a rule, or tune one that is noisy or silent | `config --explain`, `check --only` | [rules.md](references/rules.md) |
-| `compile` | turn AGENTS.md and Agent Skills into review questions in `hunch.lock` | `compile` | [compile.md](references/compile.md) |
+| `install` | write `hunch.lock`: copy the configured packs, compile AGENTS.md and Agent Skills | `install` | [install.md](references/install.md) |
 | `check` | review a branch, staged changes, a PR or whole files | `check` | [check.md](references/check.md) |
-| `packs` | review any repository against published rules, with no setup | `check --all --pack <name>` | [packs.md](references/packs.md) |
+| `packs` | review against published rules: ad hoc, or named in the config | `check --all --pack <name>`, `install` | [packs.md](references/packs.md) |
 | `find` | search existing behavior or gather context for a change | `find` | [find.md](references/find.md) |
-| `auth` | sign in once so Hunch runs in every directory, or see why it cannot authenticate | `auth login`, `auth status` | [install.md](references/install.md#model-access) |
+| `auth` | sign in once so Hunch runs in every directory, or see why it cannot authenticate | `auth login`, `auth status` | [setup.md](references/setup.md#model-access) |
 | `doctor` | explain why a PR got no review | `doctor` | [doctor.md](references/doctor.md) |
 | `eval` | measure a rule's precision and recall on labelled diffs | `eval` | [eval.md](references/eval.md) |
 | `operator` | run your own deployment of the GitHub App | `app register`, `app connect` | [operator.md](references/operator.md) |
@@ -67,20 +67,21 @@ against it.
 
 | The user has | and wants | Run |
 | --- | --- | --- |
-| no Hunch config | to review against published rules, e.g. the Cashu NUTs | `check --all --pack nuts-spec` ([packs.md](references/packs.md)) |
+| no Hunch config | to review against published rules, e.g. the Cashu NUTs, the Nostr NIPs or the Bitcoin BIPs | `check --all --pack nuts-spec` ([packs.md](references/packs.md)) |
+| a config | those published rules on every PR, or only some of them | `packs` in the config, then `install` ([packs.md](references/packs.md#packs-in-the-config)) |
 | no Hunch config | to try one rule on this branch | `check --rule id="sentence"` |
-| no Hunch config | Hunch on every PR | `init`, then follow [install.md](references/install.md) |
+| no Hunch config | Hunch on every PR | `init`, then follow [setup.md](references/setup.md) |
 | a config | to review this branch | `check` (against `origin/main`), or `check --base main` |
 | a config | to review only what is staged | `check --staged` |
 | a config | to review whole files, not a diff | `check --all [path]` |
 | a new or edited rule | to know it is valid and what it asks | `config`, then `config --explain <id>` |
 | a new rule | to try it | `check --only <id>` |
-| AGENTS.md or skills | supported guidance compiled into review questions | `compile`, then commit `hunch.lock` |
+| AGENTS.md, skills or packs | them turned into the policy a review applies | `install`, then read and commit `hunch.lock` |
 | an issue to fix or a PR to make | to start work | the [workflow below](#search-during-a-coding-task): `find "<task>"`, then inspect and validate |
 | an existing behavior to locate | candidates across the repository | `find "<condition>" --mode condition` |
 | a change to make | code worth reading first | `find "<task>"` |
 | a PR with no review | the reason | `doctor` |
-| an authentication error, or no key on this machine | Hunch to work in any directory | `auth status`, then the user runs `auth login` ([Model access](references/install.md#model-access)) |
+| an authentication error, or no key on this machine | Hunch to work in any directory | `auth status`, then the user runs `auth login` ([Model access](references/setup.md#model-access)) |
 | a noisy rule | fewer false positives | [rules.md](references/rules.md#tuning), then `eval` |
 | a rule that must block merges | it enforced | `"error"` + `failOnError: true` + a required check: [rules.md](references/rules.md#blocking-merges) |
 | no `origin` remote | to review a branch | `check --base main` (the default base is `origin/main`) |
@@ -143,14 +144,15 @@ Edit `hunch.config.ts` or `hunch.toml` directly; `init` only creates it. After e
 1. `config`. Exit 0 means valid. Any listed problem is something `check` would fail on or skip.
 2. `config --explain <id>` for each rule you touched. Read the instructions and criteria exactly as
    Jev will receive them.
-3. `check --only <id>` on this branch, and `eval` if the user has labelled fixtures.
+3. `install` when `packs`, `skills`, `agentsMd` or `docs` changed, then read `hunch.lock`.
+4. `check --only <id>` on this branch, and `eval` if the user has labelled fixtures.
 
 ## Files Hunch owns
 
 | File | Written by | Commit it? |
 | --- | --- | --- |
 | `hunch.config.ts` or `hunch.toml` | `init`, then people and agents | yes, to the default branch |
-| `hunch.lock` | `compile` | yes, after reading it: it is the policy |
+| `hunch.lock` | `install` | yes, after reading it: it is the policy, packs included |
 | `.github/workflows/hunch.yml` | `init --target actions` | yes, for the Actions path |
 | `.env.local` | the `init` wizard, when asked to keep the key in this project only | never; `init` adds it to `.gitignore` |
 | `~/.config/hunch/credentials` | `auth login` and the `init` wizard | it is outside the repository; owner-only |

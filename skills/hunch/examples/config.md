@@ -65,7 +65,7 @@ stdout:
 
 ```text
 hunch.config.ts has 1 problem:
-  ✗ hunch.lock is missing, so skill/api-style, agents-md/root are not reviewed. Run `npx @kelbie/hunch compile`.
+  ✗ hunch.lock is missing, so skill/api-style, agents-md/root are not reviewed. Run `npx @kelbie/hunch install`.
 
   SETTING      VALUE
   provider     gateway (typesafe-ai/jev); zero data retention not enforced
@@ -389,6 +389,7 @@ stdout:
       "localizationLines": 10,
       "maxLocalizationRequests": 32
     },
+    "packs": [],
     "skills": [],
     "agentsMd": false,
     "docs": []
@@ -418,7 +419,7 @@ import { choice, defineConfig, noul, score } from "@kelbie/hunch";
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript"],
   include: ["src/**"],
-  // No guidance to compile; see compile.md for a shop that has some.
+  // No guidance to compile; see install.md for a shop that has some.
   agentsMd: false,
   skills: [],
   rules: {

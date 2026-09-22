@@ -40,7 +40,7 @@ export interface RuleRow {
 export interface ConfigReport {
   path: string;
   valid: boolean;
-  settings: Pick<Config, "provider" | "model" | "zeroDataRetention" | "extends" | "include" | "ignore" | "task" | "failOnError" | "budget" | "review" | "skills" | "agentsMd" | "docs">;
+  settings: Pick<Config, "provider" | "model" | "zeroDataRetention" | "extends" | "include" | "ignore" | "task" | "failOnError" | "budget" | "review" | "packs" | "skills" | "agentsMd" | "docs">;
   /** With `--file`: the rules asked about that file, overrides applied. Otherwise every rule. */
   rules: RuleRow[];
   overrides: { files: string[]; rules: Record<string, Level> }[];
@@ -109,11 +109,11 @@ export async function inspectConfig(loaded: { path: string; config: Config }, lo
     rules = all.map((r) => row(r.id, r.level, r.question, r.source));
   }
 
-  const { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, skills, agentsMd, docs } = config;
+  const { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, packs, skills, agentsMd, docs } = config;
   return {
     path: loaded.path,
     valid: problems.length === 0,
-    settings: { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, skills, agentsMd, docs },
+    settings: { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, packs, skills, agentsMd, docs },
     rules,
     overrides: config.overrides.map((o) => ({ files: o.files, rules: Object.fromEntries(Object.entries(o.rules).map(([id, e]) => [id, e.level])) })),
     ...(fileInfo ? { file: fileInfo } : {}),
@@ -180,6 +180,7 @@ export function configText(report: ConfigReport): string {
     ["failOnError", String(s.failOnError)],
     ["review", `${s.review.chunkLines} lines, ${s.review.overlapLines} whole-file overlap, ${s.review.contextLines} context; localization ${s.review.localize ? "on" : "off"}`],
     ["budget", `${s.budget.maxHunks} hunks, ${s.budget.maxRequests} requests, ${s.budget.maxRulesPerHunk} rules per hunk, ${s.budget.timeoutSeconds}s`],
+    ...(s.packs.length ? [["packs", s.packs.map((p) => (typeof p === "string" ? p : `${p.pack}${p.rules ? ` (${p.rules.join(", ")})` : ""}`)).join("; ")]] : []),
     ["guidance", `${s.skills === undefined ? "any skills installed in .agents/skills or .claude/skills" : s.skills.length ? s.skills.map((k) => (typeof k === "string" ? k : k.repo)).join(", ") : "no skills"}${s.agentsMd ? ", AGENTS.md" : ""}${s.docs.length ? `, ${s.docs.join(", ")}` : ""}`],
   ], 100));
   out.push("");

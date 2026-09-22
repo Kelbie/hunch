@@ -16,6 +16,7 @@ import {
   pullsText,
   type Facet,
   compileSources,
+  githubFetcher,
   LOCK_FILE,
   loadConfig,
   parseHunks,
@@ -24,10 +25,15 @@ import {
   serializeLock,
   selectionHash,
   staleNotice,
+  stalePacks,
   sameText,
+  resolvePacks,
+  packSpec,
+  parsePackSpec,
   parseConfig,
   applyPresets,
   policyRules,
+  matchesAny,
   staleSources,
   summaryMarkdown,
   toSarif,
@@ -103,10 +109,10 @@ export function buildProgram(): Command {
     .option("--reporter <format>", "text, markdown, json, sarif or github", process.env.GITHUB_ACTIONS ? "github" : "text")
     .option("--code", "print the changed lines under each finding", false)
     .option("--dry-run", "count files, hunks and questions without calling Jev", false)
-    .option("--pack <name>", "rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
+    .option("--pack <name>", "rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
-    .option("--only <ids>", "ask only these rules, comma-separated; to try a rule you just wrote")
+    .option("--only <ids>", "ask only these rules: ids or globs, comma-separated (nut11/*)")
     .option("--policy-ref <ref>", "read config and lock from this ref (the App uses the base commit)")
     .addHelpText("after", `
 Exits 0 when the review is complete, 1 when failOnError is set and an error-level concern was
@@ -119,7 +125,9 @@ Examples:
   hunch check --all app/features              review whole files under a path
   hunch check --rule api/errors="Keep the code field on error responses."
   hunch check --config rules.json --reporter json
-  hunch check --only api/errors --dry-run     what one rule would cost on this branch`)
+  hunch check --only api/errors --dry-run     what one rule would cost on this branch
+  hunch check --all --pack nuts-spec --only "nut11/*"
+  hunch check --all --pack "nuts-spec#nut11/*,nut12/*"   the same, chosen as the pack is named`)
     .action((paths: string[], opts: Opts, command: Command) =>
       runCheck(paths, { ...opts, baseGiven: command.getOptionValueSource("base") === "cli" }, root(), repoFor(opts)));
 
@@ -157,21 +165,27 @@ Examples:
     .action((task: string, paths: string[], opts: Opts) => runFind(task, paths, opts, root(), localRepo(root())));
 
   program
-    .command("compile")
-    .description("turn skills and AGENTS.md into review questions, saved in hunch.lock")
+    .command("install")
+    .aliases(["compile", "i"])
+    .description("write hunch.lock: copy the configured packs, and compile skills and AGENTS.md into questions")
     .option("--with <agent>", "claude, codex or gateway; skips the question")
     .option("--effort <level>", "how hard the agent should think")
     .option("--model <name>", "model for the compiling agent")
     .option("--force", "recompile sources that have not changed", false)
-    .option("--dry-run", "list the sources and whether each changed since hunch.lock, without compiling", false)
+    .option("--packs-only", "copy the packs and leave the compiled rules as they are", false)
+    .option("--dry-run", "list the packs and sources, and what changed since hunch.lock, without writing it", false)
     .option("--reporter <format>", "text or json", "text")
     .addHelpText("after", `
+Packs are copied verbatim and need no agent; only prose guidance (skills, AGENTS.md, docs) is
+compiled, and only when it changed. A config with packs alone installs with no agent at all.
+
 Examples:
-  hunch compile                  asks which installed agent to use
-  hunch compile --dry-run        what would be compiled, and what is unchanged
-  hunch compile --with claude
-  hunch compile --force          rebuild every source`)
-    .action((opts: Opts) => runCompile(opts, root(), localRepo(root())));
+  hunch install                  packs, then asks which installed agent to compile guidance with
+  hunch install --dry-run        what would be copied and compiled, and what is unchanged
+  hunch install --packs-only     refresh the packs without touching the compiled rules
+  hunch install --with claude
+  hunch install --force          rebuild every source`)
+    .action((opts: Opts) => runInstall(opts, root(), localRepo(root())));
 
   program
     .command("config")
@@ -179,7 +193,7 @@ Examples:
     .option("--file <path>", "show only the rules asked about this file, overrides applied")
     .option("--explain <rule>", "print exactly what one rule asks Jev, and when it reports")
     .option("--reporter <format>", "text or json", "text")
-    .option("--pack <name>", "rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
+    .option("--pack <name>", "rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .addHelpText("after", `
@@ -235,7 +249,7 @@ Examples:
     .command("eval")
     .description("measure each rule's precision and recall on labelled .diff examples")
     .argument("<dir>", "directory of .diff fixtures")
-    .option("--pack <name>", "rules from a pack: a name (nuts-spec) or owner/repo/name[@ref]; repeatable, all apply", collect, [])
+    .option("--pack <name>", "rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .option("--reporter <format>", "text or json", "text")
@@ -498,7 +512,7 @@ async function finishWizard(root: string, answers: WizardAnswers, opts: { file: 
   }
   let compiled = false;
   if (answers.compile) {
-    console.error("hunch: run `npx @kelbie/hunch compile` to turn AGENTS.md and skills into review questions, then commit hunch.lock.");
+    console.error("hunch: run `npx @kelbie/hunch install` to copy the configured packs and turn AGENTS.md and skills into review questions, then commit hunch.lock.");
     compiled = existsSync(join(root, LOCK_FILE));
   }
   io.note(nextSteps(answers.target, { configFile: opts.file, compiled, secretSet, keyDeferred, keyPath }), "Next");
@@ -554,7 +568,7 @@ async function runEval(root: string, dir: string, inline: { packs?: string[]; co
   if (!loaded) return fail(NO_CONFIG);
   const files = readdirSync(join(root, dir)).filter((f) => f.endsWith(".diff")).sort();
   if (!files.length) return fail("No .diff fixtures found");
-  const lock = readLock(root);
+  const lock = loaded.replacesPolicy ? null : readLock(root);
   const stale = await staleSources(lock, loaded.config, repo);
   if (stale.length) return fail(`${staleNotice(lock, stale)} Then run eval again.`);
   const stats = new Map<string, { tp: number; fp: number; fn: number }>();
@@ -636,13 +650,15 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   if (diff.length > 16_000_000) return fail("Diff exceeds 16 MB; review a smaller change");
   hunks = parseHunks(diff).filter((h) => under(h.file));
   }
-  const lockText = await repo.read(LOCK_FILE);
+  // `--pack` and `--config` replace the repository's policy, hunch.lock included.
+  const lockText = loaded.replacesPolicy ? null : await repo.read(LOCK_FILE);
   const lock = lockText ? parseLock(lockText) : null;
-  const stale = await staleSources(lock, config, repo);
+  const stale = loaded.replacesPolicy ? [] : await staleSources(lock, config, repo);
   if (only) {
-    const known = new Set(policyRules(config, lock).map((r) => r.id));
-    const unknown = only.filter((id) => !known.has(id));
-    if (unknown.length) return fail(`--only: no rule ${unknown.join(", ")}. Run \`npx @kelbie/hunch config\` to list them.`);
+    // A pattern matching nothing is a typo: the run would review less than asked and still look complete.
+    const known = policyRules(config, lock).map((r) => r.id);
+    const unknown = only.filter((pattern) => !known.some((id) => matchesAny(id, [pattern])));
+    if (unknown.length) return fail(`--only: no rule matching ${unknown.join(", ")}. Run \`npx @kelbie/hunch config\` to list them.`);
   }
   const task = opts.task ?? prTaskFromEvent();
   if (opts.dryRun) {
@@ -844,44 +860,99 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   return;
 }
 
-async function runCompile(opts: Opts, root: string, repo: RepoReader) {
-  if (!["text", "json"].includes(opts.reporter)) return fail("Unknown --reporter for compile; use text or json");
+/**
+ * `hunch install`: writes hunch.lock, the policy a review actually applies. Packs are copied in
+ * verbatim, because a pack is already written as rules; only prose guidance needs an agent, and only
+ * the parts of it that changed. A config that names packs alone therefore installs with no agent,
+ * no key and no model cost.
+ */
+async function runInstall(opts: Opts, root: string, repo: RepoReader) {
+  if (!["text", "json"].includes(opts.reporter)) return fail("Unknown --reporter for install; use text or json");
   const loaded = await loadConfig(repo);
   if (!loaded) return fail("no hunch.config.ts or hunch.toml found. Run `npx @kelbie/hunch init`.");
   const { config } = loaded;
-  const docs = await collectSources(config, repo);
-  if (!docs.length) return fail("no skills, AGENTS.md or docs found to compile. Add an AGENTS.md, install a skill (`npx skills add <owner/repo>`), or list files under `docs` in the Hunch config; then run `npx @kelbie/hunch compile` again.");
   const previous = readLock(root);
+  const docs = opts.packsOnly ? [] : await collectSources(config, repo);
+  if (!docs.length && !config.packs.length) {
+    return fail(opts.packsOnly
+      ? "--packs-only, but the config names no pack. Add one (`packs: [\"nuts-spec\"]`), or run `npx @kelbie/hunch install` to compile guidance."
+      : "nothing to install: the config names no pack, and no skills, AGENTS.md or docs were found. Name a pack (`packs: [\"nuts-spec\"]`), add an AGENTS.md, install a skill (`npx skills add <owner/repo>`), or list files under `docs`; then run `npx @kelbie/hunch install` again.");
+  }
+
   if (opts.dryRun) {
     const byId = new Map((previous?.sources ?? []).map((s) => [s.id, s]));
     const sources = await Promise.all(docs.map(async (d) => ({ id: d.id, path: d.path, status: await sameText(byId.get(d.id), d) ? "unchanged" : byId.has(d.id) ? "changed" : "new" })));
     const removed = [...byId.keys()].filter((id) => !docs.some((d) => d.id === id));
-    if (opts.reporter === "json") console.log(JSON.stringify({ compiler: previous?.compiler.model ?? null, sources, removed }, null, 2));
+    const stale = new Set(stalePacks(previous, config));
+    const packs = config.packs.map((source) => {
+      const spec = packSpec(source);
+      const id = `pack/${parsePackSpec(spec).name}`;
+      const have = (previous?.packs ?? []).find((p) => p.id === id);
+      return { id, spec, rules: have ? Object.keys(have.rules).length : null, status: stale.has(id) ? (have ? "changed" : "new") : "installed" };
+    });
+    const droppedPacks = (previous?.packs ?? []).map((p) => p.id).filter((id) => !packs.some((p) => p.id === id));
+    if (opts.reporter === "json") console.log(JSON.stringify({ compiler: previous?.compiler.model ?? null, packs, removedPacks: droppedPacks, sources, removed }, null, 2));
     else {
-      console.log(`hunch: dry run, nothing compiled. ${sources.filter((s) => s.status !== "unchanged").length} of ${sources.length} source(s) would be compiled${previous ? ` (last compiled with ${previous.compiler.model})` : ""}.`);
+      console.log(`hunch: dry run, nothing written. ${packs.length ? `${packs.length} pack(s) would be copied; ` : ""}${sources.filter((s) => s.status !== "unchanged").length} of ${sources.length} source(s) would be compiled${previous && previous.compiler.model !== "none" ? ` (last compiled with ${previous.compiler.model})` : ""}.`);
+      for (const p of packs) console.log(`  ${p.status.padEnd(9)}  ${p.id}  ${p.spec}${p.rules === null ? "" : `  ${p.rules} rules now`}`);
+      for (const id of droppedPacks) console.log(`  removed    ${id}`);
       for (const s of sources) console.log(`  ${s.status.padEnd(9)}  ${s.id}  ${s.path}`);
       for (const id of removed) console.log(`  removed    ${id}`);
+      console.log("Packs are copied verbatim; only the changed sources cost an agent call.");
     }
     return;
   }
-  const choice = await chooseCompiler({ with: opts.with, effort: opts.effort, model: opts.model, previous: previous?.compiler.model });
-  if (!choice) return fail("compile cancelled.");
-  const model = compilerId(choice, config.compileModel);
-  console.error(`hunch: compiling ${docs.length} source(s) with ${describeChoice(choice, config.compileModel)}`);
-  if (choice.agent === "gateway") await useVercelLink();
-  const lock = await compileSources(docs, {
-    extractor: extractorFor(choice, config),
-    model,
-    previous,
-    force: opts.force,
-    onSource: (id, reused) => console.error(`  ${reused ? "unchanged" : "compiled "}  ${id}`),
-  });
-  lock.selectionHash = await selectionHash(config);
+
+  // Packs first, so a config with packs alone never reaches the compiler choice.
+  let packs: Lock["packs"] = [];
+  if (config.packs.length) {
+    packs = await resolvePacks(config.packs, { pin: githubFetcher() });
+    for (const p of packs) {
+      const moved = (previous?.packs ?? []).find((q) => q.id === p.id);
+      const note = !moved ? "copied   " : moved.commit === p.commit ? "unchanged" : "updated  ";
+      console.error(`  ${note}  ${p.id}  ${Object.keys(p.rules).length} rules from ${p.origin}@${p.commit.slice(0, 7)}${p.select.length ? ` (${p.select.join(", ")})` : ""}`);
+    }
+  }
+
+  let lock: Lock;
+  let model: string | null = null;
+  if (docs.length) {
+    const choice = await chooseCompiler({ with: opts.with, effort: opts.effort, model: opts.model, previous: previous?.compiler.model });
+    if (!choice) return fail("install cancelled.");
+    model = compilerId(choice, config.compileModel);
+    console.error(`hunch: compiling ${docs.length} source(s) with ${describeChoice(choice, config.compileModel)}`);
+    if (choice.agent === "gateway") await useVercelLink();
+    lock = await compileSources(docs, {
+      extractor: extractorFor(choice, config),
+      model,
+      previous,
+      force: opts.force,
+      onSource: (id, reused) => console.error(`  ${reused ? "unchanged" : "compiled "}  ${id}`),
+    });
+  } else {
+    // Nothing to compile: keep whatever the last compile produced rather than discarding it.
+    lock = { version: 1, compiler: previous?.compiler ?? { model: "none" }, sources: opts.packsOnly ? previous?.sources ?? [] : [] };
+  }
+  lock.selectionHash = opts.packsOnly ? previous?.selectionHash : await selectionHash(config);
+  if (packs.length) lock.packs = packs;
+
   writeFileSync(join(root, LOCK_FILE), serializeLock(lock));
-  const rules = lock.sources.reduce((n, s) => n + s.rules.length, 0);
+  const compiled = lock.sources.reduce((n, s) => n + s.rules.length, 0);
+  const copied = (lock.packs ?? []).reduce((n, p) => n + Object.keys(p.rules).length, 0);
   const skipped = lock.sources.reduce((n, s) => n + s.notChecked.length, 0);
-  if (opts.reporter === "json") console.log(JSON.stringify({ lock: LOCK_FILE, compiler: model, rules, notChecked: skipped, sources: lock.sources.map((s) => ({ id: s.id, rules: s.rules.length, notChecked: s.notChecked.length })) }, null, 2));
-  console.error(`hunch: wrote ${LOCK_FILE}: ${rules} rules, ${skipped} guidance items not checkable per hunk. Review and commit it.`);
+  if (opts.reporter === "json") {
+    console.log(JSON.stringify({
+      lock: LOCK_FILE, compiler: model, rules: compiled + copied, compiled, copied, notChecked: skipped,
+      packs: (lock.packs ?? []).map((p) => ({ id: p.id, spec: p.spec, commit: p.commit, rules: Object.keys(p.rules).length, select: p.select })),
+      sources: lock.sources.map((s) => ({ id: s.id, rules: s.rules.length, notChecked: s.notChecked.length })),
+    }, null, 2));
+  }
+  const written = [copied ? `${copied} rules from ${(lock.packs ?? []).length} pack(s)` : "", compiled ? `${compiled} compiled rules` : ""].filter(Boolean).join(", ") || "no rules";
+  console.error(`hunch: wrote ${LOCK_FILE}: ${written}${skipped ? `, ${skipped} guidance items not checkable per hunk` : ""}. Review and commit it.`);
+  const most = compiled + copied + Object.values(config.rules).filter((r) => r.question).length;
+  if (most > config.budget.maxRulesPerHunk) {
+    console.error(`hunch: up to ${most} rules can apply to one chunk, but budget.maxRulesPerHunk is ${config.budget.maxRulesPerHunk}; raise it, or check will report the rest as skipped.`);
+  }
   return;
 }
 
@@ -889,7 +960,7 @@ async function runConfig(opts: Opts, root: string, repo: RepoReader) {
   if (!["text", "json"].includes(opts.reporter)) return fail("Unknown --reporter for config; use text or json");
   const loaded = await resolveConfig(repo, { packs: opts.pack, config: opts.config, rules: opts.rule, root });
   if (!loaded) return fail(NO_CONFIG);
-  const lockText = await repo.read(LOCK_FILE);
+  const lockText = loaded.replacesPolicy ? null : await repo.read(LOCK_FILE);
   const lock = lockText ? parseLock(lockText) : null;
   if (opts.explain) {
     const explanation = explainRule(loaded.config, lock, opts.explain);
@@ -959,7 +1030,7 @@ async function runInit(opts: Opts, root: string, explicit: boolean) {
   }
   if (answers) return finishWizard(root, answers, { file });
   if (target) console.error(`\nNext:\n\n${nextSteps(target, { configFile: file, compiled: false, secretSet: false, keyDeferred: true })}`);
-  if (hasGuidance(root)) console.error("hunch: this repository has skills or AGENTS.md; run `npx @kelbie/hunch compile` and commit hunch.lock too.");
+  if (hasGuidance(root)) console.error("hunch: this repository has skills or AGENTS.md; run `npx @kelbie/hunch install` and commit hunch.lock too.");
 }
 
 async function runDoctor(opts: Opts, root: string) {

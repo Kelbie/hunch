@@ -64,8 +64,8 @@ git commit -m "Review PRs with Hunch" && git push   # to the default branch
 
 1. The user installs the App on the repositories to review. This is a browser step you can't do for
    them: <https://github.com/apps/hunch-review/installations/new>
-2. `init --target app`, plus `compile` if the repository has AGENTS.md or skills
-   ([compile.md](compile.md)).
+2. `init --target app`, plus `install` if the repository names packs or has AGENTS.md or skills
+   ([install.md](install.md)).
 3. Commit the config (and `hunch.lock`) **to the default branch**. The App reads its policy from each
    PR's base commit, so nothing is reviewed until it merges.
 4. Open a PR. The PR that adds Hunch is skipped with a notice, which is expected. A repository
@@ -128,7 +128,7 @@ else `~/.config/hunch/credentials` (`%APPDATA%\hunch\credentials` on Windows).
 not pass one as an argument. `auth login --vercel` stores no secret, so an agent may run it when
 the user asks for that path.
 
-With nothing to sign in with, `check`, `find` and `compile --with gateway` stop before the first
+With nothing to sign in with, `check`, `find` and `install --with gateway` stop before the first
 request and print how to sign in (exit 2). An invalid or expired key, an account with no credit
 (`HTTP 402`) and a plan that cannot enforce zero data retention each stop the run on the first
 refusal, and the message lists the commands that fix it. None is reported as a provider outage or as

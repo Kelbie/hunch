@@ -35,7 +35,7 @@ const SHOP_CONFIG = `import { choice, defineConfig, noul, score } from "@kelbie/
 export default defineConfig({
   extends: ["hunch:recommended", "hunch:typescript"],
   include: ["src/**"],
-  // No guidance to compile; see compile.md for a shop that has some.
+  // No guidance to compile; see install.md for a shop that has some.
   agentsMd: false,
   skills: [],
   rules: {
@@ -168,6 +168,9 @@ const shop = () => repo({ ...SHOP_BASE, "hunch.config.ts": SHOP_CONFIG }, SHOP_C
 /** The same shop, compiling its skill and AGENTS.md into hunch.lock. */
 const GUIDED_CONFIG = SHOP_CONFIG.replace(/  \/\/ No guidance[^\n]*\n  agentsMd: false,\n  skills: \[\],/, '  agentsMd: true,\n  skills: ["./.agents/skills/api-style"],');
 const guidedShop = () => repo({ ...SHOP_BASE, "hunch.config.ts": GUIDED_CONFIG }, SHOP_CHANGE);
+/** The shop reviewing against a published pack as well, with only part of that pack selected. */
+const PACKED_CONFIG = GUIDED_CONFIG.replace('  include: ["src/**"],', '  include: ["src/**"],\n  packs: ["nuts-spec", { pack: "bips-spec", rules: ["bip32/*"] }],');
+const packedShop = () => repo({ ...SHOP_BASE, "hunch.config.ts": PACKED_CONFIG }, SHOP_CHANGE);
 
 // ---------------------------------------------------------------------------------------------
 
@@ -293,14 +296,15 @@ const pages: Page[] = [
     ],
   },
   {
-    file: "compile.md",
-    title: "hunch compile: examples",
-    intro: "`compile` turns Agent Skills and `AGENTS.md` into review questions in `hunch.lock`. Here the shop's config selects its one skill and its root `AGENTS.md` (`skills: [\"./.agents/skills/api-style\"]`, `agentsMd: true`).",
+    file: "install.md",
+    title: "hunch install: examples",
+    intro: "`install` writes `hunch.lock`: it copies the packs the config names, and turns Agent Skills and `AGENTS.md` into review questions with a coding agent. Here the shop's config selects its one skill and its root `AGENTS.md` (`skills: [\"./.agents/skills/api-style\"]`, `agentsMd: true`) and names no pack.",
     cases: [
-      { id: "compile-dry", title: "What would be compiled?", args: ["compile", "--dry-run"], setup: guidedShop },
-      { id: "compile-noninteractive", title: "No terminal, no previous lock, no --with", note: "An agent must say which compiler to use.", args: ["compile"], setup: guidedShop },
-      { id: "compile-nothing", title: "Nothing to compile", args: ["compile", "--dry-run"], setup: shop },
-      { id: "compile-claude", title: "Compile with Claude Code", live: true, needs: "Claude Code installed and logged in", args: ["compile", "--with", "claude", "--effort", "low"], setup: guidedShop, show: ["hunch.lock"] },
+      { id: "install-dry", title: "What would be installed?", args: ["install", "--dry-run"], setup: guidedShop },
+      { id: "install-packs-dry", title: "Two packs, one of them in part", note: "`packs: [\"nuts-spec\", { pack: \"bips-spec\", rules: [\"bip32/*\"] }]`. A dry run compares the config with the lock and fetches nothing; `install` then copies the rules in.", args: ["install", "--dry-run"], setup: packedShop },
+      { id: "install-noninteractive", title: "No terminal, no previous lock, no --with", note: "Guidance needs a compiler, so an agent must say which one to use. A config with packs alone never reaches this.", args: ["install"], setup: guidedShop },
+      { id: "install-nothing", title: "Nothing to install", args: ["install", "--dry-run"], setup: shop },
+      { id: "compile-claude", title: "Compile guidance with Claude Code", live: true, needs: "Claude Code installed and logged in", args: ["install", "--with", "claude", "--effort", "low"], setup: guidedShop, show: ["hunch.lock"] },
     ],
   },
   {
