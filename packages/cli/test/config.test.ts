@@ -112,9 +112,14 @@ test("check --only asks just the named rules, and refuses an id no rule has", ()
     // Three files in scope: one question each for the plain rule, many more with every rule.
     expect(questions(one.out)).toBe(3);
     expect(questions(all.out)).toBeGreaterThan(3);
+    // A glob selects the same way a config re-levels by glob.
+    const glob = hunch(root, "check", "--all", "--dry-run", "--only", "api/*");
+    expect(questions(glob.out)).toBe(3);
     const bad = hunch(root, "check", "--all", "--dry-run", "--only", "api/eror");
     expect(bad.status).toBe(2);
-    expect(bad.err).toContain("--only: no rule api/eror");
+    expect(bad.err).toContain("--only: no rule matching api/eror");
+    // A glob that matches nothing is the same typo, not an empty review.
+    expect(hunch(root, "check", "--all", "--dry-run", "--only", "api/*.bad").status).toBe(2);
   } finally { rmSync(root, { recursive: true, force: true }); }
 });
 

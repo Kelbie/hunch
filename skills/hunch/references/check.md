@@ -14,14 +14,15 @@ Reviews changed lines, or whole files, against the rules. Real output:
 | a saved diff | `check --diff change.diff` |
 | whole files, not a diff | `check --all [paths…]`, or `--all --head <ref>` for a branch |
 | only some paths | add them as arguments: `check src/payments` |
-| one or two rules | `--only payments/retry-safety,tests/weakened` |
+| one or two rules, or a family of them | `--only payments/retry-safety,tests/weakened`, or `--only "nut11/*"` (ids or globs) |
 | published rules, in a repository with no Hunch config | `--pack nuts-spec`, repeatable: [packs.md](packs.md) |
 | rules without a config file | `--rule id="sentence"` (repeatable), or `--config rules.json` / `--config '{…}'` / `--config -` |
 | context for the questions | `--task "what the change is for"`. In Actions it comes from the PR automatically |
 
 `--diff`, `--staged` and `--head` are mutually exclusive. `--all` refuses `--base`, `--diff` and
-`--staged`. A `--pack` or `--config` replaces the repository's config file, a `--config` layering
-over the packs, and `--rule` adds to whichever config applies. An inline config selects no skills or AGENTS.md unless it asks for them.
+`--staged`. A `--pack` or `--config` replaces the repository's whole policy — its config file and
+its `hunch.lock`, so neither compiled guidance nor installed packs are asked — with a `--config`
+layering over the packs. `--rule` only adds to whichever policy applies, and keeps the lock.
 
 ## Context and precise locations
 
@@ -61,7 +62,7 @@ and the review is marked partial. Raise the budget rather than accept a partial 
 
 Credentials are needed only when something is actually sent, so `--dry-run` works without them.
 An authentication error means this machine has not signed in: see
-[Model access](install.md#model-access) (`auth login`, once, for every directory).
+[Model access](setup.md#model-access) (`auth login`, once, for every directory).
 
 ## Reading the result
 
@@ -134,7 +135,7 @@ partial review with the unanswered chunks listed, instead of failing with nothin
 | --- | --- |
 | 0 | the review completed, whether or not there are findings |
 | 1 | `failOnError` is true and an `error`-level finding was reported |
-| 2 | no config and no `--rule`/`--config`; an invalid config; an unknown `--only` id; or the review is incomplete (budget reached, unanswered requests, an outage, Ctrl-C, stale `hunch.lock`, deleted, binary or rename-only files) |
+| 2 | no config and no `--rule`/`--config`; an invalid config; an `--only` id or glob that matches no rule; or the review is incomplete (budget reached, unanswered requests, an outage, Ctrl-C, stale `hunch.lock`, deleted, binary or rename-only files) |
 
 On the PR that adds Hunch, run in Actions with `--policy-ref`, there is no base config yet, so check
 prints a notice and exits 0.
@@ -146,7 +147,7 @@ prints a notice and exits 0.
 | `no hunch.config.ts or hunch.toml here` | the message lists the three commands: `--pack`, `--rule`, or `init` |
 | `Zero Data Retention (ZDR) is only available…` | the message lists the choices; the user decides between a TypeSafe key and `zeroDataRetention: false` |
 | `--base origin/main is not a commit in this repository` | no `origin` remote, or it isn't fetched: pass `--base main` (or the branch you started from), or `git fetch origin` |
-| `--only: no rule …` | `hunch config` lists the ids |
-| `hunch.lock is stale for: …` (a notice) | `compile`, then commit `hunch.lock` |
+| `--only: no rule matching …` | `hunch config` lists the ids; a glob that matches nothing is the same typo |
+| `hunch.lock is stale for: …` (a notice) | `install`, then commit `hunch.lock` |
 | a provider error mentioning zero data retention | the account can't enforce ZDR; the user decides about `zeroDataRetention: false` |
 | `Review request/time budget reached` | raise `budget` or narrow the paths |

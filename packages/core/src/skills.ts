@@ -1,7 +1,8 @@
+import { parsePackSpec } from "./packs.js";
 import { repoPath } from "./path.js";
 import type { RepoReader } from "./load/index.js";
 import { type Lock, sha256 } from "./lock.js";
-import type { Config, SkillSource } from "./schema.js";
+import { packSelection, packSpec, type Config, type SkillSource } from "./schema.js";
 
 /** One document the compiler turns into rules. */
 export interface SourceDoc {
@@ -199,8 +200,8 @@ export const hashDoc = (d: SourceDoc) => sha256(`${d.kind}\n${d.origin}\n${d.com
 /** The notice for guidance the lock doesn't cover: never compiled at all, or compiled from older text. */
 export function staleNotice(lock: Lock | null, stale: string[]): string {
   return lock
-    ? `hunch.lock is stale for: ${stale.join(", ")}. Run \`npx @kelbie/hunch compile\`.`
-    : `hunch.lock is missing, so ${stale.join(", ")} ${stale.length === 1 ? "is" : "are"} not reviewed. Run \`npx @kelbie/hunch compile\`.`;
+    ? `hunch.lock is stale for: ${stale.join(", ")}. Run \`npx @kelbie/hunch install\`.`
+    : `hunch.lock is missing, so ${stale.join(", ")} ${stale.length === 1 ? "is" : "are"} not reviewed. Run \`npx @kelbie/hunch install\`.`;
 }
 
 export async function staleSources(lock: Lock | null, config: Config, repo: RepoReader): Promise<string[]> {
@@ -221,6 +222,28 @@ export async function staleSources(lock: Lock | null, config: Config, repo: Repo
     byId.delete(d.id);
   }
   for (const [id, s] of byId) if (!s.commit) stale.push(id);
+  stale.push(...stalePacks(lock, config));
+  return stale;
+}
+
+/**
+ * Packs the lock does not cover. A pack is copied in verbatim, so nothing about it can drift except
+ * what the config asks for: which packs, at which ref, and which of their rules. A pack pinned to a
+ * branch keeps the commit it was installed from, the way a remote skill does.
+ */
+export function stalePacks(lock: Lock | null, config: Config): string[] {
+  const stale: string[] = [];
+  const installed = new Map((lock?.packs ?? []).map((p) => [p.id, p]));
+  for (const source of config.packs) {
+    const spec = packSpec(source);
+    const select = packSelection(source) ?? [];
+    const { name } = parsePackSpec(spec);
+    const id = `pack/${name}`;
+    const have = installed.get(id);
+    installed.delete(id);
+    if (!have || have.spec !== spec || have.select.join("\n") !== select.join("\n")) stale.push(id);
+  }
+  for (const id of installed.keys()) stale.push(id);
   return stale;
 }
 

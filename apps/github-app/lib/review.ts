@@ -60,7 +60,7 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     const text = await base.read(LOCK_FILE);
     let lock = null;
     try { lock = text ? parseLock(text) : null; }
-    catch { throw new PermanentError("hunch.lock on the base branch is invalid. Run `npx @kelbie/hunch compile` and commit it, then comment /hunch recheck."); }
+    catch { throw new PermanentError("hunch.lock on the base branch is invalid. Run `npx @kelbie/hunch install` and commit it, then comment /hunch recheck."); }
     const stale = await staleSources(lock, config, base);
     const diff = await api.compareDiff(job.repo, baseSha, headSha);
     if (diff == null) throw new Error("Immutable comparison unavailable");
@@ -76,7 +76,7 @@ export async function runReview(job: ReviewJob, deps: ReviewDeps): Promise<"skip
     // A provider failure is usually brief, so the queue's retry gets a whole review. The last
     // attempt publishes what it has, marked partial, rather than nothing at all.
     if (result.stats.failedRequests && (deps.attempt ?? 1) < (deps.maxAttempts ?? 1)) throw new Error("Provider requests failed; safe to retry");
-    if (stale.length) { result.complete = false; result.notices.push(`Guidance is uncompiled or stale: ${stale.join(", ")}. Run hunch compile and review hunch.lock.`); }
+    if (stale.length) { result.complete = false; result.notices.push(`The policy in hunch.lock is missing or stale for: ${stale.join(", ")}. Run hunch install and review hunch.lock.`); }
     const unreviewable = unreviewableFiles(diff).filter(inScope(config));
       if (unreviewable.length) { result.complete = false; result.notices.push(`Binary, rename-only or mode changes need human review: ${unreviewable.join(", ")}.`); }
     const latest = await readPull();

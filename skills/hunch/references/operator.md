@@ -1,7 +1,7 @@
 # Run your own deployment of the GitHub App
 
 This is the **operator** path: you host the backend and own the App. Most people do not need it. To
-use the hosted App, or Actions, or just your own machine, follow [install.md](install.md).
+use the hosted App, or Actions, or just your own machine, follow [setup.md](setup.md).
 
 Everything here runs from a checkout of the Hunch repository, and several steps need the user in a
 browser (GitHub App registration, repository installation, Vercel terms). Run the commands, and stop
@@ -98,7 +98,7 @@ From the repository you want reviewed:
 ```sh
 npm install -D @kelbie/hunch
 npx -y --min-release-age=0 @kelbie/hunch init --target app
-# If using skills or AGENTS.md: npx -y --min-release-age=0 @kelbie/hunch compile (uses your local Claude Code or Codex)
+# If using packs, skills or AGENTS.md: npx -y --min-release-age=0 @kelbie/hunch install (uses your local Claude Code or Codex for guidance)
 ```
 
 Use `--preset rust`, `--preset ts`, `--preset ts,rust` or `--preset general` to choose explicitly. Commit the config and any reviewed `hunch.lock` to the PR base branch. You don't need `--target actions` or an Actions model secret when using the App.

@@ -174,9 +174,9 @@ test("every relative link in the skill and README lands on a file and heading th
 test("every verb the skill routes to has its reference and captured examples", () => {
   const skill = readFileSync(join(SKILL, "SKILL.md"), "utf8");
   const verbs = [...skill.matchAll(/^\| `(\w+)` \| .* \| \[(\w+)\.md\]\(references\/\w+\.md\) \|$/gm)].map((m) => ({ verb: m[1]!, ref: m[2]! }));
-  expect(verbs.map((v) => v.verb)).toEqual(["install", "config", "rules", "compile", "check", "packs", "find", "doctor", "eval", "operator"]);
+  expect(verbs.map((v) => v.verb)).toEqual(["setup", "config", "rules", "install", "check", "packs", "find", "doctor", "eval", "operator"]);
   for (const { ref } of verbs) expect(existsSync(join(SKILL, "references", `${ref}.md`))).toBe(true);
-  for (const command of ["init", "config", "check", "find", "compile", "doctor", "eval"]) expect(existsSync(join(SKILL, "examples", `${command}.md`))).toBe(true);
+  for (const command of ["init", "config", "check", "find", "install", "doctor", "eval"]) expect(existsSync(join(SKILL, "examples", `${command}.md`))).toBe(true);
   // Every CLI command is reachable from the skill.
   for (const command of COMMANDS) expect(skill.includes(`\`${command}`) || command === "app").toBe(true);
 });

@@ -3,7 +3,18 @@ import { isAbsolute, join } from "node:path";
 import { applyPresets, ConfigError, loadConfig, loadPacks, mergeRules, parseConfig, ruleEntrySchema, type Config, type PackFetcher, type RepoReader } from "../../core/src/index.js";
 
 /** Where the config came from (a config file, `--config` or `--rule`) and the resolved config. */
-export interface ResolvedConfig { path: string; config: Config; /** Rule packs this run fetched, as `owner/repo/name@ref`. */ packs?: string[] }
+export interface ResolvedConfig {
+  path: string;
+  config: Config;
+  /** Rule packs this run fetched, as `owner/repo/name@ref`. */
+  packs?: string[];
+  /**
+   * `--pack` and `--config` stand in for the repository's policy, so hunch.lock — the rest of that
+   * policy, both its compiled rules and its installed packs — is left out of the run as well.
+   * `--rule` only adds to whichever policy applies, so it does not set this.
+   */
+  replacesPolicy?: boolean;
+}
 
 export interface InlineOptions {
   /** `--config`, repeatable: JSON text, a path to a JSON file, or `-` for stdin. Later ones win. */
@@ -31,12 +42,12 @@ export async function resolveConfig(repo: RepoReader, opts: InlineOptions): Prom
   if (opts.packs?.length) {
     const packs = await loadPacks(opts.packs, opts.fetchPack);
     const config = inlineConfig([packs.settings, ...(opts.config ?? []).map((arg) => readConfigArg(arg, opts.stdin, opts.root))].reduce(layer, {}));
-    loaded = { path: `--pack ${opts.packs.join(", ")}`, config: { ...config, rules: mergeRules(packs.rules, config.rules) }, packs: packs.sources };
+    loaded = { path: `--pack ${opts.packs.join(", ")}`, config: { ...config, rules: mergeRules(packs.rules, config.rules) }, packs: packs.sources, replacesPolicy: true };
   }
-  else if (opts.config?.length) loaded = { path: "--config", config: inlineConfig(opts.config.map((arg) => readConfigArg(arg, opts.stdin, opts.root)).reduce(layer, {})) };
+  else if (opts.config?.length) loaded = { path: "--config", config: inlineConfig(opts.config.map((arg) => readConfigArg(arg, opts.stdin, opts.root)).reduce(layer, {})), replacesPolicy: true };
   else loaded = await loadConfig(repo);
   if (!opts.rules?.length) return loaded;
-  const base: ResolvedConfig = loaded ?? { path: "--rule", config: inlineConfig({}) };
+  const base: ResolvedConfig = loaded ?? { path: "--rule", config: inlineConfig({}), replacesPolicy: true };
   const added = Object.fromEntries(opts.rules.map(parseRuleArg));
   return { ...base, config: { ...base.config, rules: mergeRules(base.config.rules, added) } };
 }

@@ -41,7 +41,7 @@ Run `npx -y --min-release-age=0 @kelbie/hunch init` to configure plain-English o
 `check`, across whole files with `check --all`, or on pull requests through GitHub Actions or the
 GitHub App. PR policy comes from the immutable base commit.
 
-[Installation](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/install.md) · [Rule packs](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/packs.md) · [Writing rules](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/rules.md) ·
+[Installation](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/setup.md) · [Rule packs](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/packs.md) · [Writing rules](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/rules.md) ·
 [Configuration](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/config.md) · [CLI reference](https://github.com/Kelbie/hunch/blob/main/skills/hunch/references/cli.md)
 
 ## What the results mean

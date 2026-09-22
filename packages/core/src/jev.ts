@@ -221,7 +221,7 @@ export function clientFromEnv(
     return typesafeClient({ apiKey });
   }
   // No key check here: the AI SDK also authenticates through a linked Vercel project
-  // (`.vercel/project.json` + Vercel CLI login), and `hunch compile` relies on the same
+  // (`.vercel/project.json` + Vercel CLI login), and `hunch install` relies on the same
   // lookup. Missing credentials surface as the SDK's own authentication error.
   return gatewayClient({ zeroDataRetention: cfg.zeroDataRetention });
 }

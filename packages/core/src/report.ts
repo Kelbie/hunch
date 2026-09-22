@@ -41,7 +41,7 @@ export function summaryMarkdown(result: CheckResult, ctx: ReportContext = {}): s
   if (!complete) {
     lines.push("> [!CAUTION]", "> **Review is incomplete.** Some changes or guidance could not be checked.");
     for (const notice of result.notices) lines.push(`> - ${escapeCell(notice)}`);
-    if (ctx.staleLock) lines.push("> - Guidance is out of date. Run `npx @kelbie/hunch compile` and commit `hunch.lock`.");
+    if (ctx.staleLock) lines.push("> - The policy in `hunch.lock` is out of date. Run `npx @kelbie/hunch install` and commit it.");
     lines.push("");
   }
   if (shown.length) {

@@ -58,7 +58,7 @@ deliberately leave out anything deterministic.
 | a consequence visible in the changed lines: a swallowed failure, a retry that reuses no key, a test that now accepts wrong output | **Hunch** | needs judgment about meaning |
 | a contract written in a doc (API guarantees, a payment policy) | **Hunch**, with `reference` pointing at the doc | the doc supplies what the hunk can't show |
 | an architecture property spanning many files | usually not Hunch. Hunk-local questions miss it. Offer a narrow proxy the hunk can show, or `find` for investigation | Jev sees one chunk |
-| guidance already in AGENTS.md or a skill | `compile`, not a hand-written rule | the lock keeps it in step with the source |
+| guidance already in AGENTS.md or a skill | `install`, not a hand-written rule | the lock keeps it in step with the source |
 
 Tell the user plainly when a request belongs to another tool, and offer to write that instead.
 

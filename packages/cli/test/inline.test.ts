@@ -90,3 +90,12 @@ test("--pack reviews an unconfigured repository; --config and --rule still layer
   expect(r.config.rules["mine/extra"]?.level).toBe("warn");
   expect(r.config.skills).toEqual([]);
 });
+
+test("a run that replaces the repository config says so, so hunch.lock is left out of it too", async () => {
+  const packed = repoWith({ "hunch.toml": 'packs = ["nuts-spec"]\n' });
+  expect((await resolveConfig(toml, { config: ["{}"] }))!.replacesPolicy).toBe(true);
+  expect((await resolveConfig(packed, {}))!.replacesPolicy).toBeUndefined();
+  // `--rule` adds to whichever policy applies, so the repository's lock still counts.
+  expect((await resolveConfig(packed, { rules: ["mine/x=A sentence."] }))!.replacesPolicy).toBeUndefined();
+  expect((await resolveConfig(packed, {}))!.config.packs).toEqual(["nuts-spec"]);
+});
