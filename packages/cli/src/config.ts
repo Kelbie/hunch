@@ -14,6 +14,7 @@ import {
   type RepoReader,
   type WireQuestion,
   providerFor,
+  semifSettings,
   painter,
 } from "../../core/src/index.js";
 
@@ -41,7 +42,7 @@ export interface RuleRow {
 export interface ConfigReport {
   path: string;
   valid: boolean;
-  settings: Pick<Config, "provider" | "model" | "zeroDataRetention" | "extends" | "include" | "ignore" | "task" | "failOnError" | "budget" | "review" | "packs" | "skills" | "agentsMd" | "docs">;
+  settings: Pick<Config, "provider" | "model" | "semif" | "zeroDataRetention" | "extends" | "include" | "ignore" | "task" | "failOnError" | "budget" | "review" | "packs" | "skills" | "agentsMd" | "docs">;
   /** With `--file`: the rules asked about that file, overrides applied. Otherwise every rule. */
   rules: RuleRow[];
   overrides: { files: string[]; rules: Record<string, Level> }[];
@@ -110,11 +111,11 @@ export async function inspectConfig(loaded: { path: string; config: Config }, lo
     rules = all.map((r) => row(r.id, r.level, r.question, r.source));
   }
 
-  const { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, packs, skills, agentsMd, docs } = config;
+  const { provider, model, semif, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, packs, skills, agentsMd, docs } = config;
   return {
     path: loaded.path,
     valid: problems.length === 0,
-    settings: { provider, model, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, packs, skills, agentsMd, docs },
+    settings: { provider, model, semif, zeroDataRetention, extends: presets, include, ignore, task, failOnError, budget, review, packs, skills, agentsMd, docs },
     rules,
     overrides: config.overrides.map((o) => ({ files: o.files, rules: Object.fromEntries(Object.entries(o.rules).map(([id, e]) => [id, e.level])) })),
     ...(fileInfo ? { file: fileInfo } : {}),
@@ -167,11 +168,19 @@ function table(header: string[], rows: string[][], max = 40, paint?: (cell: stri
     .join("\n");
 }
 
-/** Zero data retention is something the Gateway enforces, so it is only claimed for a Gateway run. */
+/**
+ * Which provider a run here would use, and the one thing about it worth knowing before paying for a
+ * review. Zero data retention is something the Gateway enforces, so it is only claimed for a Gateway
+ * run; SemIf sends nothing anywhere, so it reports the model this machine will load instead.
+ */
 function providerLine(s: ConfigReport["settings"]): string {
-  return providerFor(s) === "typesafe"
-    ? `typesafe (${s.model}), directly${s.provider ? "" : ": the key signed in here"}`
-    : `gateway (typesafe-ai/jev); zero data retention ${s.zeroDataRetention ? "enforced" : "not enforced"}`;
+  const chosen = providerFor(s);
+  if (chosen === "semif") {
+    const settings = semifSettings(s.semif, process.env);
+    return `semif (${settings.model}, ${settings.mode} on ${settings.backend}), on this machine${s.provider ? "" : ": set up here and no key found"}`;
+  }
+  if (chosen === "typesafe") return `typesafe (${s.model}), directly${s.provider ? "" : ": the key signed in here"}`;
+  return `gateway (typesafe-ai/jev); zero data retention ${s.zeroDataRetention ? "enforced" : "not enforced"}`;
 }
 
 export function configText(report: ConfigReport, { color = false } = {}): string {

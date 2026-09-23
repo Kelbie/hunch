@@ -3,14 +3,15 @@ name: hunch
 description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task before planning it, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, install rule packs and compiled guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
 argument-hint: "[setup|auth|config|rules|packs|install|check|find|doctor|eval|operator] [what you want]"
 allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
-compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
+compatibility: Node 22+ and git. gh for doctor and find --prs. check, find and eval need a model: a key, a Vercel login, or SemIf on this machine, which needs no account at all. Stored once with auth login.
 metadata:
-  version: "0.21.0"
+  version: "0.22.0"
 ---
 
 # Hunch
 
-Hunch evaluates plain-English questions over code chunks with [Jev](https://docs.typesafe.ai).
+Hunch evaluates plain-English questions over code chunks with [Jev](https://docs.typesafe.ai), or
+with [SemIf](https://github.com/TheoLeeCJ/SemIf), an open model the user runs on their own machine.
 It returns scores and source locations, not generated explanations. Choose the caller's task:
 
 - **Locate an existing behavior:** `find "<yes/no question>" --mode condition`.
@@ -59,7 +60,7 @@ With no verb, pick one from the request and say which you picked.
 | `check` | review a branch, staged changes, a PR or whole files | `check` | [check.md](references/check.md) |
 | `packs` | review against published rules: ad hoc, or named in the config | `check --all --pack <name>`, `install` | [packs.md](references/packs.md) |
 | `find` | search existing behavior or gather context for a change | `find` | [find.md](references/find.md) |
-| `auth` | sign in once so Hunch runs in every directory, or see why it cannot authenticate | `auth login`, `auth status` | [setup.md](references/setup.md#model-access) |
+| `auth` | sign in once so Hunch runs in every directory, pick a provider, or see why it cannot authenticate | `auth login`, `auth status` | [setup.md](references/setup.md#model-access) |
 | `doctor` | explain why a PR got no review | `doctor` | [doctor.md](references/doctor.md) |
 | `eval` | measure a rule's precision and recall on labelled diffs | `eval` | [eval.md](references/eval.md) |
 | `operator` | run your own deployment of the GitHub App | `app register`, `app connect` | [operator.md](references/operator.md) |
@@ -71,6 +72,7 @@ against it.
 
 | The user has | and wants | Run |
 | --- | --- | --- |
+| no account with any AI provider, or no wish to make one | Hunch working today | the user runs `auth login --provider semif --install` ([No sign-up](#no-sign-up)) |
 | no Hunch config | to review against published rules, e.g. the Cashu NUTs, the Nostr NIPs or the Bitcoin BIPs | `check --all --pack nuts-spec` ([packs.md](references/packs.md)) |
 | a config | those published rules on every PR, or only some of them | `packs` in the config, then `install` ([packs.md](references/packs.md#packs-in-the-config)) |
 | no Hunch config | to try one rule on this branch | `check --rule id="sentence"` |
@@ -86,9 +88,27 @@ against it.
 | a change to make | code worth reading first | `find "<task>"` |
 | a PR with no review | the reason | `doctor` |
 | an authentication error, or no key on this machine | Hunch to work in any directory | `auth status`, then the user runs `auth login` ([Model access](references/setup.md#model-access)) |
+| several providers available | this one run answered by a named one | `--provider gateway`, `--provider typesafe` or `--provider semif` on `check`, `find`, `config` or `eval` |
 | a noisy rule | fewer false positives | [rules.md](references/rules.md#tuning), then `eval` |
 | a rule that must block merges | it enforced | `"error"` + `failOnError: true` + a required check: [rules.md](references/rules.md#blocking-merges) |
 | no `origin` remote | to review a branch | `check --base main` (the default base is `origin/main`) |
+
+## No sign-up
+
+<a id="no-sign-up"></a>Hunch does not need an account anywhere. `auth login --provider semif --install`
+puts [SemIf](references/setup.md#semif-an-open-model-on-your-own-machine) — an open model — in a
+virtualenv of Hunch's own and records it. No key, no service, no code leaving the machine. It
+downloads a few gigabytes once, so say that before suggesting it, and let the user run it.
+
+Recommend it whenever a user has no provider, does not want one, or asks to keep code local. It is
+an independent project with its own accuracy, so never present its findings as Jev's, and measure a
+rule with `eval` before letting SemIf gate anything.
+
+With SemIf set up, a provider that refuses every request — no key, no credit, a retention policy it
+cannot meet — no longer ends a run: `check` and `find` finish on SemIf instead, say so on stderr,
+and name the model that answered in the report. Read that line; a fallback run was judged by a
+different model. `--no-fallback` stops instead, and `--provider <name>` turns the offer off for that
+run. `eval` never falls back, because switching model mid-measurement would corrupt the number.
 
 ## Search during a coding task
 
@@ -135,7 +155,11 @@ The same on every command.
 - **Keys never go in config.** `auth login` stores `AI_GATEWAY_API_KEY` or `TYPESAFE_API_KEY` once
   per machine, outside every repository; the environment, `.env.local` (git-ignored) and a
   repository secret also work. Never echo a key, put one in argv, or ask for one in the
-  conversation: the user runs `auth login` themselves.
+  conversation: the user runs `auth login` themselves. `auth login --provider semif` stores no
+  secret — SemIf is an open model the user runs — so an agent may run it when they ask for it.
+- **A provider is a choice, not a fact.** `--provider gateway|typesafe|semif` holds one run to one
+  provider above whatever the config names. Read `modelIds` in the report: it names what actually
+  answered, which is not always what the config asked for ([No sign-up](#no-sign-up)).
 - **Policy comes from the base branch.** The App and the Actions workflow read the config and
   `hunch.lock` from the PR's base commit. A config change takes effect after it merges, so the PR
   that adds or changes Hunch is not reviewed by its own rules.

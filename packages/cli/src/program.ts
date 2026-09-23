@@ -4,7 +4,15 @@ import { Command } from "commander";
 import {
   check,
   clientFromEnv,
+  clientWithFallback,
+  closeClient,
+  isSetupError,
+  isProvider,
+  PROVIDERS,
   providerFor,
+  semifSettings,
+  SEMIF_DEFAULT_MODEL,
+  SEMIF_DEFAULT_REVISION,
   collectSources,
   FACETS,
   DEFAULT_IGNORE,
@@ -51,6 +59,8 @@ import {
   rulesFor,
   type Finding,
   type FindMatch,
+  type ClosableClient,
+  type Config,
   type Hunk,
   type JevClient,
   type Lock,
@@ -68,7 +78,7 @@ import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 import { diagnose, parseRemote, report } from "./doctor.js";
 import { liveRegion, statusLine } from "./live.js";
 import { colorFor, paintFor, styleFor, type Style } from "./style.js";
-import { applyCredentials, nextStep, credentialsPath, keyNameFor, keySources, linkedVercelProject, looselyPermitted, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, mintVercelToken, useVercelLink, KEY_NAMES, type KeyName, type Provider, type VercelLink } from "./credentials.js";
+import { applyCredentials, applySemifInstall, nextStep, credentialsPath, keyNameFor, keySources, linkedVercelProject, looselyPermitted, readVercelLink, removeCredentials, removeSemifInstall, removeVercelLink, saveCredential, saveSemifInstall, saveVercelLink, semifVenvPath, venvPython, mintVercelToken, useVercelLink, KEY_NAMES, SEMIF_FIELDS, type KeyName, type KeyProvider, type Provider, type SemifField, type SemifInstall, type VercelLink } from "./credentials.js";
 import { askWizard, clackIo, detectPreset, existingKey, ghReady, hasGuidance, installSkill, interactive, nextSteps, presetsFor, setRepoSecret, SKILL_INSTALL, writeKey, type Target, type WizardAnswers } from "./setup/wizard.js";
 
 
@@ -123,6 +133,8 @@ export function buildProgram(): Command {
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .option("--only <ids>", "ask only these rules: ids or globs, comma-separated (nut11/*)")
     .option("--policy-ref <ref>", "read config and lock from this ref (the App uses the base commit)")
+    .option("--provider <name>", "answer this run with gateway, typesafe or semif, above whatever the config names")
+    .option("--no-fallback", "fail instead of finishing on SemIf when the provider refuses every request")
     .addHelpText("after", `
 Exits 0 when the review is complete, 1 when failOnError is set and an error-level concern was
 found, and 2 when the review is incomplete or could not run.
@@ -160,6 +172,8 @@ Examples:
     .option("--pr-max <n>", "pull request diffs to read", "10")
     .option("--drafts", "include draft pull requests", false)
     .option("--dry-run", "count chunks and requests without calling Jev", false)
+    .option("--provider <name>", "answer this run with gateway, typesafe or semif, above whatever the config names")
+    .option("--no-fallback", "fail instead of finishing on SemIf when the provider refuses every request")
     .option("--config <json|file|->", "settings as JSON instead of a config file (include, ignore, provider); repeatable", collect, [])
     .addHelpText("after", `
 Works without a config: it then searches every file, minus lockfiles, minified files and node_modules.
@@ -201,6 +215,7 @@ Examples:
     .description("check the config is valid and show the rules it applies; never edits it")
     .option("--file <path>", "show only the rules asked about this file, overrides applied")
     .option("--explain <rule>", "print exactly what one rule asks Jev, and when it reports")
+    .option("--provider <name>", "report the run as gateway, typesafe or semif, above whatever the config names")
     .option("--reporter <format>", "text or json", "text")
     .option("--pack <name>", "rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable", collect, [])
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
@@ -262,25 +277,33 @@ Examples:
     .option("--config <json|file|->", "rules as JSON instead of a config file; repeatable", collect, [])
     .option("--rule <id=text>", "add one plain-English rule for this run; repeatable", collect, [])
     .option("--reporter <format>", "text or json", "text")
+    .option("--provider <name>", "answer this run with gateway, typesafe or semif, above whatever the config names")
     .addHelpText("after", `
 Each fixture is a .diff whose first line is "# expect: rule-a, rule-b" (the rules that should fire).
 
 Examples:
   hunch eval examples/presets
   hunch eval fixtures --rule api/errors="Error responses keep their code field." --reporter json`)
-    .action((dir: string, opts: Opts) => runEval(root(), dir, { packs: opts.pack, config: opts.config, rules: opts.rule, root: root(), reporter: opts.reporter }));
+    .action((dir: string, opts: Opts) => runEval(root(), dir, { packs: opts.pack, config: opts.config, rules: opts.rule, root: root(), reporter: opts.reporter, provider: opts.provider }));
 
   const auth = program
     .command("auth")
-    .description("store a model key once, so hunch works in every directory");
+    .description("say once how hunch reaches a model, so it works in every directory");
   auth
     .command("login")
-    .description("save a key to your user config directory; asks with a hidden prompt at a terminal")
-    .option("--provider <name>", "gateway (Vercel AI Gateway) or typesafe; skips the question")
+    .description("save a key, a Vercel project or a SemIf install to your user config directory; asks at a terminal")
+    .option("--provider <name>", "gateway (Vercel AI Gateway), typesafe or semif; skips the question")
     .option("--with-token", "read the key from standard input instead of prompting", false)
     .option("--vercel", "no key: sign in to the AI Gateway through your Vercel CLI login and one Vercel project", false)
     .option("--project <id|slug>", "with --vercel: the project, instead of the one linked in this directory")
     .option("--team <id|slug>", "with --vercel: the team that owns the project")
+    .option("--python <path>", "with --provider semif: the interpreter that can import semif_phase1")
+    .option("--model <id|path>", "with --provider semif: the open model it loads")
+    .option("--revision <sha>", "with --provider semif: the pinned commit of that model")
+    .option("--mode <mode>", "with --provider semif: direct, serial, shared or reranker")
+    .option("--backend <name>", "with --provider semif: torch, mlx or llamacpp")
+    .option("--gguf <path>", "with --provider semif: the checkpoint, for backend llamacpp")
+    .option("--install", "with --provider semif: download and install SemIf into hunch's own virtualenv first", false)
     .addHelpText("after", `
 The key is never taken from an argument: arguments are visible in shell history and process lists.
 It is stored owner-only, and only fills in a key the environment and the project's .env files
@@ -290,24 +313,34 @@ left unset, so a project can still use its own.
 so the sign-in that works inside a "vercel link"ed directory works in every directory. It needs
 "vercel login", and is checked before anything is stored.
 
+--provider semif stores no secret either: SemIf is an open model you run yourself, so there is no
+service to sign in to. It remembers which Python and which model to use, after checking that the
+interpreter can import semif_phase1.
+
+--install makes that interpreter for you: a virtualenv of hunch's own, holding a pinned SemIf and
+its model runtime. It downloads a few gigabytes and prints every command it runs. Without it, bring
+your own: "pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'", then pass --python.
+
 Examples:
   hunch auth login                                     choose a provider, paste the key
   hunch auth login --provider gateway --with-token < key.txt
   pbpaste | hunch auth login --with-token              from the clipboard, on macOS
   hunch auth login --vercel                            run inside a directory linked with vercel link
-  hunch auth login --vercel --project my-app --team my-team`)
+  hunch auth login --vercel --project my-app --team my-team
+  hunch auth login --provider semif --install          no account anywhere: install it and use it
+  hunch auth login --provider semif --python .venv/bin/python --backend mlx`)
     .action((opts: Opts) => runAuthLogin(opts, root()));
   auth
     .command("status")
-    .description("say which keys hunch can see from here and where each comes from, never the key")
+    .description("say what hunch can reach a model with from here, and where each comes from, never the key")
     .option("--reporter <format>", "text or json", "text")
     .addHelpText("after", `
-Exits 1 when there is no key and no Vercel project, linked here or stored, to sign in with.`)
+Exits 1 when there is no key, no Vercel project (linked here or stored) and no SemIf install.`)
     .action((opts: Opts) => runAuthStatus(opts, root()));
   auth
     .command("logout")
-    .description("delete stored keys and the stored Vercel project; the environment and .env files are not touched")
-    .option("--provider <name>", "only gateway, typesafe or vercel")
+    .description("delete the stored keys, Vercel project and SemIf install; the environment and .env files are not touched")
+    .option("--provider <name>", "only gateway, typesafe, semif or vercel")
     .action((opts: Opts) => runAuthLogout(opts));
 
   const app = program
@@ -335,8 +368,10 @@ Exits 1 when there is no key and no Vercel project, linked here or stored, to si
 Model access (no key is ever written to your config):
   AI_GATEWAY_API_KEY   Vercel AI Gateway, the default provider
   TYPESAFE_API_KEY     TypeSafe directly, with provider = "typesafe" in your config
-Looked up in the environment, then .env files in the working directory, then the key saved by
-"hunch auth login", which works in every directory.
+  SEMIF_*              SemIf, an open model on this machine, with provider = "semif"; no key
+Looked up in the environment, then .env files in the working directory, then what
+"hunch auth login" saved, which works in every directory. Any command takes --provider to pick
+one for that run.
 
 Docs: https://github.com/Kelbie/hunch`);
   return program;
@@ -363,10 +398,13 @@ const flagsOf = (opts: Opts): string[] =>
 
 /** Names filled from the user's stored credentials on this run, for `auth status` to report. */
 let storedKeys: KeyName[] = [];
+let storedSemif: SemifField[] = [];
 
 export async function main() {
   loadEnvFiles();
   storedKeys = applyCredentials();
+  // Before anything chooses a provider: a machine that set SemIf up and holds no key uses it.
+  storedSemif = applySemifInstall();
   try {
     await buildProgram().parseAsync(process.argv);
   } catch (e) {
@@ -374,16 +412,37 @@ export async function main() {
     if (!hint) throw e;
     // The SDK's own text explains how to sign up with the provider, not how to give Hunch the key.
     throw new Error(`${String(e instanceof Error ? e.message : e).split("\n")[0]}\n\n${hint}`);
+  } finally {
+    // A local model is a running process. One place closes them, so no command can end while one
+    // is still holding the terminal, whether it finished, failed or was interrupted.
+    for (const client of opened) client.close();
   }
 }
+
+/** Providers this command opened that hold a process of their own. */
+const opened: ClosableClient[] = [];
+
+/** Whether this machine has been told where SemIf is, by `auth login --provider semif` or by hand. */
+const semifIsSetUp = () => SEMIF_FIELDS.some((name) => process.env[name]);
 
 /**
  * Built on the first question, so a dry run or an empty diff needs no credentials. With no key
  * and no Vercel project linked here, the one stored by `hunch auth login --vercel` signs in first.
+ *
+ * `fallback` is the reason SemIf is worth installing even when a hosted key usually works: a key
+ * that has expired, run out of credit or cannot meet the retention policy refuses every request
+ * alike, and a run that has answered nothing yet can start again on a model this machine owns. It
+ * only ever happens before the first answer, so one review is never half-judged by two models, and
+ * it is announced both on the terminal and in the report's model list.
  */
-function jevClient(config: Parameters<typeof clientFromEnv>[0]): JevClient {
-  let client: Promise<JevClient> | undefined;
+function jevClient(config: Parameters<typeof clientFromEnv>[0], fallback = false): JevClient {
   const build = async () => {
+    if (providerFor(config) === "semif") {
+      // Loading a model takes minutes, and the first run downloads gigabytes before it does. The
+      // review would otherwise sit silent through all of it with nothing to say what it waits for.
+      const settings = semifSettings(config.semif);
+      note(`SemIf is loading ${settings.model} (${settings.mode} on ${settings.backend}). Your code is scored here; only the model itself is fetched, and only until it is cached.`);
+    }
     if (providerFor(config) === "gateway") {
       await useVercelLink();
       // Nothing to sign in with: say so before the first request, not after a thousand refusals.
@@ -392,10 +451,30 @@ function jevClient(config: Parameters<typeof clientFromEnv>[0]): JevClient {
     }
     return clientFromEnv(config);
   };
-  return { evaluate: async (req) => (await (client ??= build())).evaluate(req) };
+  // SemIf can only stand in when this machine has one, and never when the person named a provider.
+  const offered = fallback && providerFor(config) !== "semif" && semifIsSetUp();
+  const wrapper = clientWithFallback({
+    primary: build,
+    alternative: () => clientFromEnv({ ...config, provider: "semif" }),
+    shouldSwitch: (error) => offered && isSetupError(error),
+    onSwitch: (error) => warn(`${providerFor(config)} refused every request (${String(error instanceof Error ? error.message : error).split("\n")[0]}). Finishing on SemIf, on this machine; the report names the model that answered. Pass --provider to choose one yourself, or --no-fallback to stop instead.`),
+  });
+  opened.push(wrapper);
+  return wrapper;
 }
 
-const PROVIDERS: Provider[] = ["gateway", "typesafe"];
+/**
+ * `--provider` holds one run to one provider, above whatever the config names, so a repository
+ * configured for the Gateway can be reviewed by a local SemIf without editing it. Null when the
+ * name is not a provider, which the caller reports.
+ */
+function withProvider(config: Config, value: unknown): Config | null {
+  if (value === undefined) return config;
+  const name = String(value);
+  return isProvider(name) ? { ...config, provider: name } : null;
+}
+
+const unknownProvider = (value: unknown) => `Unknown --provider ${value}; choose ${PROVIDERS.join(", ")}`;
 
 async function readStdin(): Promise<string> {
   let text = "";
@@ -416,16 +495,101 @@ async function loginWithVercel(link: VercelLink) {
   if (process.env.AI_GATEWAY_API_KEY) warn("AI_GATEWAY_API_KEY is also set, and a key is used before the Vercel project.");
 }
 
+const SEMIF_FLAGS = ["python", "model", "revision", "mode", "backend", "gguf", "install"] as const;
+
+/**
+ * The SemIf `--install` puts in. Pinned to the commit this Hunch was tested against, because an
+ * installer that follows a branch installs something nobody has run.
+ */
+const SEMIF_PACKAGE = "semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf@1f2dea3e25379f9dfc98cb83c324f00ab5deda37";
+
+/** Runs one step of the install where the person can watch it; a few gigabytes take a while. */
+function step(command: string, args: string[]): boolean {
+  console.error(`hunch: ${command} ${args.join(" ")}`);
+  const run = spawnSync(command, args, { stdio: ["ignore", "inherit", "inherit"] });
+  return !run.error && run.status === 0;
+}
+
+/**
+ * A working SemIf without an account anywhere: a virtualenv of Hunch's own, outside every
+ * repository, holding a pinned SemIf. `uv` makes it when it is on PATH, because it brings its own
+ * Python and is far quicker; otherwise the interpreter that is running this does.
+ */
+function installSemif(): string | null {
+  const venv = semifVenvPath();
+  const python = venvPython(venv);
+  const uv = spawnSync("uv", ["--version"], { stdio: "ignore" }).status === 0;
+  console.error(`hunch: installing SemIf into ${venv}. This downloads a few gigabytes once.`);
+  if (!existsSync(python) && !(uv ? step("uv", ["venv", "--python", "3.12", venv]) : step("python3", ["-m", "venv", venv]))) {
+    fail(`could not create a virtualenv at ${venv}. Install SemIf yourself and pass --python <interpreter>.`);
+    return null;
+  }
+  if (!(uv ? step("uv", ["pip", "install", "--python", python, SEMIF_PACKAGE]) : step(python, ["-m", "pip", "install", SEMIF_PACKAGE]))) {
+    fail("installing SemIf failed; the output above says why. Nothing was stored.");
+    return null;
+  }
+  return python;
+}
+
+/** The install as the flags describe it, with nothing invented: an omitted flag stays unset. */
+function semifFromFlags(opts: Opts): SemifInstall {
+  const install: SemifInstall = {};
+  for (const flag of SEMIF_FLAGS) {
+    if (flag === "install" || !opts[flag]) continue;
+    install[`SEMIF_${flag.toUpperCase()}` as SemifField] = String(opts[flag]);
+  }
+  return install;
+}
+
+/**
+ * Proves the interpreter can import SemIf before remembering it, the way the Vercel sign-in proves
+ * it can mint a token. Nothing is stored when it cannot: a remembered install that does not work
+ * would fail every later run with a message about the model instead of about the install.
+ */
+async function loginWithSemif(install: SemifInstall) {
+  const python = install.SEMIF_PYTHON ?? "python3";
+  const probe = spawnSync(python, ["-c", "import semif_phase1; print(semif_phase1.__file__)"], { encoding: "utf8" });
+  if (probe.error || probe.status !== 0) {
+    return fail([
+      `${python} cannot import semif_phase1, so nothing was stored.`,
+      "Install SemIf into the interpreter Hunch will use, then run this again:",
+      "  pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'",
+      "Pass --python to name a virtualenv's own interpreter, for example --python .venv/bin/python.",
+    ].join("\n"));
+  }
+  let path: string;
+  try { path = saveSemifInstall(install); }
+  catch (e) { return fail((e as Error).message); }
+  const model = install.SEMIF_MODEL ?? SEMIF_DEFAULT_MODEL;
+  note(`SemIf works with ${python}; remembered it in ${path}. No secret was stored: SemIf runs on this machine.`);
+  note(`Hunch will load ${model}. The first run downloads it, which takes a while; later runs reuse the cache.`);
+  if (!install.SEMIF_MODEL) note(`That is SemIf's own published baseline. Pass --model and --revision to pin a different one.`);
+}
+
 async function runAuthLogin(opts: Opts, root: string) {
-  if (opts.provider && !PROVIDERS.includes(opts.provider)) return fail(`Unknown --provider ${opts.provider}; choose gateway or typesafe`);
+  if (opts.provider && !isProvider(String(opts.provider))) return fail(unknownProvider(opts.provider));
   if ((opts.project || opts.team) && !opts.vercel) return fail("--project and --team go with --vercel.");
+  const semifFlags = SEMIF_FLAGS.filter((flag) => opts[flag]);
+  if (semifFlags.length && opts.provider !== "semif") return fail(`--${semifFlags[0]} goes with --provider semif.`);
+  if (opts.install && opts.provider !== "semif") return fail("--install goes with --provider semif.");
+  if (opts.provider === "semif") {
+    if (opts.withToken || opts.vercel) return fail("--provider semif stores no key; drop --with-token and --vercel.");
+    const install = semifFromFlags(opts);
+    if (opts.install) {
+      if (install.SEMIF_PYTHON) return fail("--install makes the interpreter; pass --python only to use one you already have.");
+      const python = installSemif();
+      if (!python) return;
+      install.SEMIF_PYTHON = python;
+    }
+    return loginWithSemif(install);
+  }
   if (opts.vercel) {
     if (opts.provider || opts.withToken) return fail("--vercel stores no key; drop --provider and --with-token.");
     const link = opts.project ? { project: opts.project as string, ...(opts.team ? { team: opts.team as string } : {}) } : linkedVercelProject(root);
     if (!link) return fail("no Vercel project is linked here. Run this inside a directory linked with `vercel link`, or pass --project and --team.");
     return loginWithVercel(link);
   }
-  let provider = opts.provider as Provider | "vercel" | undefined;
+  let provider = opts.provider as KeyProvider | "vercel" | "semif" | undefined;
   let value: string;
   if (opts.withToken) {
     if (process.stdin.isTTY) return fail("--with-token reads the key from standard input; pipe it in, or drop the flag to be asked.");
@@ -435,24 +599,56 @@ async function runAuthLogin(opts: Opts, root: string) {
     if (!interactive()) return fail("no terminal to ask at. Pipe the key in: `npx @kelbie/hunch auth login --provider typesafe --with-token < file` (or --provider gateway).");
     const io = clackIo();
     provider ??= await io.select({
-      message: "Which model provider is this key for?",
+      message: "Which model should Hunch ask?",
       initialValue: "gateway",
       options: [
         { value: "gateway", label: "Vercel AI Gateway", hint: "AI_GATEWAY_API_KEY, from API Keys → Create key" },
         { value: "typesafe", label: "TypeSafe directly", hint: "TYPESAFE_API_KEY" },
         { value: "vercel", label: "Vercel AI Gateway, without a key", hint: "your Vercel CLI login and the project linked in this directory" },
+        { value: "semif", label: "SemIf, on this machine", hint: "an open model you run yourself; no key and no service" },
       ],
-    }) as Provider | "vercel" | null ?? undefined;
+    }) as KeyProvider | "vercel" | "semif" | null ?? undefined;
     if (!provider) return fail("login cancelled; nothing was stored.");
     if (provider === "vercel") {
       const link = linkedVercelProject(root);
       return link ? loginWithVercel(link) : fail("no Vercel project is linked here. Run this inside a directory linked with `vercel link`, or pass --vercel --project and --team.");
     }
+    if (provider === "semif") {
+      const how = await io.select({
+        message: "Where is SemIf?",
+        initialValue: "install",
+        options: [
+          { value: "install", label: "Install it for me", hint: `a virtualenv at ${semifVenvPath()}; a few gigabytes, once` },
+          { value: "own", label: "I already have it", hint: "name the interpreter that can import semif_phase1" },
+        ],
+      }) as string | null;
+      if (!how) return fail("login cancelled; nothing was stored.");
+      let python: string | null = null;
+      if (how === "install") {
+        python = installSemif();
+        if (!python) return;
+      } else {
+        const answer = await io.text({ message: "Which Python can import semif_phase1?", placeholder: "python3", initialValue: "python3" });
+        if (answer === null) return fail("login cancelled; nothing was stored.");
+        python = answer.trim() || "python3";
+      }
+      const backend = await io.select({
+        message: "Which SemIf backend does this machine run?",
+        initialValue: "torch",
+        options: [
+          { value: "torch", label: "PyTorch", hint: "an NVIDIA GPU, or Apple Silicon through MPS" },
+          { value: "mlx", label: "MLX", hint: "Apple Silicon, with the mlx extra installed" },
+          { value: "llamacpp", label: "llama.cpp", hint: "a local GGUF checkpoint; pass --gguf as well" },
+        ],
+      }) as string | null;
+      if (!backend) return fail("login cancelled; nothing was stored.");
+      return loginWithSemif({ SEMIF_PYTHON: python, SEMIF_BACKEND: backend });
+    }
     const answer = await io.password({ message: provider === "gateway" ? "Paste your AI Gateway key" : "Paste your TypeSafe key" });
     if (answer === null) return fail("login cancelled; nothing was stored.");
     value = answer;
   }
-  const name = keyNameFor(provider as Provider);
+  const name = keyNameFor(provider as KeyProvider);
   let path: string;
   try { path = saveCredential(name, value); }
   catch (e) { return fail((e as Error).message); }
@@ -460,6 +656,24 @@ async function runAuthLogin(opts: Opts, root: string) {
   if (process.env[name] && !storedKeys.includes(name) && process.env[name] !== value.trim()) {
     warn(`${name} is also set in the environment or a .env file here, and that one wins in this directory.`);
   }
+}
+
+/**
+ * What SemIf would be asked to run on the next command, from the environment and the stored
+ * install together. Nothing is loaded and nothing is checked: saying "set up" here would claim more
+ * than reading a file can support, so `auth status` reports what was found and says it is unverified.
+ */
+function semifStatus(env: Record<string, string | undefined>, applied: readonly SemifField[]) {
+  const set = SEMIF_FIELDS.filter((name) => env[name]);
+  return {
+    configured: set.length > 0,
+    python: env.SEMIF_PYTHON ?? "python3",
+    model: env.SEMIF_MODEL ?? SEMIF_DEFAULT_MODEL,
+    revision: env.SEMIF_REVISION ?? SEMIF_DEFAULT_REVISION,
+    mode: env.SEMIF_MODE ?? "direct",
+    backend: env.SEMIF_BACKEND ?? "torch",
+    from: set.length === 0 ? "nothing" : set.every((name) => applied.includes(name)) ? "stored" : "environment",
+  };
 }
 
 function runAuthStatus(opts: Opts, root: string) {
@@ -470,22 +684,28 @@ function runAuthStatus(opts: Opts, root: string) {
   const stored = readVercelLink(path);
   const loose = looselyPermitted(path);
   const found = KEY_NAMES.some((n) => sources[n] !== "missing");
-  if (opts.reporter === "json") console.log(JSON.stringify({ credentialsFile: path, keys: sources, vercelLinked: linked, vercelProject: stored, credentialsFileReadableByOthers: loose }, null, 2));
+  const semif = semifStatus(process.env, storedSemif);
+  if (opts.reporter === "json") console.log(JSON.stringify({ credentialsFile: path, keys: sources, vercelLinked: linked, vercelProject: stored, semif, credentialsFileReadableByOthers: loose }, null, 2));
   else {
     const say = { environment: "set, from the environment or a .env file here", stored: `set, from ${path}`, missing: "not set" };
     for (const n of KEY_NAMES) console.log(`${n.padEnd(20)} ${say[sources[n]]}`);
     console.log(`${"Vercel project".padEnd(20)} ${linked ? "linked in this directory; the AI Gateway signs in through it (not verified)"
       : stored ? `${stored.project}${stored.team ? ` (${stored.team})` : ""}, from ${path}; used when no key is set (not verified)` : "none"}`);
+    console.log(`${"SemIf".padEnd(20)} ${semif.configured
+      ? `${semif.python}, ${semif.model} (${semif.mode}, ${semif.backend}), from ${semif.from === "stored" ? path : "the environment"}; no key (not verified)`
+      : "not set up"}`);
     if (loose) console.log(`warning: ${path} is readable by other users. Run: chmod 600 ${path}`);
-    if (!found && !linked && !stored) console.log("\nNothing to sign in with. Run `hunch auth login` to store a key, or `hunch auth login --vercel`, once for every directory.");
+    if (!found && !linked && !stored && !semif.configured) console.log("\nNothing to sign in with. Run `hunch auth login` to store a key, `hunch auth login --vercel`, or `hunch auth login --provider semif`, once for every directory.");
   }
-  process.exitCode = found || linked || stored ? 0 : 1;
+  process.exitCode = found || linked || stored || semif.configured ? 0 : 1;
 }
 
 function runAuthLogout(opts: Opts) {
-  if (opts.provider && ![...PROVIDERS, "vercel"].includes(opts.provider)) return fail(`Unknown --provider ${opts.provider}; choose gateway, typesafe or vercel`);
-  const removed: string[] = opts.provider === "vercel" ? [] : removeCredentials(opts.provider ? [keyNameFor(opts.provider)] : KEY_NAMES);
+  if (opts.provider && ![...PROVIDERS, "vercel"].includes(opts.provider)) return fail(`Unknown --provider ${opts.provider}; choose ${PROVIDERS.join(", ")} or vercel`);
+  const key = opts.provider && opts.provider !== "vercel" && opts.provider !== "semif" ? [keyNameFor(opts.provider as KeyProvider)] : undefined;
+  const removed: string[] = opts.provider === "vercel" || opts.provider === "semif" ? [] : removeCredentials(key ?? KEY_NAMES);
   if ((!opts.provider || opts.provider === "vercel") && removeVercelLink()) removed.push("the Vercel project");
+  if ((!opts.provider || opts.provider === "semif") && removeSemifInstall()) removed.push("the SemIf install");
   console.error(removed.length ? `hunch: removed ${removed.join(" and ")} from ${credentialsPath()}.` : "hunch: nothing stored to remove.");
 }
 
@@ -602,11 +822,14 @@ function prTaskFromEvent(): string | undefined {
  * (rules that SHOULD fire; any other rule firing counts as a false positive).
  * Prints precision/recall per rule so thresholds can be tuned before `error`.
  */
-async function runEval(root: string, dir: string, inline: { packs?: string[]; config?: string[]; rules?: string[]; root?: string; reporter?: string }) {
+async function runEval(root: string, dir: string, inline: { packs?: string[]; config?: string[]; rules?: string[]; root?: string; reporter?: string; provider?: string }) {
   if (!["text", "json"].includes(inline.reporter ?? "text")) return fail("Unknown --reporter for eval; use text or json");
   const repo = localRepo(root);
-  const loaded = await resolveConfig(repo, inline);
-  if (!loaded) return fail(NO_CONFIG);
+  const resolved = await resolveConfig(repo, inline);
+  if (!resolved) return fail(NO_CONFIG);
+  const chosen = withProvider(resolved.config, inline.provider);
+  if (!chosen) return fail(unknownProvider(inline.provider));
+  const loaded = { ...resolved, config: chosen };
   const files = readdirSync(join(root, dir)).filter((f) => f.endsWith(".diff")).sort();
   if (!files.length) return fail("No .diff fixtures found");
   const lock = loaded.replacesPolicy ? null : readLock(root);
@@ -618,6 +841,8 @@ async function runEval(root: string, dir: string, inline: { packs?: string[]; co
     s[k]++;
     stats.set(rule, s);
   };
+  // No fallback here: eval measures how a rule behaves on a model, so quietly answering some
+  // fixtures with a different one would corrupt the number it exists to produce.
   const client = jevClient(loaded.config);
   const fixtures: { file: string; expected: string[]; fired: string[] }[] = [];
   // One fixture is a whole review, so a directory of them runs for minutes: say where it is.
@@ -691,7 +916,8 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
   }
   if (!loaded) return fail(NO_CONFIG);
   if (loaded.packs) note(`rules from ${loaded.packs.join(", ")}`);
-  const { config } = loaded;
+  const config = withProvider(loaded.config, opts.provider);
+  if (!config) return fail(unknownProvider(opts.provider));
   if (!["text", "markdown", "json", "sarif", "github"].includes(opts.reporter!)) return fail(`Unknown --reporter ${opts.reporter}; use text, markdown, json, sarif or github`);
   const only = opts.only ? String(opts.only).split(",").map((id) => id.trim()).filter(Boolean) : undefined;
   const under = underPaths(paths);
@@ -771,7 +997,7 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     task,
     lock,
     only,
-    client: jevClient(config),
+    client: jevClient(config, opts.fallback !== false && !opts.provider),
     signal: interrupt.signal,
     readFile: (p) => repo.read(p),
     readChangedFile: opts.diff ? undefined : opts.staged ? (p) => readStagedFile(root, p) : (p) => changedSource.read(p),
@@ -825,7 +1051,8 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   // file except the ones no review ever reads.
   const loaded = await resolveConfig(repo, { config: opts.config, root });
   if (!loaded) console.error("hunch: no config; searching every file except lockfiles, minified files and node_modules.");
-  const config = loaded?.config ?? applyPresets(parseConfig({}, "defaults"));
+  const config = withProvider(loaded?.config ?? applyPresets(parseConfig({}, "defaults")), opts.provider);
+  if (!config) return fail(unknownProvider(opts.provider));
   // A person at a terminal gets the coloured report; a redirect gets Markdown, because the
   // reason to redirect this is to hand it to something that reads Markdown. Either way the
   // code is in the output — that is what find is for.
@@ -871,7 +1098,7 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   if (!hunks.length && !skipped.length) return fail("nothing in scope to search; check `include` and the paths you passed.");
   note(`searching ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}`);
 
-  const jev = jevClient(config);
+  const jev = jevClient(config, opts.fallback !== false && !opts.provider);
 
   // Asked first: if this work is already open as a pull request, the person should hear it
   // before reading a hundred lines of code they may not need to touch.
@@ -1042,8 +1269,11 @@ async function runInstall(opts: Opts, root: string, repo: RepoReader) {
 
 async function runConfig(opts: Opts, root: string, repo: RepoReader) {
   if (!["text", "json"].includes(opts.reporter)) return fail("Unknown --reporter for config; use text or json");
-  const loaded = await resolveConfig(repo, { packs: opts.pack, config: opts.config, rules: opts.rule, root });
-  if (!loaded) return fail(NO_CONFIG);
+  const resolved = await resolveConfig(repo, { packs: opts.pack, config: opts.config, rules: opts.rule, root });
+  if (!resolved) return fail(NO_CONFIG);
+  const chosen = withProvider(resolved.config, opts.provider);
+  if (!chosen) return fail(unknownProvider(opts.provider));
+  const loaded = { ...resolved, config: chosen };
   const lockText = loaded.replacesPolicy ? null : await repo.read(LOCK_FILE);
   const lock = lockText ? parseLock(lockText) : null;
   if (opts.explain) {

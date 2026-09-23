@@ -34,6 +34,8 @@ review the lines this branch changed, against your rules
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
 | `--only <ids>` |  | ask only these rules: ids or globs, comma-separated (nut11/*) |
 | `--policy-ref <ref>` |  | read config and lock from this ref (the App uses the base commit) |
+| `--provider <name>` |  | answer this run with gateway, typesafe or semif, above whatever the config names |
+| `--no-fallback` | `fallback` on | fail instead of finishing on SemIf when the provider refuses every request |
 
 ```text
 Exits 0 when the review is complete, 1 when failOnError is set and an error-level concern was
@@ -77,6 +79,8 @@ search existing behavior or find context for a change across the repository
 | `--pr-max <n>` | `10` | pull request diffs to read |
 | `--drafts` |  | include draft pull requests |
 | `--dry-run` |  | count chunks and requests without calling Jev |
+| `--provider <name>` |  | answer this run with gateway, typesafe or semif, above whatever the config names |
+| `--no-fallback` | `fallback` on | fail instead of finishing on SemIf when the provider refuses every request |
 | `--config <json\|file\|->` |  | settings as JSON instead of a config file (include, ignore, provider); repeatable |
 
 ```text
@@ -125,6 +129,7 @@ check the config is valid and show the rules it applies; never edits it
 | --- | --- | --- |
 | `--file <path>` |  | show only the rules asked about this file, overrides applied |
 | `--explain <rule>` |  | print exactly what one rule asks Jev, and when it reports |
+| `--provider <name>` |  | report the run as gateway, typesafe or semif, above whatever the config names |
 | `--reporter <format>` | `text` | text or json |
 | `--pack <name>` |  | rules from a pack: nuts-spec, owner/repo/name[@ref], or name#rule,rule to keep some; repeatable |
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
@@ -201,6 +206,7 @@ measure each rule's precision and recall on labelled .diff examples
 | `--config <json\|file\|->` |  | rules as JSON instead of a config file; repeatable |
 | `--rule <id=text>` |  | add one plain-English rule for this run; repeatable |
 | `--reporter <format>` | `text` | text or json |
+| `--provider <name>` |  | answer this run with gateway, typesafe or semif, above whatever the config names |
 
 ```text
 Each fixture is a .diff whose first line is "# expect: rule-a, rule-b" (the rules that should fire).
@@ -212,15 +218,22 @@ Examples:
 
 ## `hunch auth login`
 
-save a key to your user config directory; asks with a hidden prompt at a terminal
+save a key, a Vercel project or a SemIf install to your user config directory; asks at a terminal
 
 | Flag | Default | Means |
 | --- | --- | --- |
-| `--provider <name>` |  | gateway (Vercel AI Gateway) or typesafe; skips the question |
+| `--provider <name>` |  | gateway (Vercel AI Gateway), typesafe or semif; skips the question |
 | `--with-token` |  | read the key from standard input instead of prompting |
 | `--vercel` |  | no key: sign in to the AI Gateway through your Vercel CLI login and one Vercel project |
 | `--project <id\|slug>` |  | with --vercel: the project, instead of the one linked in this directory |
 | `--team <id\|slug>` |  | with --vercel: the team that owns the project |
+| `--python <path>` |  | with --provider semif: the interpreter that can import semif_phase1 |
+| `--model <id\|path>` |  | with --provider semif: the open model it loads |
+| `--revision <sha>` |  | with --provider semif: the pinned commit of that model |
+| `--mode <mode>` |  | with --provider semif: direct, serial, shared or reranker |
+| `--backend <name>` |  | with --provider semif: torch, mlx or llamacpp |
+| `--gguf <path>` |  | with --provider semif: the checkpoint, for backend llamacpp |
+| `--install` |  | with --provider semif: download and install SemIf into hunch's own virtualenv first |
 
 ```text
 The key is never taken from an argument: arguments are visible in shell history and process lists.
@@ -231,33 +244,43 @@ left unset, so a project can still use its own.
 so the sign-in that works inside a "vercel link"ed directory works in every directory. It needs
 "vercel login", and is checked before anything is stored.
 
+--provider semif stores no secret either: SemIf is an open model you run yourself, so there is no
+service to sign in to. It remembers which Python and which model to use, after checking that the
+interpreter can import semif_phase1.
+
+--install makes that interpreter for you: a virtualenv of hunch's own, holding a pinned SemIf and
+its model runtime. It downloads a few gigabytes and prints every command it runs. Without it, bring
+your own: "pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'", then pass --python.
+
 Examples:
   hunch auth login                                     choose a provider, paste the key
   hunch auth login --provider gateway --with-token < key.txt
   pbpaste | hunch auth login --with-token              from the clipboard, on macOS
   hunch auth login --vercel                            run inside a directory linked with vercel link
   hunch auth login --vercel --project my-app --team my-team
+  hunch auth login --provider semif --install          no account anywhere: install it and use it
+  hunch auth login --provider semif --python .venv/bin/python --backend mlx
 ```
 
 ## `hunch auth status`
 
-say which keys hunch can see from here and where each comes from, never the key
+say what hunch can reach a model with from here, and where each comes from, never the key
 
 | Flag | Default | Means |
 | --- | --- | --- |
 | `--reporter <format>` | `text` | text or json |
 
 ```text
-Exits 1 when there is no key and no Vercel project, linked here or stored, to sign in with.
+Exits 1 when there is no key, no Vercel project (linked here or stored) and no SemIf install.
 ```
 
 ## `hunch auth logout`
 
-delete stored keys and the stored Vercel project; the environment and .env files are not touched
+delete the stored keys, Vercel project and SemIf install; the environment and .env files are not touched
 
 | Flag | Default | Means |
 | --- | --- | --- |
-| `--provider <name>` |  | only gateway, typesafe or vercel |
+| `--provider <name>` |  | only gateway, typesafe, semif or vercel |
 
 ## `hunch app register`
 

@@ -13,7 +13,9 @@ npx skills add Kelbie/hunch
 The [Agent Skill](skills/hunch/SKILL.md) explains when to search, how to phrase a question, and how
 to verify the results. No project config is needed for an ad hoc search. Requires Node 22+, Git,
 and provider authentication: run `npx -y --min-release-age=0 @kelbie/hunch auth login` once and Hunch works in every
-directory (`--vercel` reuses a Vercel CLI login instead of a key).
+directory (`--vercel` reuses a Vercel CLI login instead of a key; `--provider semif` uses
+[SemIf](https://github.com/TheoLeeCJ/SemIf), an open model on your own machine, with no key at all).
+Every command takes `--provider gateway|typesafe|semif` to pick one for that run.
 
 ```sh
 # Gather implementation, callers, contracts, tests and precedents for a change.
@@ -50,8 +52,10 @@ Search scores rank candidates; findings flag configured concerns. Neither proves
 absence of one. A complete run means the selected chunks were evaluated, not that every relevant
 behavior was found. Reports identify omissions and distinguish result limits from search coverage.
 
-Code is sent to the selected provider. Cost depends on input tokens, repeated context and questions;
-small model prices make broad scans practical, but latency and recall still need measurement.
+Code is sent to the selected provider, or to nothing but your own GPU with `--provider semif`. Cost
+depends on input tokens, repeated context and questions; small model prices make broad scans
+practical, but latency and recall still need measurement. SemIf is an independent project whose
+accuracy is its own: measure it on your own rules with `eval` before it gates anything.
 
 [Search workflow](skills/hunch/references/find.md) · [Architecture](docs/architecture.md) ·
 [Research and evaluation design](docs/semantic-search-research.md) · [Deployment](docs/deploy.md)

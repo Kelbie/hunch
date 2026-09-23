@@ -53,8 +53,9 @@ fail-on-error = true
 | `overrides` | `[[overrides]]` | `[]` | `{ files, rules }`: different levels or rules for some paths |
 | `failOnError` | `fail-on-error` | `false` | `check` exits 1 (and the check fails) when an `error` rule reports |
 | `task` | `task` | `"pr"` | `"pr"` sends the PR title and description to every question as `task`; `"none"` sends nothing |
-| `provider` | `provider` | unset | `"gateway"` (Vercel AI Gateway) or `"typesafe"` (direct). Unset uses the signed-in credentials: TypeSafe when only a `TYPESAFE_API_KEY` is found, otherwise the Gateway ([setup.md](setup.md#model-access)) |
+| `provider` | `provider` | unset | `"gateway"` (Vercel AI Gateway), `"typesafe"` (direct) or `"semif"` (an open model on this machine). Unset uses the signed-in credentials: TypeSafe when only a `TYPESAFE_API_KEY` is found, SemIf when only it is set up, otherwise the Gateway ([setup.md](setup.md#model-access)). Every command takes `--provider` to override it for one run |
 | `model` | `model` | `"jev-1.13.0"` | the TypeSafe model id, used by `provider: "typesafe"`. Gateway always serves `typesafe-ai/jev` |
+| `semif` | `[semif]` | `{}` | settings for `provider: "semif"`; see [SemIf](#semif) |
 | `zeroDataRetention` | `zero-data-retention` | `true` | ask Gateway to route only to zero-retention providers; see below |
 | `packs` | `[[packs]]` | `[]` | published rule packs to review against: `"nuts-spec"`, `"owner/repo/name@v2"`, or `{ pack, rules }` to keep only some ids. `hunch install` copies them into `hunch.lock` ([packs.md](packs.md#packs-in-the-config)) |
 | `skills` | `skills` | every installed skill | Agent Skills to compile into `hunch.lock`; `[]` for none |
@@ -188,6 +189,39 @@ retention off is the user's decision. Record it in the config with a comment, as
 own config does.
 
 `install --with gateway` uses `compileModel` through Gateway, under the same retention setting.
+
+### SemIf
+
+`provider: "semif"` answers from an open model this machine runs, with no account, no key and
+nothing leaving the machine. Installing and signing in to it is in
+[setup.md](setup.md#semif-an-open-model-on-your-own-machine); its accuracy is its own project's,
+so measure it on your own rules with [eval.md](eval.md) before it gates anything.
+
+A repository fixes only the portable part. Which Python, which GPU and which checkpoint file are
+properties of a machine, so they live in `SEMIF_*` — which also overrides everything below, for a
+machine that cannot run what the repository assumed.
+
+| TypeScript | TOML | Default | Means |
+| --- | --- | --- | --- |
+| `semif.model` | `[semif] model` | `"Qwen/Qwen3.5-4B"` | Hugging Face id or local path; SemIf's published baseline for direct option logits. `SEMIF_MODEL` |
+| `semif.revision` | `[semif] revision` | that model's pinned commit | the 40-character commit SemIf requires for a remote model. `SEMIF_REVISION` |
+| `semif.mode` | `[semif] mode` | `"direct"` | `direct`, `serial`, `shared` or `reranker`. `shared` and `serial` prefill one hunk's state once and answer every rule of that hunk against it, which is much faster; SemIf refuses the request when the tokenizer does not split that state off the prompt exactly, and `check` then reports those rules unanswered. `direct` never needs that. `SEMIF_MODE` |
+| `semif.backend` | `[semif] backend` | `"torch"` | `torch`, `mlx` (Apple Silicon) or `llamacpp` (a local GGUF). `SEMIF_BACKEND` |
+| `semif.maxTokens` | `[semif] max-tokens` | `32768` | SemIf never truncates: a longer prompt fails its request rather than losing evidence, and `check` reports those rules as unanswered. `SEMIF_MAX_TOKENS` |
+
+```toml
+provider = "semif"
+
+[semif]
+model = "Qwen/Qwen3.5-4B"
+mode = "shared"
+max-tokens = 32768
+```
+
+Machine-only variables: `SEMIF_PYTHON` (an interpreter that can import `semif_phase1`),
+`SEMIF_GGUF`, `SEMIF_DEVICE`, `SEMIF_DTYPE`, `SEMIF_THREADS`, `SEMIF_MLX_BITS`,
+`SEMIF_STARTUP_SECONDS` and `SEMIF_BRIDGE`. `hunch auth login --provider semif` stores the first of
+these once, for every directory.
 
 ## Guidance
 

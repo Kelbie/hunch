@@ -13,6 +13,8 @@ try {
   run('npm', ['install', '--ignore-scripts', '--no-audit', '--no-fund', join(temp, packed[0].filename)]);
   const bin = join(temp, 'node_modules/@kelbie/hunch/dist/bin.js');
   if (!run(process.execPath, [bin, '--version']).includes(version)) throw new Error('Version command failed');
+  // SemIf runs from a Python file no bundler can inline, so the package must carry it.
+  if (!existsSync(join(temp, 'node_modules/@kelbie/hunch/dist/semif/bridge.py'))) throw new Error('SemIf bridge missing from the package');
   const appHelp = run(process.execPath, [bin, 'app', '--help']);
   if (!appHelp.includes('register') || !appHelp.includes('connect')) throw new Error('App setup subcommands missing');
   // A flag the command does not take must be refused, not silently ignored.
@@ -56,6 +58,9 @@ try {
   if (!existsSync(join(ts, '.github/workflows/hunch.yml'))) throw new Error('GitHub workflow was not created');
   // `config` validates what init wrote, from the packed build, without a key.
   if (!JSON.parse(run(process.execPath, [bin, 'config', '--reporter', 'json', '--cwd', ts])).rules.some((r) => r.id === 'typescript/async-ordering')) throw new Error('config did not list the preset rules');
+  // Naming a provider is a per-run choice, and reporting one must not start a model.
+  const semifReport = JSON.parse(run(process.execPath, [bin, 'config', '--provider', 'semif', '--reporter', 'json', '--cwd', ts]));
+  if (semifReport.settings.provider !== 'semif') throw new Error('--provider did not override the config');
   const defaults = join(temp, 'defaults'); mkdirSync(defaults); run('git', ['init', '--quiet'], defaults);
   run(process.execPath, [bin, 'init', '--yes', '--cwd', defaults]);
   if (!existsSync(join(defaults, 'hunch.toml'))) throw new Error('init --yes did not write the detected default');

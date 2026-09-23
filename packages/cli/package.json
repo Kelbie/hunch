@@ -1,6 +1,6 @@
 {
   "name": "@kelbie/hunch",
-  "version": "0.21.0",
+  "version": "0.22.0",
   "description": "Search code by behavior and review changes against plain-English rules with TypeSafe's Jev.",
   "type": "module",
   "bin": {
@@ -50,7 +50,7 @@
     "access": "public"
   },
   "scripts": {
-    "build": "node ../../scripts/sync-readme.mjs && bun ../../scripts/sync-skill.ts && tsup --config tsup.config.ts",
+    "build": "node ../../scripts/sync-readme.mjs && bun ../../scripts/sync-skill.ts && tsup --config tsup.config.ts && node ../../scripts/copy-bridge.mjs",
     "prepack": "bun run build"
   }
 }

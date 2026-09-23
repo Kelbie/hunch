@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, mkdirSync, readFileSync, statSync, writeFileSync, existsSync, chmodSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { applyCredentials, authHint, nextStep, credentialsPath, keySources, linkedVercelProject, looselyPermitted, mintVercelToken, readCredentials, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, useVercelLink } from "../src/credentials.js";
+import { applyCredentials, applySemifInstall, authHint, nextStep, credentialsPath, keySources, linkedVercelProject, looselyPermitted, mintVercelToken, readCredentials, readSemifInstall, readVercelLink, removeCredentials, removeSemifInstall, removeVercelLink, saveCredential, saveSemifInstall, saveVercelLink, useVercelLink } from "../src/credentials.js";
 
 const dir = (prefix = "hunch-cred-") => mkdtempSync(join(tmpdir(), prefix));
 const BIN = join(import.meta.dir, "../src/bin.ts");
@@ -183,4 +183,63 @@ test("a failure Hunch recognises names the command to run next, so an agent can 
   expect(nextStep("Jev request failed (HTTP 402). Check provider credentials, quota and availability.")).toContain("no credit or quota left");
   // A rate limit is not something a command fixes, so nothing is invented for it.
   expect(nextStep("Jev request failed (HTTP 429).")).toBeNull();
+});
+
+/** An interpreter that answers the import probe, so the login path can be exercised without SemIf. */
+function fakePython(ok = true): string {
+  const path = join(dir("hunch-python-"), "python3");
+  writeFileSync(path, `#!/bin/sh\nexit ${ok ? 0 : 1}\n`);
+  chmodSync(path, 0o755);
+  return path;
+}
+
+test("the SemIf install is remembered whole, so changing backend leaves no stale checkpoint behind", () => {
+  const path = join(dir(), "credentials");
+  saveSemifInstall({ SEMIF_PYTHON: "/venv/bin/python", SEMIF_BACKEND: "llamacpp", SEMIF_GGUF: "/models/qwen.gguf" }, path);
+  expect(readSemifInstall(path)).toEqual({ SEMIF_PYTHON: "/venv/bin/python", SEMIF_BACKEND: "llamacpp", SEMIF_GGUF: "/models/qwen.gguf" });
+  saveSemifInstall({ SEMIF_PYTHON: "/venv/bin/python", SEMIF_BACKEND: "torch" }, path);
+  expect(readSemifInstall(path)).toEqual({ SEMIF_PYTHON: "/venv/bin/python", SEMIF_BACKEND: "torch" });
+  // A key stored alongside it is not disturbed by setting SemIf up.
+  saveCredential("TYPESAFE_API_KEY", "k", path);
+  saveSemifInstall({ SEMIF_MODEL: "local/model" }, path);
+  expect(readCredentials(path).TYPESAFE_API_KEY).toBe("k");
+  expect(removeSemifInstall(path)).toBe(true);
+  expect(readSemifInstall(path)).toBeNull();
+  expect(readCredentials(path).TYPESAFE_API_KEY).toBe("k");
+});
+
+test("a stored SemIf setting only fills what this directory left unset", () => {
+  const path = join(dir(), "credentials");
+  saveSemifInstall({ SEMIF_PYTHON: "/venv/bin/python", SEMIF_MODEL: "local/model" }, path);
+  const env: Record<string, string | undefined> = { SEMIF_MODEL: "project/model" };
+  expect(applySemifInstall(env, path)).toEqual(["SEMIF_PYTHON"]);
+  expect(env).toEqual({ SEMIF_MODEL: "project/model", SEMIF_PYTHON: "/venv/bin/python" });
+});
+
+test("signing in to SemIf checks the interpreter before remembering it, and stores no secret", () => {
+  const config = dir();
+  const refused = hunch(["auth", "login", "--provider", "semif", "--python", fakePython(false)], { config });
+  expect(refused.status).toBe(2);
+  expect(refused.stderr).toContain("pip install");
+  expect(existsSync(join(config, "credentials"))).toBe(false);
+
+  const python = fakePython();
+  const ok = hunch(["auth", "login", "--provider", "semif", "--python", python, "--backend", "mlx"], { config });
+  expect(ok.status ?? 0).toBe(0);
+  expect(readFileSync(join(config, "credentials"), "utf8")).toContain(`SEMIF_PYTHON=${python}`);
+
+  const status = JSON.parse(hunch(["auth", "status", "--reporter", "json"], { config }).stdout) as { semif: { configured: boolean; python: string; backend: string } };
+  expect(status.semif).toMatchObject({ configured: true, python, backend: "mlx" });
+  // Nothing to sign in to means nothing to fail on: SemIf alone is a working setup.
+  expect(hunch(["auth", "status"], { config }).status ?? 0).toBe(0);
+
+  expect(hunch(["auth", "logout", "--provider", "semif"], { config }).stderr).toContain("the SemIf install");
+  expect(readSemifInstall(join(config, "credentials"))).toBeNull();
+});
+
+test("SemIf flags belong to SemIf, and a key is never asked for it", () => {
+  const config = dir();
+  expect(hunch(["auth", "login", "--python", "python3"], { config }).stderr).toContain("--provider semif");
+  expect(hunch(["auth", "login", "--provider", "semif", "--with-token"], { config, input: "k" }).stderr).toContain("stores no key");
+  expect(hunch(["auth", "login", "--provider", "nope"], { config }).stderr).toContain("gateway, typesafe, semif");
 });
