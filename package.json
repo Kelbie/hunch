@@ -19,7 +19,7 @@
     "@types/node": "22",
     "esbuild": "0.25.12",
     "tsup": "8.5.0",
-    "typescript": "^5.9.0",
+    "typescript": "^7.0.2",
     "@kelbie/hunch": "workspace:*"
   },
   "engines": {
