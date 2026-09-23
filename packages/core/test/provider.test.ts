@@ -41,6 +41,7 @@ test("a config or a flag that names SemIf is obeyed, and needs no key at all", (
 });
 
 import { clientWithFallback } from "../src/provider.js";
+import type { Provider } from "../src/provider.js";
 import type { EvaluateResult, JevClient } from "../src/jev.js";
 
 const ASKED = { model: "m", state: { a: 1 }, questions: { q: { type: "noul" as const, instructions: "Is it?" } } };
@@ -48,28 +49,52 @@ const answer = (id: string): EvaluateResult => ({ answers: { q: { type: "noul", 
 const refuses = (error: Error): JevClient => ({ evaluate: () => Promise.reject(error) });
 const answers = (id: string): JevClient => ({ evaluate: () => Promise.resolve(answer(id)) });
 
-test("a provider that refuses everything hands the run to the one that can finish it", async () => {
-  const switches: unknown[] = [];
+const chain = (...links: [Provider, JevClient | (() => JevClient)][]) =>
+  links.map(([name, open]) => ({ name, open: typeof open === "function" ? open : () => open }));
+
+test("a provider that refuses everything hands the run to the next one that can finish it", async () => {
+  const switches: [Provider, Provider][] = [];
   const client = clientWithFallback({
-    primary: () => refuses(new Error("Jev request failed (HTTP 402). Check provider credentials, quota and availability.")),
-    alternative: () => answers("semif:local"),
-    onSwitch: (e) => switches.push(e),
+    chain: chain(
+      ["typesafe", refuses(new Error("Jev request failed (HTTP 402). Check provider credentials, quota and availability."))],
+      ["gateway", refuses(new Error("Jev request failed (HTTP 429)."))],
+      ["semif", answers("semif:local")],
+    ),
+    onSwitch: (from, to) => switches.push([from, to]),
+  });
+  // Every provider is a fallback for every other, in the order the run was given them.
+  expect((await client.evaluate(ASKED)).modelId).toBe("semif:local");
+  expect(switches).toEqual([["typesafe", "gateway"], ["gateway", "semif"]]);
+  // The chain is walked once, not per request.
+  expect((await client.evaluate(ASKED)).modelId).toBe("semif:local");
+  expect(switches).toHaveLength(2);
+});
+
+test("a rate limit that outlasted its retries is a reason to ask someone else", async () => {
+  const client = clientWithFallback({
+    chain: chain(["gateway", refuses(new Error("Jev request failed (HTTP 429)."))], ["semif", answers("semif:local")]),
+    onSwitch: () => {},
   });
   expect((await client.evaluate(ASKED)).modelId).toBe("semif:local");
-  // Announced once, never quietly: a report that names another model must say why.
-  expect(switches).toHaveLength(1);
-  // The switch is made once, not per request.
-  expect((await client.evaluate(ASKED)).modelId).toBe("semif:local");
-  expect(switches).toHaveLength(1);
 });
 
 test("nothing signed in at all is still a refusal a local model can answer", async () => {
   const client = clientWithFallback({
-    primary: () => { throw new Error("No authentication provided: no model key or Vercel project is signed in on this machine."); },
-    alternative: () => answers("semif:local"),
+    chain: chain(
+      ["gateway", () => { throw new Error("No authentication provided: no model key or Vercel project is signed in on this machine."); }],
+      ["semif", answers("semif:local")],
+    ),
     onSwitch: () => {},
   });
   expect((await client.evaluate(ASKED)).modelId).toBe("semif:local");
+});
+
+test("the last provider's failure is the run's failure, with nothing left to try", async () => {
+  const client = clientWithFallback({
+    chain: chain(["gateway", refuses(new Error("Jev request failed (HTTP 402)."))], ["semif", refuses(new Error("SemIf could not start: no module named mlx"))]),
+    onSwitch: () => {},
+  });
+  await expect(client.evaluate(ASKED)).rejects.toThrow("SemIf could not start");
 });
 
 test("an ordinary failure is the caller's to handle, and one review is never judged by two models", async () => {
@@ -80,23 +105,22 @@ test("an ordinary failure is the caller's to handle, and one review is never jud
       return () => (++n === 1 ? Promise.resolve(answer("gateway")) : Promise.reject(new Error("Jev request failed (HTTP 402).")));
     })(),
   };
-  const client = clientWithFallback({ primary: () => flaky, alternative: () => answers("semif:local"), onSwitch: (e) => switches.push(e) });
+  const client = clientWithFallback({ chain: chain(["gateway", flaky], ["semif", answers("semif:local")]), onSwitch: (f, t) => switches.push([f, t]) });
   expect((await client.evaluate(ASKED)).modelId).toBe("gateway");
   // It answered once, so the rest of this review belongs to it, failures included.
   await expect(client.evaluate(ASKED)).rejects.toThrow("HTTP 402");
   expect(switches).toEqual([]);
 
   const timeout = clientWithFallback({
-    primary: () => refuses(new Error("The operation was aborted due to timeout")),
-    alternative: () => answers("semif:local"),
-    onSwitch: (e) => switches.push(e),
+    chain: chain(["gateway", refuses(new Error("The operation was aborted due to timeout"))], ["semif", answers("semif:local")]),
+    onSwitch: (f, t) => switches.push([f, t]),
   });
   await expect(timeout.evaluate(ASKED)).rejects.toThrow("timeout");
   expect(switches).toEqual([]);
 });
 
-test("a caller that never asked anything closes nothing", () => {
+test("a caller that never asked anything opens nothing", () => {
   let built = 0;
-  clientWithFallback({ primary: () => { built++; return answers("x"); }, alternative: () => answers("y"), onSwitch: () => {} }).close();
+  clientWithFallback({ chain: chain(["gateway", () => { built++; return answers("x"); }], ["semif", answers("y")]), onSwitch: () => {} }).close();
   expect(built).toBe(0);
 });

@@ -199,3 +199,13 @@ export function isSetupError(error: unknown): boolean {
   // A SemIf install that will not start refuses every request alike, exactly as a missing key does.
   return isAuthError(error) || /Zero Data Retention|\bZDR\b|HTTP 402|insufficient (credit|funds|balance)|SemIf is not set up|SemIf could not start|SemIf did not load/i.test(message);
 }
+
+/**
+ * A refusal the next request would meet alike: nothing signed in, nothing left to spend, or a rate
+ * limit that outlasted its own retries. Wider than `isSetupError` by exactly that last case, which
+ * is a provider saying "not you, not now" rather than anything about this request.
+ */
+export function isExhaustedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return isSetupError(error) || /HTTP 429|too many requests|rate limit/i.test(message);
+}

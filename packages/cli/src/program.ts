@@ -6,10 +6,11 @@ import {
   clientFromEnv,
   clientWithFallback,
   closeClient,
-  isSetupError,
   isProvider,
   PROVIDERS,
   providerFor,
+  defaultBackend,
+  SEMIF_BACKENDS,
   semifSettings,
   SEMIF_DEFAULT_MODEL,
   SEMIF_DEFAULT_REVISION,
@@ -61,6 +62,7 @@ import {
   type FindMatch,
   type ClosableClient,
   type Config,
+  type SemifBackend,
   type Hunk,
   type JevClient,
   type Lock,
@@ -301,9 +303,9 @@ Examples:
     .option("--model <id|path>", "with --provider semif: the open model it loads")
     .option("--revision <sha>", "with --provider semif: the pinned commit of that model")
     .option("--mode <mode>", "with --provider semif: direct, serial, shared or reranker")
-    .option("--backend <name>", "with --provider semif: torch, mlx or llamacpp")
+    .option("--backend <name>", "with --provider semif: mlx on Apple Silicon, torch elsewhere, or llamacpp")
     .option("--gguf <path>", "with --provider semif: the checkpoint, for backend llamacpp")
-    .option("--install", "with --provider semif: download and install SemIf into hunch's own virtualenv first", false)
+    .option("--install", "with --provider semif: install SemIf and the backend's runtime into hunch's own virtualenv first", false)
     .addHelpText("after", `
 The key is never taken from an argument: arguments are visible in shell history and process lists.
 It is stored owner-only, and only fills in a key the environment and the project's .env files
@@ -318,8 +320,11 @@ service to sign in to. It remembers which Python and which model to use, after c
 interpreter can import semif_phase1.
 
 --install makes that interpreter for you: a virtualenv of hunch's own, holding a pinned SemIf and
-its model runtime. It downloads a few gigabytes and prints every command it runs. Without it, bring
-your own: "pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'", then pass --python.
+the runtime its backend needs. It downloads a few gigabytes and prints every command it runs. The
+backend is mlx on Apple Silicon and torch elsewhere; --backend overrides it and changes what gets
+installed. Sign-in imports SemIf and that runtime and stores nothing if either is missing, so a
+recorded backend is one this machine actually has. Without --install, bring your own interpreter
+and pass --python.
 
 Examples:
   hunch auth login                                     choose a provider, paste the key
@@ -328,7 +333,7 @@ Examples:
   hunch auth login --vercel                            run inside a directory linked with vercel link
   hunch auth login --vercel --project my-app --team my-team
   hunch auth login --provider semif --install          no account anywhere: install it and use it
-  hunch auth login --provider semif --python .venv/bin/python --backend mlx`)
+  hunch auth login --provider semif --python .venv/bin/python --backend torch`)
     .action((opts: Opts) => runAuthLogin(opts, root()));
   auth
     .command("status")
@@ -425,6 +430,25 @@ const opened: ClosableClient[] = [];
 /** Whether this machine has been told where SemIf is, by `auth login --provider semif` or by hand. */
 const semifIsSetUp = () => SEMIF_FIELDS.some((name) => process.env[name]);
 
+/** Whether a provider has anything to sign in with here. A provider with nothing is not a fallback. */
+function providerIsReady(provider: Provider, root: string): boolean {
+  if (provider === "semif") return semifIsSetUp();
+  if (provider === "typesafe") return Boolean(process.env.TYPESAFE_API_KEY);
+  return Boolean(process.env.AI_GATEWAY_API_KEY || process.env.VERCEL_OIDC_TOKEN || readVercelLink() || linkedVercelProject(root));
+}
+
+/**
+ * Every provider this machine can reach, in the order to try them: the one the run asked for, then
+ * the others, with SemIf last. SemIf goes last because it is the floor rather than a peer — it
+ * costs nothing, has no quota and cannot expire, so it is what remains when the rest have refused,
+ * not something to prefer over a provider that is working.
+ */
+function providerChain(config: Parameters<typeof clientFromEnv>[0], root: string): Provider[] {
+  const first = providerFor(config);
+  const rest = PROVIDERS.filter((p) => p !== first && providerIsReady(p, root));
+  return [first, ...rest.filter((p) => p !== "semif"), ...(rest.includes("semif") ? (["semif"] as Provider[]) : [])];
+}
+
 /**
  * Built on the first question, so a dry run or an empty diff needs no credentials. With no key
  * and no Vercel project linked here, the one stored by `hunch auth login --vercel` signs in first.
@@ -436,28 +460,27 @@ const semifIsSetUp = () => SEMIF_FIELDS.some((name) => process.env[name]);
  * it is announced both on the terminal and in the report's model list.
  */
 function jevClient(config: Parameters<typeof clientFromEnv>[0], fallback = false): JevClient {
-  const build = async () => {
-    if (providerFor(config) === "semif") {
+  /** Opens one provider, saying whatever is worth saying before it is asked its first question. */
+  const open = async (name: Provider): Promise<JevClient> => {
+    if (name === "semif") {
       // Loading a model takes minutes, and the first run downloads gigabytes before it does. The
       // review would otherwise sit silent through all of it with nothing to say what it waits for.
       const settings = semifSettings(config.semif);
       note(`SemIf is loading ${settings.model} (${settings.mode} on ${settings.backend}). Your code is scored here; only the model itself is fetched, and only until it is cached.`);
     }
-    if (providerFor(config) === "gateway") {
+    if (name === "gateway") {
       await useVercelLink();
       // Nothing to sign in with: say so before the first request, not after a thousand refusals.
       if (!process.env.AI_GATEWAY_API_KEY && !process.env.VERCEL_OIDC_TOKEN && !linkedVercelProject(process.cwd()))
         throw new Error("No authentication provided: no model key or Vercel project is signed in on this machine.");
     }
-    return clientFromEnv(config);
+    return clientFromEnv({ ...config, provider: name });
   };
-  // SemIf can only stand in when this machine has one, and never when the person named a provider.
-  const offered = fallback && providerFor(config) !== "semif" && semifIsSetUp();
+  // A named provider is an instruction, so only an unnamed run is offered anything else.
+  const chain = fallback ? providerChain(config, process.cwd()) : [providerFor(config)];
   const wrapper = clientWithFallback({
-    primary: build,
-    alternative: () => clientFromEnv({ ...config, provider: "semif" }),
-    shouldSwitch: (error) => offered && isSetupError(error),
-    onSwitch: (error) => warn(`${providerFor(config)} refused every request (${String(error instanceof Error ? error.message : error).split("\n")[0]}). Finishing on SemIf, on this machine; the report names the model that answered. Pass --provider to choose one yourself, or --no-fallback to stop instead.`),
+    chain: chain.map((name) => ({ name, open: () => open(name) })),
+    onSwitch: (from, to, error) => warn(`${from} refused every request (${String(error instanceof Error ? error.message : error).split("\n")[0]}). Trying ${to}${to === "semif" ? ", on this machine" : ""}; the report names the model that answered. Pass --provider to choose one yourself, or --no-fallback to stop instead.`),
   });
   opened.push(wrapper);
   return wrapper;
@@ -511,7 +534,13 @@ const SEMIF_FLAGS = ["python", "model", "revision", "mode", "backend", "gguf", "
  * The SemIf `--install` puts in. Pinned to the commit this Hunch was tested against, because an
  * installer that follows a branch installs something nobody has run.
  */
-const SEMIF_PACKAGE = "semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf@1f2dea3e25379f9dfc98cb83c324f00ab5deda37";
+const SEMIF_SOURCE = "git+https://github.com/TheoLeeCJ/SemIf@1f2dea3e25379f9dfc98cb83c324f00ab5deda37";
+
+/** A backend needs its own runtime, and SemIf ships each one as an extra of the same package. */
+export const semifPackage = (backend: SemifBackend): string => {
+  const extra = SEMIF_BACKENDS[backend].extra;
+  return `semif-phase1${extra ? `[${extra}]` : ""} @ ${SEMIF_SOURCE}`;
+};
 
 /** Runs one step of the install where the person can watch it; a few gigabytes take a while. */
 function step(command: string, args: string[]): boolean {
@@ -525,16 +554,19 @@ function step(command: string, args: string[]): boolean {
  * repository, holding a pinned SemIf. `uv` makes it when it is on PATH, because it brings its own
  * Python and is far quicker; otherwise the interpreter that is running this does.
  */
-function installSemif(): string | null {
+function installSemif(backend: SemifBackend): string | null {
   const venv = semifVenvPath();
   const python = venvPython(venv);
   const uv = spawnSync("uv", ["--version"], { stdio: "ignore" }).status === 0;
-  console.error(`hunch: installing SemIf into ${venv}. This downloads a few gigabytes once.`);
+  console.error(`hunch: installing SemIf and its ${SEMIF_BACKENDS[backend].label} runtime into ${venv}. This downloads a few gigabytes once.`);
   if (!existsSync(python) && !(uv ? step("uv", ["venv", "--python", "3.12", venv]) : step("python3", ["-m", "venv", venv]))) {
     fail(`could not create a virtualenv at ${venv}. Install SemIf yourself and pass --python <interpreter>.`);
     return null;
   }
-  if (!(uv ? step("uv", ["pip", "install", "--python", python, SEMIF_PACKAGE]) : step(python, ["-m", "pip", "install", SEMIF_PACKAGE]))) {
+  // The backend's extra goes in the same install: a SemIf without its runtime looks installed and
+  // then fails minutes into the first run, when the model loads.
+  const spec = semifPackage(backend);
+  if (!(uv ? step("uv", ["pip", "install", "--python", python, spec]) : step(python, ["-m", "pip", "install", spec]))) {
     fail("installing SemIf failed; the output above says why. Nothing was stored.");
     return null;
   }
@@ -556,22 +588,33 @@ function semifFromFlags(opts: Opts): SemifInstall {
  * it can mint a token. Nothing is stored when it cannot: a remembered install that does not work
  * would fail every later run with a message about the model instead of about the install.
  */
+/**
+ * Proves the interpreter can import SemIf **and the backend's own runtime** before remembering it,
+ * the way the Vercel sign-in proves it can mint a token. Recording a backend whose runtime is
+ * missing is the trap: SemIf only discovers it when it loads the model, minutes into the first run,
+ * and the error is about MLX rather than about the sign-in that promised it.
+ */
 async function loginWithSemif(install: SemifInstall) {
   const python = install.SEMIF_PYTHON ?? "python3";
-  const probe = spawnSync(python, ["-c", "import semif_phase1; print(semif_phase1.__file__)"], { encoding: "utf8" });
+  const backend = (install.SEMIF_BACKEND as SemifBackend | undefined) ?? defaultBackend();
+  const { module, label } = SEMIF_BACKENDS[backend];
+  const probe = spawnSync(python, ["-c", `import semif_phase1, importlib; importlib.import_module(${JSON.stringify(module)})`], { encoding: "utf8" });
   if (probe.error || probe.status !== 0) {
+    const missing = /semif_phase1/.test(probe.stderr ?? "") ? "SemIf" : `SemIf's ${label} runtime`;
     return fail([
-      `${python} cannot import semif_phase1, so nothing was stored.`,
-      "Install SemIf into the interpreter Hunch will use, then run this again:",
-      "  pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'",
-      "Pass --python to name a virtualenv's own interpreter, for example --python .venv/bin/python.",
+      `${python} cannot import ${missing}, so nothing was stored.`,
+      "Install it into the interpreter Hunch will use, then run this again:",
+      `  npx @kelbie/hunch auth login --provider semif --install --backend ${backend}`,
+      "or do it yourself, with the same pinned commit:",
+      `  uv pip install --python ${python} '${semifPackage(backend)}'`,
+      "Pass --python to name a virtualenv's own interpreter, or --backend to choose another runtime.",
     ].join("\n"));
   }
   let path: string;
-  try { path = saveSemifInstall(install); }
+  try { path = saveSemifInstall({ ...install, SEMIF_BACKEND: backend }); }
   catch (e) { return fail((e as Error).message); }
   const model = install.SEMIF_MODEL ?? SEMIF_DEFAULT_MODEL;
-  note(`SemIf works with ${python}; remembered it in ${path}. No secret was stored: SemIf runs on this machine.`);
+  note(`SemIf works with ${python} on ${label}; remembered it in ${path}. No secret was stored: SemIf runs on this machine.`);
   note(`Hunch will load ${model}. The first run downloads it, which takes a while; later runs reuse the cache.`);
   if (!install.SEMIF_MODEL) note(`That is SemIf's own published baseline. Pass --model and --revision to pin a different one.`);
 }
@@ -587,7 +630,9 @@ async function runAuthLogin(opts: Opts, root: string) {
     const install = semifFromFlags(opts);
     if (opts.install) {
       if (install.SEMIF_PYTHON) return fail("--install makes the interpreter; pass --python only to use one you already have.");
-      const python = installSemif();
+      // The backend is decided here, not at load time: it chooses what gets installed.
+      install.SEMIF_BACKEND ??= defaultBackend();
+      const python = installSemif(install.SEMIF_BACKEND as SemifBackend);
       if (!python) return;
       install.SEMIF_PYTHON = python;
     }
@@ -624,6 +669,16 @@ async function runAuthLogin(opts: Opts, root: string) {
       return link ? loginWithVercel(link) : fail("no Vercel project is linked here. Run this inside a directory linked with `vercel link`, or pass --vercel --project and --team.");
     }
     if (provider === "semif") {
+      const chosen = await io.select({
+        message: "Which SemIf backend does this machine run?",
+        initialValue: defaultBackend(),
+        options: (Object.keys(SEMIF_BACKENDS) as SemifBackend[]).map((name) => ({
+          value: name,
+          label: SEMIF_BACKENDS[name].label,
+          hint: name === defaultBackend() ? "what this machine should use" : name === "llamacpp" ? "a local GGUF checkpoint; pass --gguf as well" : "another runtime for this machine",
+        })),
+      }) as SemifBackend | null;
+      if (!chosen) return fail("login cancelled; nothing was stored.");
       const how = await io.select({
         message: "Where is SemIf?",
         initialValue: "install",
@@ -635,24 +690,14 @@ async function runAuthLogin(opts: Opts, root: string) {
       if (!how) return fail("login cancelled; nothing was stored.");
       let python: string | null = null;
       if (how === "install") {
-        python = installSemif();
+        python = installSemif(chosen as SemifBackend);
         if (!python) return;
       } else {
         const answer = await io.text({ message: "Which Python can import semif_phase1?", placeholder: "python3", initialValue: "python3" });
         if (answer === null) return fail("login cancelled; nothing was stored.");
         python = answer.trim() || "python3";
       }
-      const backend = await io.select({
-        message: "Which SemIf backend does this machine run?",
-        initialValue: "torch",
-        options: [
-          { value: "torch", label: "PyTorch", hint: "an NVIDIA GPU, or Apple Silicon through MPS" },
-          { value: "mlx", label: "MLX", hint: "Apple Silicon, with the mlx extra installed" },
-          { value: "llamacpp", label: "llama.cpp", hint: "a local GGUF checkpoint; pass --gguf as well" },
-        ],
-      }) as string | null;
-      if (!backend) return fail("login cancelled; nothing was stored.");
-      return loginWithSemif({ SEMIF_PYTHON: python, SEMIF_BACKEND: backend });
+      return loginWithSemif({ SEMIF_PYTHON: python, SEMIF_BACKEND: chosen });
     }
     const answer = await io.password({ message: provider === "gateway" ? "Paste your AI Gateway key" : "Paste your TypeSafe key" });
     if (answer === null) return fail("login cancelled; nothing was stored.");

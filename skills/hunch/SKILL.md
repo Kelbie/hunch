@@ -5,7 +5,7 @@ argument-hint: "[setup|auth|config|rules|packs|install|check|find|doctor|eval|op
 allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. check, find and eval need a model — a key, a Vercel login, or SemIf on this machine, which needs no account at all. Stored once with auth login.
 metadata:
-  version: "0.22.0"
+  version: "0.23.0"
 ---
 
 # Hunch
@@ -104,11 +104,13 @@ Recommend it whenever a user has no provider, does not want one, or asks to keep
 an independent project with its own accuracy, so never present its findings as Jev's, and measure a
 rule with `eval` before letting SemIf gate anything.
 
-With SemIf set up, a provider that refuses every request — no key, no credit, a retention policy it
-cannot meet — no longer ends a run: `check` and `find` finish on SemIf instead, say so on stderr,
-and name the model that answered in the report. Read that line; a fallback run was judged by a
-different model. `--no-fallback` stops instead, and `--provider <name>` turns the offer off for that
-run. `eval` never falls back, because switching model mid-measurement would corrupt the number.
+Every provider is a fallback for the others. One that refuses every request — no key, no credit, a
+retention policy it cannot meet, a rate limit that outlasted its retries — no longer ends a run:
+`check` and `find` try the next provider this machine can reach, in order, with SemIf last because
+it has no quota to run out of. They say so on stderr and name the model that answered in the
+report. Read that line; a fallback run was judged by a different model. `--no-fallback` stops
+instead, and `--provider <name>` turns it off for that run. `eval` never falls back, because
+switching model mid-measurement would corrupt the number.
 
 ## Search during a coding task
 

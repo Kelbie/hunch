@@ -240,6 +240,35 @@ test("signing in to SemIf checks the interpreter before remembering it, and stor
   expect(readSemifInstall(join(config, "credentials"))).toBeNull();
 });
 
+test("a backend whose runtime is missing is refused at sign-in, not minutes into the first run", () => {
+  const config = dir();
+  // An interpreter that has SemIf but not MLX: the exact install `--backend mlx` used to record.
+  const path = join(dir("hunch-python-"), "python3");
+  writeFileSync(path, `#!/bin/sh\ncase "$2" in *mlx*) echo "ModuleNotFoundError: No module named 'mlx'" >&2; exit 1;; esac\nexit 0\n`);
+  chmodSync(path, 0o755);
+
+  const refused = hunch(["auth", "login", "--provider", "semif", "--python", path, "--backend", "mlx"], { config });
+  expect(refused.status).toBe(2);
+  expect(refused.stderr).toContain("MLX runtime");
+  // The command it names must be the one that installs the runtime, not the one that just ran.
+  expect(refused.stderr).toContain("--install --backend mlx");
+  expect(refused.stderr).toContain("semif-phase1[mlx]");
+  expect(existsSync(join(config, "credentials"))).toBe(false);
+
+  // The same interpreter is fine for a backend whose runtime it does have.
+  const ok = hunch(["auth", "login", "--provider", "semif", "--python", path, "--backend", "torch"], { config });
+  expect(ok.status ?? 0).toBe(0);
+  expect(readFileSync(join(config, "credentials"), "utf8")).toContain("SEMIF_BACKEND=torch");
+});
+
+test("the backend a sign-in checked is the backend it records, so status cannot promise what is absent", () => {
+  const config = dir();
+  const ok = hunch(["auth", "login", "--provider", "semif", "--python", fakePython()], { config });
+  expect(ok.status ?? 0).toBe(0);
+  // Never left to be guessed later: what was verified is what a run will load.
+  expect(readFileSync(join(config, "credentials"), "utf8")).toMatch(/SEMIF_BACKEND=(torch|mlx|llamacpp)\n/);
+});
+
 test("SemIf flags belong to SemIf, and a key is never asked for it", () => {
   const config = dir();
   expect(hunch(["auth", "login", "--python", "python3"], { config }).stderr).toContain("--provider semif");

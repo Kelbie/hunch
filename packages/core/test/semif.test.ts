@@ -1,7 +1,7 @@
 import { expect, test } from "bun:test";
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { answersFrom, bridgePath, isSetupError, rowsFor, semifClient, semifSettings, semifModelId, SemifError, type EvaluateRequest, type SemifResult } from "../src/index.js";
+import { answersFrom, bridgePath, defaultBackend, isSetupError, rowsFor, SEMIF_BACKENDS, semifClient, semifSettings, semifModelId, SemifError, type EvaluateRequest, type SemifResult } from "../src/index.js";
 
 const QUESTIONS: EvaluateRequest["questions"] = {
   swallowed: { type: "noul", instructions: "Does the change swallow a failure?" },
@@ -173,4 +173,23 @@ test("a repository fixes the model, and a machine that cannot run it says so", (
   const machine = semifSettings({ model: "local/model", backend: "torch" }, { SEMIF_BACKEND: "mlx", SEMIF_PYTHON: "/venv/bin/python" });
   expect(machine).toMatchObject({ model: "local/model", backend: "mlx", python: "/venv/bin/python" });
   expect(() => semifSettings({}, { SEMIF_MODE: "guess" })).toThrow(/SEMIF_MODE/);
+});
+
+test("Apple Silicon runs SemIf on MLX, because PyTorch there loads for minutes before answering", () => {
+  expect(defaultBackend("darwin", "arm64")).toBe("mlx");
+  expect(defaultBackend("darwin", "x64")).toBe("torch");
+  expect(defaultBackend("linux", "x64")).toBe("torch");
+  expect(defaultBackend("win32", "x64")).toBe("torch");
+  // A config or a machine that names one is obeyed; the default only fills a gap.
+  expect(semifSettings({ backend: "torch" }, {}).backend).toBe("torch");
+  expect(semifSettings({}, { SEMIF_BACKEND: "llamacpp" }).backend).toBe("llamacpp");
+});
+
+test("every backend names the runtime it needs, so an install can be checked before it is recorded", () => {
+  // Recording a backend whose runtime is absent is the trap: SemIf only says so at model load.
+  expect(SEMIF_BACKENDS.mlx).toMatchObject({ module: "mlx.core", extra: "mlx" });
+  expect(SEMIF_BACKENDS.llamacpp).toMatchObject({ module: "llama_cpp", extra: "llamacpp" });
+  // PyTorch is SemIf's base dependency, so it has no extra to add.
+  expect(SEMIF_BACKENDS.torch.extra).toBeUndefined();
+  expect(Object.keys(SEMIF_BACKENDS).sort()).toEqual(["llamacpp", "mlx", "torch"]);
 });
