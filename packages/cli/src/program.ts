@@ -476,7 +476,17 @@ function withProvider(config: Config, value: unknown): Config | null {
 
 const unknownProvider = (value: unknown) => `Unknown --provider ${value}; choose ${PROVIDERS.join(", ")}`;
 
+/**
+ * The whole of standard input. Read the descriptor at once, as `--config -` does: the async
+ * iterator over `process.stdin` yields nothing under Bun on Linux, which turned a piped key into an
+ * empty one and refused it as "not a key". The stream is kept for a descriptor a runtime will not
+ * hand over in one read.
+ */
 async function readStdin(): Promise<string> {
+  try {
+    const whole = readFileSync(0, "utf8");
+    if (whole) return whole;
+  } catch { /* not readable at once on this runtime; fall through to the stream */ }
   let text = "";
   for await (const chunk of process.stdin) text += chunk;
   return text;
