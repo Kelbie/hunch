@@ -177,28 +177,45 @@ npx -y --min-release-age=0 @kelbie/hunch check --provider semif
 
 `--install` makes a virtualenv of Hunch's own — `$XDG_DATA_HOME/hunch/semif`, else
 `~/.local/share/hunch/semif` (`%LOCALAPPDATA%\hunch\semif` on Windows) — installs a pinned SemIf
-and its model runtime into it, and records it. It uses `uv` when that is on `PATH` and `python3 -m
-venv` otherwise, prints every command it runs, and downloads a few gigabytes. It is the whole setup:
-after it, `check` and `find` work in every directory with no account anywhere.
+**and the runtime its backend needs** into it, and records both. It uses `uv` when that is on `PATH`
+and `python3 -m venv` otherwise, prints every command it runs, and downloads a few gigabytes. It is
+the whole setup: after it, `check` and `find` work in every directory with no account anywhere.
 
-To use a SemIf you installed yourself, drop `--install` and pass `--python .venv/bin/python`. Either
-way the interpreter is checked for `import semif_phase1` and nothing is stored if it fails. Pass
-`--backend mlx` on Apple Silicon, or `--backend llamacpp --gguf <file>` for a local GGUF checkpoint.
-`--model` and `--revision` pin a different model; the default is SemIf's own published baseline,
-`Qwen/Qwen3.5-4B`.
+| Machine | Backend chosen | Why |
+| --- | --- | --- |
+| Apple Silicon | `mlx` | it runs on the GPU. PyTorch there takes minutes to load a 4B model before answering anything, which reads as a hang |
+| anything else | `torch` | SemIf's base dependency, on an NVIDIA GPU or CPU |
+| a local GGUF checkpoint | `--backend llamacpp --gguf <file>` | nothing is downloaded from Hugging Face |
 
-### Finishing on SemIf when a provider refuses
+`--backend` overrides the choice and changes what gets installed. Sign-in imports both SemIf and
+that backend's runtime (`mlx.core`, `torch`, `llama_cpp`) and stores nothing if either is missing,
+so a recorded backend is one this machine has: SemIf itself only notices a missing runtime when it
+loads the model, minutes into a run. If that ever happens — an install made before this check, or a
+runtime removed since — `auth login --provider semif --install` repairs it, installing whatever the
+recorded backend needs.
 
-Once SemIf is set up, a hosted provider that refuses **every** request — no key, no credit, a
-retention policy it cannot meet — no longer ends a run. `check` and `find` start again on SemIf,
-warn on stderr, and name the model that answered in the report's `modelIds`. Read that: a review
-finished this way was judged by a different model than the one the config names.
+To use a SemIf you installed yourself, drop `--install` and pass `--python .venv/bin/python`; the
+same check applies. `--model` and `--revision` pin a different model; the default is SemIf's own
+published baseline, `Qwen/Qwen3.5-4B`.
+
+### Every provider is a fallback for the others
+
+A provider that refuses **every** request — no key, no credit, a retention policy it cannot meet, a
+rate limit that outlasted its own retries — no longer ends a run. `check` and `find` try the next
+provider this machine can reach, warn on stderr, and name the model that answered in the report's
+`modelIds`. Read that: a review finished this way was judged by a different model than the one the
+config names.
+
+The order is the provider the run asked for, then the others that have credentials here, with SemIf
+last. SemIf is last because it is the floor rather than a peer: it costs nothing, has no quota and
+cannot expire, so it is what remains when the rest have refused, not something to prefer over a
+provider that is working. A provider with nothing to sign in with is skipped rather than tried.
 
 It only happens before the first answer, so no single review is judged half by one model and half by
 another; a provider that has answered once keeps the run, failures included. `--no-fallback` fails
-instead. Naming `--provider` turns the offer off for that run, because a named provider is an
-instruction. `eval` never falls back: switching model mid-measurement would corrupt the number it
-exists to produce.
+instead. Naming `--provider` turns it off for that run, because a named provider is an instruction.
+`eval` never falls back: switching model mid-measurement would corrupt the number it exists to
+produce.
 
 The first question loads the model, which downloads several gigabytes the first time and then stays
 loaded for the rest of the run. A dry run, an empty diff and `hunch config` never start it. The

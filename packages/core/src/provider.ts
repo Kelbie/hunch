@@ -1,4 +1,4 @@
-import { gatewayClient, isSetupError, typesafeClient, type JevClient } from "./jev.js";
+import { gatewayClient, isExhaustedError, typesafeClient, type JevClient } from "./jev.js";
 import { closeClient, semifClient, semifSettings, type ClosableClient, type SemifConfig } from "./semif.js";
 
 /** The three ways to reach a semantic model. `gateway` and `typesafe` are Jev; `semif` is local. */
@@ -41,52 +41,53 @@ export function clientFromEnv(
 }
 
 /**
- * One provider, and the one to finish on when it will not answer at all.
+ * The providers to try, in order, and how a run says which one answered.
  *
- * A key that has expired, run out of credit or cannot meet the retention policy refuses every
- * request alike, so a run that has answered nothing yet has nothing to lose by starting again
- * somewhere else. Once anything has been answered the offer expires: one review judged half by one
- * model and half by another would be a worse result than a failed one, and harder to notice.
+ * A key that has expired, run out of credit, cannot meet the retention policy, or is being rate
+ * limited refuses every request alike, so a run that has answered nothing yet has nothing to lose
+ * by trying the next provider. Once anything has been answered the offer expires: one review judged
+ * half by one model and half by another would be a worse result than a failed one, and harder to
+ * notice.
  */
-export interface FallbackOptions {
-  /** The provider the run asked for. It may fail here, before a question is ever sent. */
-  primary: () => Promise<JevClient> | JevClient;
-  /** Built at most once, and only in place of a provider that answered nothing. */
-  alternative: () => Promise<JevClient> | JevClient;
-  /** Which failures every request would meet alike. Setup failures, unless a caller knows better. */
+export interface Fallback {
+  /** Providers in the order to try them. The first is the one the run asked for. */
+  chain: readonly { name: Provider; open: () => Promise<JevClient> | JevClient }[];
+  /** Which failures every request would meet alike. Exhausted providers, unless a caller knows better. */
   shouldSwitch?: (error: unknown) => boolean;
-  /** Told before the alternative is built, so a run never changes model without saying so. */
-  onSwitch: (error: unknown) => void;
+  /** Told before the next provider is opened, so a run never changes model without saying so. */
+  onSwitch: (from: Provider, to: Provider, error: unknown) => void;
 }
 
-export function clientWithFallback(opts: FallbackOptions): ClosableClient {
-  const shouldSwitch = opts.shouldSwitch ?? isSetupError;
+export function clientWithFallback(opts: Fallback): ClosableClient {
+  if (!opts.chain.length) throw new Error("A run needs at least one provider to ask.");
+  const shouldSwitch = opts.shouldSwitch ?? isExhaustedError;
+  const open: Promise<JevClient>[] = [];
+  let at = 0;
   let current: Promise<JevClient> | undefined;
   let answered = false;
-  let switched: Promise<JevClient> | undefined;
-  const open: Promise<JevClient>[] = [];
-  const start = (make: FallbackOptions["primary"]) => {
-    const built = (async () => make())();
+  const start = () => {
+    const built = (async () => opts.chain[at]!.open())();
     open.push(built);
-    return built;
+    return (current = built);
   };
   return {
     async evaluate(req) {
-      try {
-        const result = await (current ??= start(opts.primary)).then((client) => client.evaluate(req));
-        answered = true;
-        return result;
-      } catch (error) {
-        if (answered || switched || !shouldSwitch(error)) throw error;
-        opts.onSwitch(error);
-        current = switched = start(opts.alternative);
-        const result = await (await switched).evaluate(req);
-        answered = true;
-        return result;
+      for (;;) {
+        try {
+          const result = await (current ?? start()).then((client) => client.evaluate(req));
+          answered = true;
+          return result;
+        } catch (error) {
+          // Nothing has been answered and there is somewhere else to ask: the whole run moves.
+          if (answered || at + 1 >= opts.chain.length || !shouldSwitch(error)) throw error;
+          opts.onSwitch(opts.chain[at]!.name, opts.chain[at + 1]!.name, error);
+          at += 1;
+          start();
+        }
       }
     },
     close() {
-      // Both, and only the ones that were built: a provider that was never reached holds nothing.
+      // Only the ones that were opened: a provider that was never reached holds nothing.
       for (const client of open) void client.then(closeClient, () => {});
     },
   };

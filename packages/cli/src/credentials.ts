@@ -266,6 +266,14 @@ export function authHint(message: string): string | null {
 export function nextStep(message: string): string | null {
   const auth = authHint(message);
   if (auth) return auth;
+  // SemIf names the runtime it is missing; the fix is an install, not a different command.
+  if (/Install the MLX extra|No module named '?(mlx|torch|llama_cpp)/i.test(message)) return [
+    "SemIf is set up here, but without the runtime the chosen backend needs. The person runs:",
+    "  npx @kelbie/hunch auth login --provider semif --install        installs the runtime this machine needs, and records it",
+    "  ... --install --backend torch                                  to use PyTorch instead (mlx on Apple Silicon, llamacpp for a GGUF)",
+    "  npx @kelbie/hunch auth status                                  see which backend is recorded here",
+    "Re-running the plain install without --backend is enough: it installs whatever the recorded backend needs.",
+  ].join("\n");
   if (/SemIf is not set up|SemIf could not start|SemIf did not load/i.test(message)) return [
     "SemIf runs an open model on this machine, and this one is not ready. The person does one of:",
     "  pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'   install SemIf and its model runtime",

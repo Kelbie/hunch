@@ -231,9 +231,9 @@ save a key, a Vercel project or a SemIf install to your user config directory; a
 | `--model <id\|path>` |  | with --provider semif: the open model it loads |
 | `--revision <sha>` |  | with --provider semif: the pinned commit of that model |
 | `--mode <mode>` |  | with --provider semif: direct, serial, shared or reranker |
-| `--backend <name>` |  | with --provider semif: torch, mlx or llamacpp |
+| `--backend <name>` |  | with --provider semif: mlx on Apple Silicon, torch elsewhere, or llamacpp |
 | `--gguf <path>` |  | with --provider semif: the checkpoint, for backend llamacpp |
-| `--install` |  | with --provider semif: download and install SemIf into hunch's own virtualenv first |
+| `--install` |  | with --provider semif: install SemIf and the backend's runtime into hunch's own virtualenv first |
 
 ```text
 The key is never taken from an argument: arguments are visible in shell history and process lists.
@@ -249,8 +249,11 @@ service to sign in to. It remembers which Python and which model to use, after c
 interpreter can import semif_phase1.
 
 --install makes that interpreter for you: a virtualenv of hunch's own, holding a pinned SemIf and
-its model runtime. It downloads a few gigabytes and prints every command it runs. Without it, bring
-your own: "pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'", then pass --python.
+the runtime its backend needs. It downloads a few gigabytes and prints every command it runs. The
+backend is mlx on Apple Silicon and torch elsewhere; --backend overrides it and changes what gets
+installed. Sign-in imports SemIf and that runtime and stores nothing if either is missing, so a
+recorded backend is one this machine actually has. Without --install, bring your own interpreter
+and pass --python.
 
 Examples:
   hunch auth login                                     choose a provider, paste the key
@@ -259,7 +262,7 @@ Examples:
   hunch auth login --vercel                            run inside a directory linked with vercel link
   hunch auth login --vercel --project my-app --team my-team
   hunch auth login --provider semif --install          no account anywhere: install it and use it
-  hunch auth login --provider semif --python .venv/bin/python --backend mlx
+  hunch auth login --provider semif --python .venv/bin/python --backend torch
 ```
 
 ## `hunch auth status`

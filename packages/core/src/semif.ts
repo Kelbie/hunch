@@ -27,7 +27,7 @@ export interface SemifSettings {
    * refuses the request when the tokenizer does not split that state off the prompt exactly.
    */
   mode: "direct" | "serial" | "shared" | "reranker";
-  backend: "torch" | "mlx" | "llamacpp";
+  backend: SemifBackend;
   device?: "auto" | "cuda" | "mps";
   dtype?: "bfloat16" | "float16" | "float32";
   /** Checkpoint for `backend: "llamacpp"`. */
@@ -38,6 +38,27 @@ export interface SemifSettings {
   maxTokens: number;
   /** How long a model may take to load before Hunch stops waiting for it. */
   startupTimeoutMs: number;
+}
+
+/**
+ * What each SemIf backend needs installed, and the extra that installs it. Recording a backend
+ * whose runtime is absent is the failure this exists to prevent: SemIf only says so when it loads
+ * the model, which is minutes into a run.
+ */
+export const SEMIF_BACKENDS = {
+  torch: { module: "torch", extra: undefined, label: "PyTorch" },
+  mlx: { module: "mlx.core", extra: "mlx", label: "MLX" },
+  llamacpp: { module: "llama_cpp", extra: "llamacpp", label: "llama.cpp" },
+} as const satisfies Record<string, { module: string; extra?: string; label: string }>;
+
+export type SemifBackend = keyof typeof SEMIF_BACKENDS;
+
+/**
+ * The backend to use when nothing says otherwise. Apple Silicon runs SemIf on the GPU through MLX;
+ * PyTorch there takes minutes to load a 4B model before it answers anything, which reads as a hang.
+ */
+export function defaultBackend(platform: string = process.platform, arch: string = process.arch): SemifBackend {
+  return platform === "darwin" && arch === "arm64" ? "mlx" : "torch";
 }
 
 /** SemIf's published baseline for direct option logits, pinned as its own manifest pins it. */
@@ -131,7 +152,7 @@ export function bridgePath(env: Record<string, string | undefined> = process.env
 }
 
 const MODES = ["direct", "serial", "shared", "reranker"] as const;
-const BACKENDS = ["torch", "mlx", "llamacpp"] as const;
+const BACKENDS = Object.keys(SEMIF_BACKENDS) as SemifBackend[];
 
 function oneOf<T extends string>(allowed: readonly T[], value: string | undefined, name: string): T | undefined {
   if (value === undefined) return undefined;
@@ -167,7 +188,7 @@ export function semifSettings(cfg: SemifConfig = {}, env: Record<string, string 
     model: env.SEMIF_MODEL || cfg.model || SEMIF_DEFAULT_MODEL,
     revision: env.SEMIF_REVISION || cfg.revision || SEMIF_DEFAULT_REVISION,
     mode: oneOf(MODES, env.SEMIF_MODE, "SEMIF_MODE") ?? cfg.mode ?? "direct",
-    backend: oneOf(BACKENDS, env.SEMIF_BACKEND, "SEMIF_BACKEND") ?? cfg.backend ?? "torch",
+    backend: oneOf(BACKENDS, env.SEMIF_BACKEND, "SEMIF_BACKEND") ?? cfg.backend ?? defaultBackend(),
     device: oneOf(["auto", "cuda", "mps"] as const, env.SEMIF_DEVICE, "SEMIF_DEVICE"),
     dtype: oneOf(["bfloat16", "float16", "float32"] as const, env.SEMIF_DTYPE, "SEMIF_DTYPE"),
     gguf: env.SEMIF_GGUF,
