@@ -177,7 +177,6 @@ export class JevError extends Error {
   }
 }
 
-/** Picks a provider from config + environment. */
 /** This many failures in a row, with no answer between them, is an outage rather than bad luck. */
 export const OUTAGE_FAILURES = 8;
 
@@ -197,31 +196,6 @@ export function isAuthError(error: unknown): boolean {
  */
 export function isSetupError(error: unknown): boolean {
   const message = error instanceof Error ? error.message : String(error);
-  return isAuthError(error) || /Zero Data Retention|\bZDR\b|HTTP 402|insufficient (credit|funds|balance)/i.test(message);
-}
-
-type ProviderChoice = { provider?: "gateway" | "typesafe" };
-
-/**
- * The provider a run uses. A config that names one is obeyed. One that does not leaves it to the
- * credentials at hand, so a person signed in with a TypeSafe key can review a repository that has
- * no Hunch config, while the hosted App and CI, which hold no such key, stay on the Gateway.
- */
-export function providerFor(cfg: ProviderChoice, env: Record<string, string | undefined> = process.env): "gateway" | "typesafe" {
-  return cfg.provider ?? (env.TYPESAFE_API_KEY && !env.AI_GATEWAY_API_KEY ? "typesafe" : "gateway");
-}
-
-export function clientFromEnv(
-  cfg: ProviderChoice & { zeroDataRetention: boolean },
-  env: Record<string, string | undefined> = process.env,
-): JevClient {
-  if (providerFor(cfg, env) === "typesafe") {
-    const apiKey = env.TYPESAFE_API_KEY;
-    if (!apiKey) throw new Error("provider = typesafe needs TYPESAFE_API_KEY");
-    return typesafeClient({ apiKey });
-  }
-  // No key check here: the AI SDK also authenticates through a linked Vercel project
-  // (`.vercel/project.json` + Vercel CLI login), and `hunch install` relies on the same
-  // lookup. Missing credentials surface as the SDK's own authentication error.
-  return gatewayClient({ zeroDataRetention: cfg.zeroDataRetention });
+  // A SemIf install that will not start refuses every request alike, exactly as a missing key does.
+  return isAuthError(error) || /Zero Data Retention|\bZDR\b|HTTP 402|insufficient (credit|funds|balance)|SemIf is not set up|SemIf could not start|SemIf did not load/i.test(message);
 }

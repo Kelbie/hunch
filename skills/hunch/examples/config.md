@@ -365,6 +365,7 @@ stdout:
   "valid": true,
   "settings": {
     "model": "jev-1.13.0",
+    "semif": {},
     "zeroDataRetention": true,
     "extends": [],
     "include": [

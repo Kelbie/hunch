@@ -21,8 +21,9 @@ stdout:
 AI_GATEWAY_API_KEY   not set
 TYPESAFE_API_KEY     not set
 Vercel project       none
+SemIf                not set up
 
-Nothing to sign in with. Run `hunch auth login` to store a key, or `hunch auth login --vercel`, once for every directory.
+Nothing to sign in with. Run `hunch auth login` to store a key, `hunch auth login --vercel`, or `hunch auth login --provider semif`, once for every directory.
 ```
 
 <!-- /case -->
@@ -80,6 +81,7 @@ stdout:
 AI_GATEWAY_API_KEY   set, from ~/.config/hunch/credentials
 TYPESAFE_API_KEY     not set
 Vercel project       none
+SemIf                not set up
 ```
 
 <!-- /case -->
@@ -104,6 +106,15 @@ stdout:
   },
   "vercelLinked": false,
   "vercelProject": null,
+  "semif": {
+    "configured": false,
+    "python": "python3",
+    "model": "Qwen/Qwen3.5-4B",
+    "revision": "851bf6e806efd8d0a36b00ddf55e13ccb7b8cd0a",
+    "mode": "direct",
+    "backend": "torch",
+    "from": "nothing"
+  },
   "credentialsFileReadableByOthers": false
 }
 ```

@@ -6,7 +6,7 @@ Hunch has three modules: a portable review engine, a local CLI, and a GitHub App
 
 - `check({config, hunks, lock, client, readFile, readChangedFile})` owns rule selection, budgets, evaluation and findings. It returns structured data. It does not authenticate or publish.
 - `RepoReader` provides read/list/files for local disk, a Git commit, and GitHub. Policy selection stays outside the engine, and each adapter enforces its own file access restrictions.
-- `JevClient.evaluate` normalizes the two real provider contracts. It validates typed output and hides authentication and retries.
+- `JevClient.evaluate` normalizes the three real provider contracts: the Jev Gateway, TypeSafe's REST API, and SemIf, an open model the person runs. It validates typed output and hides authentication, process lifetime and retries. SemIf has no endpoint and no key, so its adapter keeps one loaded model alive behind a line-delimited bridge instead; the bridge is a transport, and every decision is scored by SemIf's own published functions. Its score answer is the expected level under SemIf's option distribution, which is Hunch's reading of what SemIf reports, not a formula SemIf publishes.
 - `runReview(job, deps)` owns the GitHub lifecycle. A signed webhook durably enqueues minimal identifiers; the worker reads current PR state, immutable base policy, immutable comparison, and publishes commit-labelled results.
 
 The CLI and App use the same engine and report renderer. The npm artifact bundles Hunch's internal core into a single public package; the core workspace is private. Bun is the development/test tool, not a requirement for npm consumers.
@@ -35,7 +35,7 @@ Base policy is trusted by repository owners, but never executed. Config referenc
 
 Jev can identify a local symptom such as a function that exposes bookkeeping or conceals a failed operation. It cannot establish repository-wide module depth, absence of duplication, correct threat modeling, or skill compliance. Both prompt injection and ordinary false positives/negatives remain possible. All semantic findings start advisory; measure per-rule fixtures before enabling failOnError.
 
-No operational credentials are stored in config or a lock. Diffs and selected context go to the chosen provider. Compiler calls send selected guidance to a separate text model. Gateway calls request ZDR; direct TypeSafe retention follows the account agreement. Probabilities and Hunch's distribution-concentration metric are not empirical accuracy or provider-native confidence.
+No operational credentials are stored in config or a lock. Diffs and selected context go to the chosen provider, or no further than the machine under `provider: "semif"`. A repository's `semif` settings are portable; which interpreter, GPU and checkpoint to use belong to the machine and stay in `SEMIF_*`, which also overrides the config. Compiler calls send selected guidance to a separate text model. Gateway calls request ZDR; direct TypeSafe retention follows the account agreement. Probabilities and Hunch's distribution-concentration metric are not empirical accuracy or provider-native confidence.
 
 ## Semantic search design (2026-09-19)
 

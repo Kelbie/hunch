@@ -2,20 +2,32 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, sta
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { getVercelOidcToken } from "@vercel/oidc";
-import { isAuthError } from "../../core/src/index.js";
+import { isAuthError, type Provider } from "../../core/src/index.js";
 
-/** The only names the store will ever hold or hand to the environment. */
+export type { Provider };
+
+/** The only secrets the store will ever hold or hand to the environment. */
 export const KEY_NAMES = ["AI_GATEWAY_API_KEY", "TYPESAFE_API_KEY"] as const;
 export type KeyName = (typeof KEY_NAMES)[number];
-export type Provider = "gateway" | "typesafe";
+/** The providers a key signs in to. SemIf is a local program, so there is nothing to sign in to. */
+export type KeyProvider = "gateway" | "typesafe";
+export const isKeyProvider = (provider: Provider): provider is KeyProvider => provider !== "semif";
 
 /** A Vercel project whose OIDC token the AI Gateway accepts, for people who sign in with `vercel login` and hold no key. */
 export interface VercelLink { project: string; team?: string }
 const LINK_FIELDS = ["HUNCH_VERCEL_PROJECT", "HUNCH_VERCEL_TEAM"] as const;
-const FIELDS = [...KEY_NAMES, ...LINK_FIELDS] as const;
+/**
+ * Where SemIf is on this machine and which model it should load. These are settings, not secrets:
+ * they are kept here because they belong to the machine rather than to any repository, the way the
+ * Vercel project does, and because a person should have to say them once.
+ */
+export const SEMIF_FIELDS = ["SEMIF_PYTHON", "SEMIF_MODEL", "SEMIF_REVISION", "SEMIF_MODE", "SEMIF_BACKEND", "SEMIF_GGUF"] as const;
+export type SemifField = (typeof SEMIF_FIELDS)[number];
+export type SemifInstall = Partial<Record<SemifField, string>>;
+const FIELDS = [...KEY_NAMES, ...LINK_FIELDS, ...SEMIF_FIELDS] as const;
 type Field = (typeof FIELDS)[number];
 
-export const keyNameFor = (provider: Provider): KeyName => (provider === "gateway" ? "AI_GATEWAY_API_KEY" : "TYPESAFE_API_KEY");
+export const keyNameFor = (provider: KeyProvider): KeyName => (provider === "gateway" ? "AI_GATEWAY_API_KEY" : "TYPESAFE_API_KEY");
 
 /**
  * One file per person, not per project, so `hunch` works in any directory after one login. It
@@ -68,6 +80,63 @@ export function saveCredential(name: KeyName, value: string, path = credentialsP
   write(path, { ...readFields(path), [name]: key });
   return path;
 }
+
+/** What `auth login --provider semif` remembered, or null when SemIf was never set up here. */
+export function readSemifInstall(path = credentialsPath()): SemifInstall | null {
+  const all = readFields(path);
+  const install = Object.fromEntries(SEMIF_FIELDS.filter((n) => all[n]).map((n) => [n, all[n]])) as SemifInstall;
+  return Object.keys(install).length ? install : null;
+}
+
+/**
+ * Replaces the whole SemIf install rather than merging into it, so switching backend or model
+ * cannot leave a stale checkpoint path behind to be picked up by the next run.
+ */
+export function saveSemifInstall(install: SemifInstall, path = credentialsPath()): string {
+  for (const [name, value] of Object.entries(install)) {
+    if (value && /[\n\r]/.test(value)) throw new Error(`${name} must be a single line.`);
+  }
+  const rest = Object.fromEntries(Object.entries(readFields(path)).filter(([n]) => !(SEMIF_FIELDS as readonly string[]).includes(n)));
+  write(path, { ...rest, ...Object.fromEntries(Object.entries(install).filter(([, v]) => v)) });
+  return path;
+}
+
+export function removeSemifInstall(path = credentialsPath()): boolean {
+  const install = readSemifInstall(path);
+  if (install) write(path, Object.fromEntries(Object.entries(readFields(path)).filter(([n]) => !(SEMIF_FIELDS as readonly string[]).includes(n))));
+  return Boolean(install);
+}
+
+/**
+ * Like a stored key: it fills a `SEMIF_*` name the real environment and the project's `.env` files
+ * left unset, so a project or a single command can still point at a different model or interpreter.
+ */
+export function applySemifInstall(env: Record<string, string | undefined> = process.env, path = credentialsPath(env)): SemifField[] {
+  const applied: SemifField[] = [];
+  for (const [name, value] of Object.entries(readSemifInstall(path) ?? {}) as [SemifField, string][]) {
+    if (env[name]) continue;
+    env[name] = value;
+    applied.push(name);
+  }
+  return applied;
+}
+
+/**
+ * Where `auth login --provider semif --install` puts the interpreter it makes. Data, not config, so
+ * it follows the data convention rather than sitting beside the credentials: `$XDG_DATA_HOME/hunch`,
+ * `~/.local/share/hunch`, or `%LOCALAPPDATA%\hunch` on Windows. `HUNCH_CONFIG_DIR` moves it too, so
+ * one variable still isolates a test or an unusual home.
+ */
+export function semifVenvPath(env: Record<string, string | undefined> = process.env, home = homedir(), platform: string = process.platform): string {
+  if (env.HUNCH_CONFIG_DIR) return join(env.HUNCH_CONFIG_DIR, "semif");
+  if (env.XDG_DATA_HOME) return join(env.XDG_DATA_HOME, "hunch", "semif");
+  if (platform === "win32" && env.LOCALAPPDATA) return join(env.LOCALAPPDATA, "hunch", "semif");
+  return join(home, ".local", "share", "hunch", "semif");
+}
+
+/** The interpreter inside a virtualenv, wherever this platform keeps it. */
+export const venvPython = (venv: string, platform: string = process.platform): string =>
+  platform === "win32" ? join(venv, "Scripts", "python.exe") : join(venv, "bin", "python");
 
 export function readVercelLink(path = credentialsPath()): VercelLink | null {
   const all = readFields(path);
@@ -184,6 +253,7 @@ export function authHint(message: string): string | null {
     "  npx @kelbie/hunch auth login --provider gateway       asks for a Vercel AI Gateway key",
     "  npx @kelbie/hunch auth login --with-token < file      reads the key from standard input, for scripts",
     "  npx @kelbie/hunch auth login --vercel                 no key: reuse a Vercel CLI login, from a linked project",
+    "  npx @kelbie/hunch auth login --provider semif --install   no account anywhere: install an open model and run it here",
     "or export TYPESAFE_API_KEY or AI_GATEWAY_API_KEY. `npx @kelbie/hunch auth status` shows what is found.",
     "An agent must not ask for the key in conversation or pass it as an argument.",
   ].join("\n");
@@ -196,9 +266,18 @@ export function authHint(message: string): string | null {
 export function nextStep(message: string): string | null {
   const auth = authHint(message);
   if (auth) return auth;
+  if (/SemIf is not set up|SemIf could not start|SemIf did not load/i.test(message)) return [
+    "SemIf runs an open model on this machine, and this one is not ready. The person does one of:",
+    "  pip install 'semif-phase1 @ git+https://github.com/TheoLeeCJ/SemIf'   install SemIf and its model runtime",
+    "  npx @kelbie/hunch auth login --provider semif         say which Python and model Hunch should use",
+    "  npx @kelbie/hunch auth status                         see what Hunch found for SemIf here",
+    "  add --provider gateway (or typesafe) to this command  use a hosted provider for this run instead",
+    "The lines above the hint come from SemIf itself and name the missing piece.",
+  ].join("\n");
   if (/Zero Data Retention|\bZDR\b/i.test(message)) return [
     "This Vercel plan cannot enforce zero data retention, which Hunch asks the Gateway for by default. The person chooses one:",
     "  npx @kelbie/hunch auth login --provider typesafe      use a TypeSafe key instead; nothing passes through the Gateway",
+    "  npx @kelbie/hunch auth login --provider semif --install   run an open model here instead; no account, no routing",
     "  add --config '{\"zeroDataRetention\":false}'             accept Gateway routing without it, for this run (with --pack or --config)",
     "  set zeroDataRetention: false in the Hunch config       the same, for a configured repository",
     "Turning it off is a data-handling decision; do not make it for them.",
@@ -208,6 +287,7 @@ export function nextStep(message: string): string | null {
     "  add credit to the provider account the key belongs to, then run the same command again",
     "  npx @kelbie/hunch auth status                         see which key is in use, and from where",
     "  npx @kelbie/hunch auth login --provider typesafe      sign in with a different TypeSafe key (or --provider gateway)",
+    "  npx @kelbie/hunch auth login --provider semif --install   stop paying anyone: an open model, on this machine",
     "Nothing was reviewed. Add --dry-run to size a run before paying for it.",
   ].join("\n");
   if (/not a git repository/i.test(message)) return "Hunch reads files through git. Run it inside a git repository, or pass --cwd <dir>. For a folder that is not one: `git init && git add -A`, then run it again.";

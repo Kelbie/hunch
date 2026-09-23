@@ -167,9 +167,26 @@ export const configSchema = z.strictObject({
   model: z.string().default("jev-1.13.0"),
   /**
    * Omit to use what the machine is signed in with: TypeSafe directly when `TYPESAFE_API_KEY` is
-   * set, otherwise the Gateway. Name one to hold every run to it.
+   * set, SemIf when it alone is set up, otherwise the Gateway. Name one to hold every run to it.
    */
-  provider: z.enum(["gateway", "typesafe"]).optional(),
+  provider: z.enum(["gateway", "typesafe", "semif"]).optional(),
+  /**
+   * What a repository fixes about `provider: "semif"`: which open model answers, and how it is
+   * read. Which Python, which GPU and which checkpoint file are properties of a machine, not of a
+   * repository, so they stay in `SEMIF_*` — which also overrides anything here, for a machine that
+   * cannot run what the repository assumed.
+   */
+  semif: z.strictObject({
+    /** Hugging Face id or local path. SemIf pins its published baseline; so does Hunch. */
+    model: z.string().min(1).optional(),
+    /** The 40-character commit SemIf requires for a remote model. */
+    revision: z.string().min(1).optional(),
+    /** `shared` prefills one hunk's state once and answers every rule against it. */
+    mode: z.enum(["direct", "serial", "shared", "reranker"]).optional(),
+    backend: z.enum(["torch", "mlx", "llamacpp"]).optional(),
+    /** SemIf never truncates: a longer prompt fails its request rather than losing evidence. */
+    maxTokens: z.number().int().min(256).max(1_000_000).optional(),
+  }).default({}),
   zeroDataRetention: z.boolean().default(true),
   extends: z.array(z.string()).default([]),
   include: z.array(z.string()).default(["**/*"]),

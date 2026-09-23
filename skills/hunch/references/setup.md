@@ -116,6 +116,7 @@ about it lives in the project.
 | an AI Gateway or TypeSafe key | `auth login`, which asks with a hidden prompt | the key, owner-only |
 | the same, but no terminal (an agent, a script) | `auth login --with-token` with the key on standard input | the key, owner-only |
 | no key, but `vercel login` and a project with AI Gateway | `auth login --vercel` inside a `vercel link`ed directory, or with `--project` and `--team` | the project and team ids; no secret |
+| no account anywhere, or a wish to keep code local | `auth login --provider semif --install`, which installs [SemIf](#semif-an-open-model-on-your-own-machine) first | which Python and model to run; no secret |
 
 `auth status` says which of these Hunch can see from the current directory and where each comes
 from, never the key; `--reporter json` for scripts. It exits 1 when there is nothing to sign in
@@ -136,25 +137,84 @@ chunks that failed. Relay those commands to the user; do not retry, install anyt
 
 Hunch takes the first of these that is set:
 
-1. the real environment: `AI_GATEWAY_API_KEY` or `TYPESAFE_API_KEY`;
+1. the real environment: `AI_GATEWAY_API_KEY`, `TYPESAFE_API_KEY` or `SEMIF_*`;
 2. `.env.<mode>.local`, `.env.local`, `.env.<mode>` and `.env` in the working directory, so a
    project can pin its own key;
 3. the key stored by `auth login`;
 4. for the AI Gateway with no key: the Vercel project linked in or above the working directory,
    then the one stored by `auth login --vercel`. Both need a current `vercel login`.
 
-| Provider | Credential | Config |
-| --- | --- | --- |
-| Vercel AI Gateway | `AI_GATEWAY_API_KEY`, or Vercel OIDC: on Vercel, after `vercel link`, or after `auth login --vercel` | nothing, or `provider: "gateway"` to hold every run to it |
-| TypeSafe directly | `TYPESAFE_API_KEY` | nothing, or `provider: "typesafe"` to hold every run to it |
+| Provider | Credential | Config | Name it for one run |
+| --- | --- | --- | --- |
+| Vercel AI Gateway | `AI_GATEWAY_API_KEY`, or Vercel OIDC: on Vercel, after `vercel link`, or after `auth login --vercel` | nothing, or `provider: "gateway"` to hold every run to it | `--provider gateway` |
+| TypeSafe directly | `TYPESAFE_API_KEY` | nothing, or `provider: "typesafe"` to hold every run to it | `--provider typesafe` |
+| SemIf, on this machine | none; `SEMIF_*` say which Python and model | nothing, or `provider: "semif"` to hold every run to it | `--provider semif` |
+
+`check`, `find`, `config` and `eval` all take `--provider`, which wins over the config for that one
+run. It is the quickest way to try a repository's rules against a different model, or to fall back
+when one provider is refusing.
 
 A config that names no `provider` uses what the machine is signed in with: TypeSafe directly when a
-`TYPESAFE_API_KEY` is found and no `AI_GATEWAY_API_KEY` is, otherwise the Gateway. So after
-`auth login --provider typesafe`, Hunch runs in any repository, with or without a Hunch config, and
-nothing passes through Vercel. The hosted App and CI hold no TypeSafe key, so they are unaffected.
-A config that names `provider: "gateway"` is obeyed and needs Gateway credentials; `hunch config`
-shows which provider a run will use. `zeroDataRetention` is a Gateway setting and does nothing on a
-direct TypeSafe run.
+`TYPESAFE_API_KEY` is found and no `AI_GATEWAY_API_KEY` is, SemIf when it alone is set up, otherwise
+the Gateway. So after `auth login --provider typesafe`, Hunch runs in any repository, with or
+without a Hunch config, and nothing passes through Vercel. The hosted App and CI hold neither, so
+they are unaffected. A config that names `provider: "gateway"` is obeyed and needs Gateway
+credentials; `hunch config` shows which provider a run will use. `zeroDataRetention` is a Gateway
+setting and does nothing on a direct TypeSafe or SemIf run.
+
+### SemIf: an open model on your own machine
+
+[SemIf](https://github.com/TheoLeeCJ/SemIf) answers the same yes/no, choice and score questions as
+Jev, from an open model you run yourself. It is an independent project, not affiliated with TypeSafe,
+and its published accuracy is its own — measure it on your own rules with `eval` before trusting it
+to gate anything. There is no account and no key, and your code is scored on the machine: the only
+thing fetched is the model itself, from Hugging Face, until it is cached.
+
+```sh
+npx -y --min-release-age=0 @kelbie/hunch auth login --provider semif --install
+npx -y --min-release-age=0 @kelbie/hunch check --provider semif
+```
+
+`--install` makes a virtualenv of Hunch's own — `$XDG_DATA_HOME/hunch/semif`, else
+`~/.local/share/hunch/semif` (`%LOCALAPPDATA%\hunch\semif` on Windows) — installs a pinned SemIf
+and its model runtime into it, and records it. It uses `uv` when that is on `PATH` and `python3 -m
+venv` otherwise, prints every command it runs, and downloads a few gigabytes. It is the whole setup:
+after it, `check` and `find` work in every directory with no account anywhere.
+
+To use a SemIf you installed yourself, drop `--install` and pass `--python .venv/bin/python`. Either
+way the interpreter is checked for `import semif_phase1` and nothing is stored if it fails. Pass
+`--backend mlx` on Apple Silicon, or `--backend llamacpp --gguf <file>` for a local GGUF checkpoint.
+`--model` and `--revision` pin a different model; the default is SemIf's own published baseline,
+`Qwen/Qwen3.5-4B`.
+
+### Finishing on SemIf when a provider refuses
+
+Once SemIf is set up, a hosted provider that refuses **every** request — no key, no credit, a
+retention policy it cannot meet — no longer ends a run. `check` and `find` start again on SemIf,
+warn on stderr, and name the model that answered in the report's `modelIds`. Read that: a review
+finished this way was judged by a different model than the one the config names.
+
+It only happens before the first answer, so no single review is judged half by one model and half by
+another; a provider that has answered once keeps the run, failures included. `--no-fallback` fails
+instead. Naming `--provider` turns the offer off for that run, because a named provider is an
+instruction. `eval` never falls back: switching model mid-measurement would corrupt the number it
+exists to produce.
+
+The first question loads the model, which downloads several gigabytes the first time and then stays
+loaded for the rest of the run. A dry run, an empty diff and `hunch config` never start it. The
+repository can fix the portable part of this in `semif` ([config.md](config.md#every-option)); which
+Python, which GPU and which checkpoint belong to the machine, so they stay in `SEMIF_*`, which also
+overrides the config for a machine that cannot run what the repository assumed.
+
+SemIf never truncates a prompt: one that exceeds `semif.maxTokens` fails its own request rather than
+losing evidence, and `check` reports those rules as unanswered. Lower `review.chunkLines` or raise
+`maxTokens` if that happens often.
+
+Each question is scored on its own by default. `semif.mode` set to `shared` or `serial` prefills a
+hunk's state once and answers every rule of that hunk against it, which SemIf measures as several
+times faster — but only when the tokenizer splits that state off the prompt exactly. It refuses the
+request when it cannot, and `check` reports those rules unanswered rather than scoring something
+else, so try it on your own repository before relying on it.
 
 No config at all is fine: `check --all --pack nuts-spec` reviews against published rules
 ([packs.md](packs.md)), and `check --rule id="sentence"` tries one of your own ([check.md](check.md)).
