@@ -191,6 +191,16 @@ describe("packs the lock does not cover", () => {
     expect(stalePacks(installed("nuts-spec", ["nut11/*"]), cfg([{ pack: "nuts-spec", rules: ["nut11/*"] }]))).toEqual([]);
   });
 
+  test("a selection written after \"#\" is the one the lock installed, not an empty one", () => {
+    // `resolvePacks` takes the selection from the spec when `rules` is absent, so reading only
+    // `rules` here reported a pack stale the moment it was installed, on every later command.
+    expect(stalePacks(installed("nuts-spec#nut11/*", ["nut11/*"]), cfg(["nuts-spec#nut11/*"]))).toEqual([]);
+    expect(stalePacks(installed("nuts-spec#nut11/*,nut12/*", ["nut11/*", "nut12/*"]), cfg(["nuts-spec#nut11/*,nut12/*"]))).toEqual([]);
+    // Changing which rules the spec keeps is still a change the lock has to be rebuilt for.
+    expect(stalePacks(installed("nuts-spec#nut11/*", ["nut11/*"]), cfg(["nuts-spec#nut12/*"]))).toEqual(["pack/nuts-spec"]);
+    expect(stalePacks(installed("nuts-spec", []), cfg(["nuts-spec#nut11/*"]))).toEqual(["pack/nuts-spec"]);
+  });
+
   test("a config with no packs leaves the lock's currency judgement untouched", async () => {
     const lock = { version: 1 as const, compiler: { model: "none" }, sources: [] };
     expect(await selectionHash(applyPresets(parseConfig({}, "test")))).toBe(await selectionHash(applyPresets(parseConfig({ packs: [] }, "test"))));

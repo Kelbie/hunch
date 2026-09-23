@@ -236,8 +236,11 @@ export function stalePacks(lock: Lock | null, config: Config): string[] {
   const installed = new Map((lock?.packs ?? []).map((p) => [p.id, p]));
   for (const source of config.packs) {
     const spec = packSpec(source);
-    const select = packSelection(source) ?? [];
-    const { name } = parsePackSpec(spec);
+    const { name, select: inSpec } = parsePackSpec(spec);
+    // The same selection `resolvePacks` installed: a config may write it after "#" in the spec
+    // or in `rules`, and the lock records whichever was used. Reading only `rules` here called
+    // every "#" selection stale the moment it was installed.
+    const select = packSelection(source) ?? inSpec;
     const id = `pack/${name}`;
     const have = installed.get(id);
     installed.delete(id);
