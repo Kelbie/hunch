@@ -1,5 +1,6 @@
 import type { CheckResult, Finding } from "./check.js";
 import type { Hunk } from "./diff.js";
+import { clipLeft, pad, painter, wrapText } from "./style.js";
 
 /** Hidden marker so the app/action updates one comment instead of posting new ones. */
 export const STICKY_MARKER = "<!-- hunch:summary -->";
@@ -199,26 +200,68 @@ export function diffExcerpt(hunks: Hunk[], f: Pick<Finding, "file" | "line" | "e
   return span.length > maxLines ? { lines: span.slice(0, maxLines), omitted: span.length - maxLines } : { lines: span, omitted: 0 };
 }
 
+/** `[✖ ERROR]` and `[▲ WARN ]`: the same width, and the same word as `level` in the JSON. */
+export function levelBadge(level: Finding["level"], color = false): string {
+  const p = painter(color);
+  return level === "error" ? p.red("[✖ ERROR]") : p.yellow("[▲ WARN ]");
+}
+
+const BADGE_WIDTH = 9;
+const rangeOf = (f: Pick<Finding, "line" | "endLine">) => (f.endLine > f.line ? `L${f.line}-${f.endLine}` : `L${f.line}`);
+const locationOf = (f: Pick<Finding, "file" | "line" | "endLine">, path: boolean) => (path ? `${f.file}:${rangeOf(f)}` : rangeOf(f));
+
 /**
- * Terminal report: findings grouped by file, then by place. Every concern shows its
- * line range and message, so a reader (or an agent) can act on it without the PR;
- * `hunks` adds the diff around each place. A per-rule tally, notes and totals follow.
+ * One row's columns, agreed across a set of findings so their cells line up. The live view a
+ * running review draws and the report it prints at the end lay out rows with the same function,
+ * so a concern watched as it lands and the same concern read at the end are one row, not two.
+ */
+export interface FindingLayout {
+  /** Include the file in the location cell: a row printed on its own, outside a file's section. */
+  path: boolean;
+  location: number;
+  rule: number;
+  /**
+   * Where the model's answer goes. It moves under the row rather than being cut, because it is
+   * the whole evidence for the concern and a reader deciding whether to believe it needs all of it.
+   */
+  evidence: "beside" | "below";
+  /** Column the message and the evidence-below line are indented to. */
+  indent: number;
+}
+
+export function findingLayout(findings: readonly Finding[], { width = 100, path = false } = {}): FindingLayout {
+  const rule = Math.max(0, ...findings.map((f) => f.rule.length));
+  const widest = Math.max(0, ...findings.map((f) => evidenceOf(f).length));
+  const longest = Math.max(6, ...findings.map((f) => locationOf(f, path).length));
+  const gutter = 2 + BADGE_WIDTH + 2;
+  const room = width - (gutter + longest + 2 + rule + 2 + widest);
+  const location = Math.min(longest, Math.max(6, width - (gutter + 2 + rule + 2 + widest)));
+  return { path, rule, location, indent: gutter + location + 2, evidence: room >= 0 ? "beside" : "below" };
+}
+
+const evidenceOf = (f: Finding) => f.evidence + (f.source === "config" ? "" : ` · ${f.source}`);
+
+/**
+ * One finding as a line: how serious it is, where it is, which rule raised it and what the model
+ * answered. The badge carries the severity a caller would read from `level`, so a row on screen
+ * and a record from `--reporter json` never disagree about whether something is an error.
+ */
+export function findingRow(f: Finding, layout: FindingLayout, color = false): string {
+  const p = painter(color);
+  const location = clipLeft(locationOf(f, layout.path), layout.location);
+  const row = `  ${levelBadge(f.level, color)}  ${p.dim(pad(location, layout.location))}  ${p.cyan(pad(f.rule, layout.rule))}`;
+  const evidence = p.dim(evidenceOf(f));
+  return layout.evidence === "beside" ? `${row}  ${evidence}` : `${row.trimEnd()}\n${" ".repeat(layout.indent)}${evidence}`;
+}
+
+/**
+ * Terminal report: findings grouped by file, then by place. Every concern shows its severity,
+ * line range and message, so a reader (or an agent) can act on it without the PR; `hunks` adds
+ * the diff around each place. A per-rule tally, notes and totals follow.
  */
 export function toText(result: CheckResult, { color = false, width = 100, hunks }: TextOptions = {}): string {
-  const paint = (codes: string) => (s: string) => (color ? `\x1b[${codes}m${s}\x1b[0m` : s);
-  const bold = paint("1"), dim = paint("2"), red = paint("31"), yellow = paint("33"), green = paint("32"), cyan = paint("36");
-  const wrap = (text: string, indent: number) => {
-    const max = Math.max(40, width - indent);
-    const lines: string[] = [];
-    let line = "";
-    for (const word of text.split(/\s+/).filter(Boolean)) {
-      if (line && line.length + 1 + word.length > max) { lines.push(line); line = word; }
-      else line = line ? `${line} ${word}` : word;
-    }
-    if (line) lines.push(line);
-    return lines.map((l) => " ".repeat(indent) + l).join("\n");
-  };
-  const badge = (level: Finding["level"]) => (level === "error" ? red("✖ error") : yellow("▲ warn "));
+  const { bold, dim, red, yellow, green, cyan } = painter(color);
+  const wrap = (text: string, indent: number) => wrapText(text, indent, width);
   const count = (n: number) => n.toLocaleString("en-US");
   const { findings, stats } = result;
   const errors = findings.filter((f) => f.level === "error").length;
@@ -234,19 +277,17 @@ export function toText(result: CheckResult, { color = false, width = 100, hunks 
     : green("no findings");
   out.push(`${bold("Hunch")} · ${summary} · ${result.complete ? green("review complete") : yellow("partial review, see notes")}`);
 
-  const range = (f: Finding) => (f.endLine > f.line ? `L${f.line}-${f.endLine}` : `L${f.line}`);
-  const lineW = Math.max(0, ...findings.map((f) => range(f).length));
-  const ruleW = Math.max(0, ...findings.map((f) => f.rule.length));
-  const indent = 2 + lineW + 2;
+  // One layout across every file, so the columns do not jump from section to section.
+  const layout = findingLayout(findings, { width });
+  const indent = layout.indent;
   for (const [file, group] of files) {
     out.push("", bold(file));
     const places = [...Map.groupBy(group, (f) => `${f.line}-${f.endLine}`).values()].sort((a, b) => a[0]!.line - b[0]!.line);
     for (const [p, place] of places.entries()) {
       if (p && (hunks || place.length > 1 || places[p - 1]!.length > 1)) out.push("");
       place.sort((a, b) => Number(b.level === "error") - Number(a.level === "error"));
-      for (const [i, f] of place.entries()) {
-        const origin = f.source === "config" ? "" : ` · ${f.source}`;
-        out.push(`  ${dim((i ? "" : range(f)).padEnd(lineW))}  ${badge(f.level)}  ${cyan(f.rule.padEnd(ruleW))}  ${dim(f.evidence + origin)}`);
+      for (const f of place) {
+        out.push(findingRow(f, layout, color));
         out.push(wrap(f.message, indent));
       }
       const excerpt = hunks && diffExcerpt(hunks, place[0]!);
@@ -268,7 +309,7 @@ export function toText(result: CheckResult, { color = false, width = 100, hunks 
       .sort((a, b) => Number(hasError(b[1])) - Number(hasError(a[1])) || b[1].length - a[1].length || a[0].localeCompare(b[0]));
     out.push("", bold("Rules"));
     const w = Math.max(...rules.map(([rule]) => rule.length));
-    for (const [rule, fs] of rules) out.push(`  ${badge(fs[0]!.level)}  ${cyan(rule.padEnd(w))}  ${dim(plural(fs.length, "finding"))}`);
+    for (const [rule, fs] of rules) out.push(`  ${levelBadge(fs[0]!.level, color)}  ${cyan(pad(rule, w))}  ${dim(plural(fs.length, "finding"))}`);
   }
 
   // Gaps get a warning mark; standing facts about the policy are dimmed.

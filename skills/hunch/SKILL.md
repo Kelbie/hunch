@@ -5,7 +5,7 @@ argument-hint: "[setup|auth|config|rules|packs|install|check|find|doctor|eval|op
 allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
 metadata:
-  version: "0.20.0"
+  version: "0.21.0"
 ---
 
 # Hunch

@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { diffExcerpt, threadKey, findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
+import { diffExcerpt, findingLayout, findingRow, threadKey, findingKey, findingKeysIn, reviewComment, shortPaths, summaryMarkdown, toText } from "../src/report.js";
 import { parseHunks, unreviewableFiles } from "../src/diff.js";
 import type { CheckResult } from "../src/check.js";
 
@@ -91,17 +91,38 @@ test("terminal report shows every concern's line range and message, grouped by p
       ...result.findings,
       { rule: "billing/retry", source: "config", level: "error", file: "src/refund.ts", line: 3, endLine: 3, message: "Retrying after a timeout may charge the customer twice.", evidence: "p(yes)=0.9 ≥ 0.7" },
     ],
-  }, { width: 80 });
+  }, { width: 120 });
   expect(text).not.toContain("\x1b[");
   expect(text.split("\n")[0]).toBe("Hunch · 3 findings in 2 files (2 errors, 1 warning) · review complete");
-  // Both concerns at src/pay.ts:12-20 share one location label, each with its own message.
-  expect(text).toMatch(/^src\/pay\.ts\n  L12-20  ✖ error  billing\/retry +choice=duplicate_charge.*\n +Retrying after a timeout may charge the customer twice\.\n +▲ warn   failures\/misleading-success +p\(yes\)=0\.96 ≥ 0\.85 · hunch:recommended\n +A failed operation/m);
-  expect(text).toMatch(/^src\/refund\.ts\n  L3 +✖ error  billing\/retry/m);
+  // Every row carries its own severity, range, rule and evidence, so a row copied out still says what it is.
+  expect(text).toMatch(/^src\/pay\.ts\n  \[✖ ERROR\]  L12-20  billing\/retry +choice=duplicate_charge.*\n +Retrying after a timeout may charge the customer twice\.\n  \[▲ WARN \]  L12-20  failures\/misleading-success +p\(yes\)=0\.96 ≥ 0\.85 · hunch:recommended\n +A failed operation/m);
+  expect(text).toMatch(/^src\/refund\.ts\n  \[✖ ERROR\]  L3 +billing\/retry/m);
   expect(text).toMatch(/billing\/retry +2 findings/);
   expect(text).toContain("Notes\n  · skill/codebase-design");
   expect(text.trim().split("\n").at(-1)).toBe("1 hunk · 1 request · 1,234 input tokens · typesafe-ai/jev");
-  expect(toText(result, { color: true })).toContain("\x1b[31m✖ error\x1b[0m");
+  expect(toText(result, { color: true })).toContain("\x1b[31m[✖ ERROR]\x1b[0m");
   expect(toText({ ...result, findings: [], notices: [] }).split("\n")[0]).toBe("Hunch · no findings · review complete");
+});
+
+test("a row too wide for the terminal moves its evidence under itself rather than cutting it", () => {
+  const wide = toText(result, { width: 120 });
+  const narrow = toText(result, { width: 72 });
+  expect(wide).toMatch(/billing\/retry +choice=duplicate_charge \(confidence 0\.94\)/);
+  // The answer the concern rests on is never truncated: it moves to its own line, at the message's indent.
+  expect(narrow).toMatch(/billing\/retry\n +choice=duplicate_charge \(confidence 0\.94\)\n +Retrying after a timeout/);
+  for (const line of narrow.split("\n")) expect(line.length).toBeLessThanOrEqual(72);
+});
+
+test("a row's badge says exactly what `level` says, so the screen and the JSON cannot disagree", () => {
+  const layout = findingLayout(result.findings, { width: 120, path: true });
+  for (const f of result.findings) {
+    const row = findingRow(f, layout);
+    expect(row).toContain(f.level === "error" ? "[✖ ERROR]" : "[▲ WARN ]");
+    // A row printed on its own, as the live region prints it, locates itself without a file heading.
+    expect(row).toContain(`${f.file}:L${f.line}`);
+    expect(row).toContain(f.rule);
+    expect(row).toContain(f.evidence);
+  }
 });
 
 test("--code prints the changed lines around each place with new-file line numbers", () => {

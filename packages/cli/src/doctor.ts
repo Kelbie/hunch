@@ -3,6 +3,8 @@
  * click that fixes it. Facts that cannot be established are reported as unknown, never as passing:
  * a green checklist beside a silent PR is worse than no checklist.
  */
+import { pad, painter } from "../../core/src/index.js";
+
 export type Status = "ok" | "bad" | "unknown";
 export interface Check { label: string; status: Status; detail: string; fix?: string }
 
@@ -125,11 +127,16 @@ async function json(io: DoctorIo, args: string[]): Promise<unknown | null> {
   try { return JSON.parse(result.body); } catch { return null; }
 }
 
-/** One line per check, then the single next action. Exit code 1 when something is actually wrong. */
-export function report(checks: Check[]): { text: string; failed: boolean } {
-  const mark = { ok: "✓", bad: "✗", unknown: "?" } as const;
-  const lines = checks.map((c) => `  ${mark[c.status]} ${c.label.padEnd(22)} ${c.detail}`);
+/**
+ * One line per check, then the single next action. Exit code 1 when something is actually wrong.
+ * Colour follows the mark rather than replacing it: a checklist read over a pipe still reads.
+ */
+export function report(checks: Check[], { color = false } = {}): { text: string; failed: boolean } {
+  const p = painter(color);
+  const mark = { ok: p.green("✓"), bad: p.red("✗"), unknown: p.yellow("?") } as const;
+  const paint = { ok: p.plain, bad: p.bold, unknown: p.dim } as const;
+  const lines = checks.map((c) => `  ${mark[c.status]} ${pad(p.bold(c.label), 22)} ${paint[c.status](c.detail)}`);
   const blocking = checks.filter((c) => c.status === "bad" && c.fix);
-  const text = [...lines, "", blocking.length ? `Next: ${blocking[0]!.fix}` : "Nothing is missing that Hunch can see from here."].join("\n");
+  const text = [...lines, "", blocking.length ? `${p.bold("Next:")} ${p.cyan(blocking[0]!.fix!)}` : p.green("Nothing is missing that Hunch can see from here.")].join("\n");
   return { text, failed: checks.some((c) => c.status === "bad") };
 }

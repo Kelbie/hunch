@@ -36,6 +36,37 @@ describe("check", () => {
     expect(result.findings.find(f => f.rule === "failures/misleading-success")?.source).toBe("hunch:recommended");
     expect(result.findings.find(f => f.rule === "docs/contradictory-comment")?.source).toBe("config");
   });
+  test("concerns are reported as they are raised, so a long review can be watched rather than waited out", async () => {
+    const cfg = config({ extends: ["hunch:recommended"] });
+    const streamed: string[] = [];
+    const progress: number[] = [];
+    const result = await check({
+      config: cfg,
+      hunks: parseHunks(DIFF),
+      client: fakeJev(() => ({ type: "noul", p: 0.99 })).client,
+      onFinding: (f) => streamed.push(`${f.rule} ${f.file}:${f.line} ${f.level}`),
+      onProgress: (done) => progress.push(done),
+    });
+    expect(streamed.length).toBeGreaterThan(0);
+    // Every concern the result carries was announced while the review ran, and nothing else was.
+    expect(streamed.sort()).toEqual(result.findings.map((f) => `${f.rule} ${f.file}:${f.line} ${f.level}`).sort());
+    expect(progress.at(-1)).toBe(result.stats.hunks);
+  });
+
+  test("a review with nothing to raise announces nothing, which is not the same as a clean result", async () => {
+    const streamed: string[] = [];
+    const result = await check({
+      config: config({ extends: ["hunch:recommended"] }),
+      hunks: parseHunks(DIFF),
+      client: fakeJev(() => ({ type: "noul", p: 0.01 })).client,
+      onFinding: (f) => streamed.push(f.rule),
+    });
+    expect(streamed).toEqual([]);
+    // Silence from the stream says only that nothing was raised; `complete` says whether it was asked.
+    expect(result.findings).toEqual([]);
+    expect(result.complete).toBe(true);
+  });
+
   test("semantic rules share one batched request per hunk", async () => {
     const { client, calls } = fakeJev((q): Answer =>
       q.type === "noul" ? { type: "noul", p: q.instructions.includes("comment") ? 0.95 : 0.05 } : q.type === "choice"

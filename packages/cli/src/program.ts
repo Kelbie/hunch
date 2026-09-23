@@ -10,8 +10,13 @@ import {
   DEFAULT_IGNORE,
   find,
   findMarkdown,
+  findingLayout,
+  findingRow,
   findPulls,
   findText,
+  matchLayout,
+  matchRow,
+  painter,
   pullsMarkdown,
   pullsText,
   type Facet,
@@ -44,6 +49,8 @@ import {
   underPaths,
   inScope,
   rulesFor,
+  type Finding,
+  type FindMatch,
   type Hunk,
   type JevClient,
   type Lock,
@@ -59,6 +66,8 @@ import { VERSION } from "./version.js";
 import { chooseCompiler } from "./pick.js";
 import { compilerId, describeChoice, extractorFor } from "./compilers.js";
 import { diagnose, parseRemote, report } from "./doctor.js";
+import { liveRegion, statusLine } from "./live.js";
+import { colorFor, paintFor, styleFor, type Style } from "./style.js";
 import { applyCredentials, nextStep, credentialsPath, keyNameFor, keySources, linkedVercelProject, looselyPermitted, readVercelLink, removeCredentials, removeVercelLink, saveCredential, saveVercelLink, mintVercelToken, useVercelLink, KEY_NAMES, type KeyName, type Provider, type VercelLink } from "./credentials.js";
 import { askWizard, clackIo, detectPreset, existingKey, ghReady, hasGuidance, installSkill, interactive, nextSteps, presetsFor, setRepoSecret, SKILL_INSTALL, writeKey, type Target, type WizardAnswers } from "./setup/wizard.js";
 
@@ -403,8 +412,8 @@ async function loginWithVercel(link: VercelLink) {
     await mintVercelToken(link);
     path = saveVercelLink(link);
   } catch (e) { return fail((e as Error).message); }
-  console.error(`hunch: Vercel sign-in works for ${link.project}; remembered it in ${path}. No secret was stored: each run asks your Vercel CLI login for a short-lived token.`);
-  if (process.env.AI_GATEWAY_API_KEY) console.error("hunch: AI_GATEWAY_API_KEY is also set, and a key is used before the Vercel project.");
+  note(`Vercel sign-in works for ${link.project}; remembered it in ${path}. No secret was stored: each run asks your Vercel CLI login for a short-lived token.`);
+  if (process.env.AI_GATEWAY_API_KEY) warn("AI_GATEWAY_API_KEY is also set, and a key is used before the Vercel project.");
 }
 
 async function runAuthLogin(opts: Opts, root: string) {
@@ -447,9 +456,9 @@ async function runAuthLogin(opts: Opts, root: string) {
   let path: string;
   try { path = saveCredential(name, value); }
   catch (e) { return fail((e as Error).message); }
-  console.error(`hunch: stored ${name} in ${path} (owner-only). It was not checked against the provider; the next check or find will be.`);
+  note(`stored ${name} in ${path} (owner-only). It was not checked against the provider; the next check or find will be.`);
   if (process.env[name] && !storedKeys.includes(name) && process.env[name] !== value.trim()) {
-    console.error(`hunch: ${name} is also set in the environment or a .env file here, and that one wins in this directory.`);
+    warn(`${name} is also set in the environment or a .env file here, and that one wins in this directory.`);
   }
 }
 
@@ -495,20 +504,20 @@ async function finishWizard(root: string, answers: WizardAnswers, opts: { file: 
     try {
       if (key.scope === "user") {
         keyPath = saveCredential(name, key.value);
-        console.error(`hunch: stored ${name} in ${keyPath} (owner-only); hunch now works in every directory.`);
+        note(`stored ${name} in ${keyPath} (owner-only); hunch now works in every directory.`);
       } else {
         const path = writeKey(root, name, key.value);
-        console.error(`hunch: wrote ${name} to ${path.replace(`${root}/`, "")} (git-ignored).`);
+        note(`wrote ${name} to ${path.replace(`${root}/`, "")} (git-ignored).`);
       }
     } catch (e) {
       keyDeferred = true;
-      console.error(`hunch: ${e instanceof Error ? e.message : String(e)}`);
+      warn(e instanceof Error ? e.message : String(e));
     }
   }
   let secretSet = false;
   if (answers.target === "actions" && key.kind === "gateway" && ghReady()) {
     try { setRepoSecret("AI_GATEWAY_API_KEY", key.value); secretSet = true; }
-    catch (e) { console.error(`hunch: ${e instanceof Error ? e.message : String(e)}`); }
+    catch (e) { warn(e instanceof Error ? e.message : String(e)); }
   }
   let compiled = false;
   if (answers.compile) {
@@ -525,11 +534,43 @@ function excerptText(hunks: Hunk[], f: Parameters<typeof diffExcerpt>[1]): strin
   return e && [...e.lines.map((l) => `${l.kind}${l.text}`), ...(e.omitted ? [`… ${e.omitted} more lines`] : [])].join("\n");
 }
 
-/** A counter for someone watching. Silent when stderr is redirected, where \r is just noise. */
-function progress(message: string, last: boolean) {
-  if (!process.stderr.isTTY) return;
-  process.stderr.write(`\r  ${message}${last ? "\n" : ""}`);
+/** Rows of found-so-far the live region keeps above its status line. Taller terminals do not get more. */
+const LIVE_ROWS = 8;
+
+/**
+ * The bottom of the screen while a review runs: the concerns raised so far, newest last, then how
+ * far through the hunks it is and how much longer. Rows are drawn by the same function the final
+ * report uses, so nothing here says anything the report will not repeat — and all of it is erased
+ * before the report is printed, because localization can still narrow a range after it is shown.
+ */
+function reviewFrame(raised: Finding[], done: number, total: number, startedAt: number, style: Style): string[] {
+  const { red, yellow, dim } = painter(style.color);
+  const recent = raised.slice(-LIVE_ROWS);
+  const layout = findingLayout(recent, { width: style.width, path: true });
+  const errors = raised.filter((f) => f.level === "error").length;
+  const warnings = raised.length - errors;
+  const tally = raised.length
+    ? [errors && red(plural(errors, "error")), warnings && yellow(plural(warnings, "warning"))].filter(Boolean).join(", ")
+    : dim("nothing raised yet");
+  return ["", ...recent.map((f) => findingRow(f, layout, style.color)),
+    statusLine({ label: "hunks checked", done, total, elapsedMs: Date.now() - startedAt, extra: tally, ...style })];
 }
+
+/**
+ * The same, for a search: the passages found so far with the score behind every question asked of
+ * them. A row here is a candidate, not a result — `--top` still cuts the list at the end — so the
+ * region is erased and the selected passages are printed properly.
+ */
+function searchFrame(found: FindMatch[], done: number, total: number, startedAt: number, style: Style): string[] {
+  const { dim } = painter(style.color);
+  const recent = found.slice(-LIVE_ROWS);
+  const layout = matchLayout(recent, style.width);
+  return ["", ...recent.map((m) => matchRow(m, layout, style.color)),
+    statusLine({ label: "chunks searched", done, total, elapsedMs: Date.now() - startedAt,
+      extra: found.length ? `${plural(found.length, "candidate")} so far` : dim("nothing above the threshold yet"), ...style })];
+}
+
+const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
 /** `gh api`, shared by doctor and find. Any non-zero exit is "no answer", including 404. */
 async function ghApi(args: string[]): Promise<{ ok: boolean; body: string }> {
@@ -579,34 +620,63 @@ async function runEval(root: string, dir: string, inline: { packs?: string[]; co
   };
   const client = jevClient(loaded.config);
   const fixtures: { file: string; expected: string[]; fired: string[] }[] = [];
-  for (const f of files) {
-    const text = readFileSync(join(root, dir, f), "utf8");
-    const expected = new Set((text.match(/^# expect:(.*)$/m)?.[1] ?? "").split(",").map((s) => s.trim()).filter(Boolean));
-    const task = text.match(/^# task:(.*)$/m)?.[1]?.trim();
-    const res = await check({ config: loaded.config, hunks: parseHunks(text), client, task, lock, readFile: (path) => repo.read(path) });
-    if (!res.complete) return fail(`Fixture ${f} has incomplete coverage: ${res.notices.join("; ")}`);
-    const fired = new Set(res.findings.map((x) => x.rule));
-    for (const r of fired) bump(r, expected.has(r) ? "tp" : "fp");
-    for (const r of expected) if (!fired.has(r)) bump(r, "fn");
-    console.error(`  ${f}: fired ${[...fired].join(", ") || "nothing"}`);
-    fixtures.push({ file: f, expected: [...expected], fired: [...fired] });
-  }
+  // One fixture is a whole review, so a directory of them runs for minutes: say where it is.
+  const paint = painter(colorFor(process.stdout));
+  const progress = paintFor(process.stderr);
+  const startedAt = Date.now();
+  let done = 0;
+  const region = liveRegion(process.stderr, (width) => ["",
+    statusLine({ label: "fixtures reviewed", done, total: files.length, elapsedMs: Date.now() - startedAt, ...liveStyle(width) })]);
+  try {
+    for (const f of files) {
+      const text = readFileSync(join(root, dir, f), "utf8");
+      const expected = new Set((text.match(/^# expect:(.*)$/m)?.[1] ?? "").split(",").map((s) => s.trim()).filter(Boolean));
+      const task = text.match(/^# task:(.*)$/m)?.[1]?.trim();
+      const res = await check({ config: loaded.config, hunks: parseHunks(text), client, task, lock, readFile: (path) => repo.read(path) });
+      if (!res.complete) return fail(`Fixture ${f} has incomplete coverage: ${res.notices.join("; ")}`);
+      const fired = new Set(res.findings.map((x) => x.rule));
+      for (const r of fired) bump(r, expected.has(r) ? "tp" : "fp");
+      for (const r of expected) if (!fired.has(r)) bump(r, "fn");
+      const surprises = [...fired].filter((r) => !expected.has(r)).length + [...expected].filter((r) => !fired.has(r)).length;
+      // Kept above the region: which fixture did what is the record someone tunes a rule from.
+      region.log(`  ${surprises ? progress.yellow("≠") : progress.green("=")} ${progress.bold(f)}: fired ${[...fired].map((r) => progress.cyan(r)).join(", ") || progress.dim("nothing")}`);
+      done++;
+      fixtures.push({ file: f, expected: [...expected], fired: [...fired] });
+    }
+  } finally { region.stop(); }
   const rate = (a: number, b: number) => (a + b ? a / (a + b) : 1);
   if (inline.reporter === "json") {
     console.log(JSON.stringify({ fixtures, rules: [...stats].sort().map(([rule, s]) => ({ rule, precision: rate(s.tp, s.fp), recall: rate(s.tp, s.fn), ...s })) }, null, 2));
     return;
   }
-  console.log("\nrule                                  precision  recall   tp fp fn");
+  // A rate is read to decide whether a rule can be trusted, so it is coloured by that decision.
+  const grade = (v: number, w: number) => (v >= 0.9 ? paint.green : v >= 0.7 ? paint.yellow : paint.red)(v.toFixed(2).padStart(w));
+  console.log(`\n${paint.dim("rule                                  precision  recall   tp fp fn")}`);
   for (const [rule, s] of [...stats].sort()) {
-    const p = s.tp + s.fp ? s.tp / (s.tp + s.fp) : 1;
-    const r = s.tp + s.fn ? s.tp / (s.tp + s.fn) : 1;
-    console.log(`${rule.padEnd(38)}${p.toFixed(2).padStart(9)}${r.toFixed(2).padStart(8)}   ${s.tp}  ${s.fp}  ${s.fn}`);
+    console.log(`${paint.cyan(rule.padEnd(38))}${grade(rate(s.tp, s.fp), 9)}${grade(rate(s.tp, s.fn), 8)}   ${s.tp}  ${paint.yellow(String(s.fp))}  ${paint.red(String(s.fn))}`);
   }
 }
 
 function fail(msg: string) {
-  console.error(`hunch: ${msg}`);
+  const p = paintFor(process.stderr);
+  console.error(`${p.red("hunch:")} ${msg}`);
   process.exitCode = 2;
+}
+
+/**
+ * The live region is drawn on stderr, so it takes its colour from stderr: a report redirected to a
+ * file must not decide whether the terminal it is not going to gets colour.
+ */
+const liveStyle = (width: number): Style => ({ color: colorFor(process.stderr), width });
+
+/** The one-line status a command prints to stderr while it works. */
+function note(msg: string) {
+  console.error(`${paintFor(process.stderr).dim("hunch:")} ${msg}`);
+}
+
+/** A gap, not a failure: the command carries on, but something was skipped or is out of date. */
+function warn(msg: string) {
+  console.error(`${paintFor(process.stderr).yellow("hunch:")} ${msg}`);
 }
 
 
@@ -620,7 +690,7 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     return;
   }
   if (!loaded) return fail(NO_CONFIG);
-  if (loaded.packs) console.error(`hunch: rules from ${loaded.packs.join(", ")}`);
+  if (loaded.packs) note(`rules from ${loaded.packs.join(", ")}`);
   const { config } = loaded;
   if (!["text", "markdown", "json", "sarif", "github"].includes(opts.reporter!)) return fail(`Unknown --reporter ${opts.reporter}; use text, markdown, json, sarif or github`);
   const only = opts.only ? String(opts.only).split(",").map((id) => id.trim()).filter(Boolean) : undefined;
@@ -636,9 +706,9 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     const full = await repoHunks(source, config, paths, config.review);
     hunks = full.hunks;
     skippedFiles = full.skipped;
-    if (full.skipped.length) console.error(`hunch: skipped ${full.skipped.length} unreadable, binary or oversized file(s)`);
+    if (full.skipped.length) warn(`skipped ${full.skipped.length} unreadable, binary or oversized file(s)`);
     const files = new Set(hunks.map((h) => h.file)).size;
-    console.error(`hunch: reviewing ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}` +
+    note(`reviewing ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}` +
       (hunks.length > config.budget.maxHunks ? `; only the first ${config.budget.maxHunks} fit budget.maxHunks` : ""));
   } else {
   if ([opts.diff, opts.staged, opts.head].filter(Boolean).length > 1) return fail("Choose only one of --diff, --staged or --head");
@@ -671,23 +741,27 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
       readChangedFile: opts.diff ? undefined : opts.staged ? (p) => readStagedFile(root, p) : (p) => changedSource.read(p),
     });
     // The real run would be incomplete; a dry run is where someone decides whether to run it.
-    if (stale.length) console.error(`hunch: ${staleNotice(lock, stale)} A review now would be incomplete.`);
-    for (const notice of plan.notices) console.error(`hunch: ${notice}`);
+    if (stale.length) warn(`${staleNotice(lock, stale)} A review now would be incomplete.`);
+    for (const notice of plan.notices) warn(notice);
     console.log(`hunch: dry run, nothing sent. ${new Set(hunks.filter((h) => h.status !== "deleted" && inScope(config)(h.file)).map((h) => h.file)).size} file(s) as ${plan.stats.hunks} hunk(s): ${plan.stats.questions} question(s) in ${plan.stats.requests} request(s). Budget: ${config.budget.maxHunks} hunks, ${config.budget.maxRequests} requests, ${config.budget.timeoutSeconds}s.`);
     if (config.review.localize) console.log("Optional localization runs after baseline coverage, within the remaining request/time budget.");
     if (skippedFiles.length || !plan.complete) process.exitCode = 2;
     return;
   }
   // Created on first request, so a diff with nothing to review needs no API key.
-  // Progress goes to stderr, so it never mixes with a report written to a file or a pipe. Other
-  // reporters show it only at a terminal, where someone is waiting on a long run.
-  const progress = opts.reporter === "text" || Boolean(process.stderr.isTTY);
+  // The live region draws on stderr, so a report written to a file or a pipe never contains it,
+  // and it draws nothing unless stderr is a terminal with someone waiting at it.
+  const style = styleFor(process.stdout);
+  const startedAt = Date.now();
+  const raised: Finding[] = [];
+  let checked = 0;
+  const region = liveRegion(process.stderr, (width) => reviewFrame(raised, checked, hunks.length, startedAt, liveStyle(width)));
   // The first Ctrl-C stops the sending and prints what was found; a second one quits at once.
   const interrupt = new AbortController();
   const onSigint = () => {
     if (interrupt.signal.aborted) process.exit(130);
     interrupt.abort();
-    process.stderr.write("\nhunch: stopping; reporting what was found. Press Ctrl-C again to quit without a report.\n");
+    region.log("hunch: stopping; reporting what was found. Press Ctrl-C again to quit without a report.");
   };
   process.on("SIGINT", onSigint);
   let providerErrors = 0;
@@ -701,11 +775,13 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
     signal: interrupt.signal,
     readFile: (p) => repo.read(p),
     readChangedFile: opts.diff ? undefined : opts.staged ? (p) => readStagedFile(root, p) : (p) => changedSource.read(p),
-    onProgress: (d, t) => progress && process.stderr.write(`\r  checked ${d}/${t} hunks`),
+    onProgress: (d) => { checked = d; region.refresh(); },
+    // Concerns appear as they are raised, so a long review is watchable; the region is erased
+    // before the report, which is the only version of them anyone gets to keep.
+    onFinding: (f) => { raised.push(f); region.refresh(); },
     // Say once why requests are failing; the report names every chunk that went unanswered.
-    onRequestError: (e) => { if (!providerErrors++ && !interrupt.signal.aborted) process.stderr.write(`\nhunch: a provider request failed (${String(e instanceof Error ? e.message : e).split("\n")[0]!.slice(0, 200)}). Carrying on; it is asked once more at the end.\n`); },
-  }).finally(() => process.off("SIGINT", onSigint));
-  if (progress) process.stderr.write("\n");
+    onRequestError: (e) => { if (!providerErrors++ && !interrupt.signal.aborted) region.log(`hunch: a provider request failed (${String(e instanceof Error ? e.message : e).split("\n")[0]!.slice(0, 200)}). Carrying on; it is asked once more at the end.`); },
+  }).finally(() => { process.off("SIGINT", onSigint); region.stop(); });
   if (stale.length) result.complete = false;
   if (skippedFiles.length) {
     result.complete = false;
@@ -737,11 +813,7 @@ async function runCheck(paths: string[], opts: Opts, root: string, repo: RepoRea
       break;
     }
     default:
-      console.log(toText(result, {
-        color: process.env.FORCE_COLOR ? process.env.FORCE_COLOR !== "0" : Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && process.env.TERM !== "dumb",
-        width: Math.min(process.stdout.columns || 100, 120),
-        hunks: opts.code ? hunks : undefined,
-      }));
+      console.log(toText(result, { ...style, hunks: opts.code ? hunks : undefined }));
   }
   const failed = config.failOnError && result.findings.some((f) => f.level === "error");
   process.exitCode = !result.complete ? 2 : failed ? 1 : 0;
@@ -759,10 +831,7 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   // code is in the output — that is what find is for.
   const reporter: string = opts.reporter ?? (process.stdout.isTTY ? "text" : "markdown");
   if (!["text", "markdown", "json"].includes(reporter)) return fail("Unknown --reporter for find; use markdown, text or json");
-  const style = {
-    color: process.env.FORCE_COLOR ? process.env.FORCE_COLOR !== "0" : Boolean(process.stdout.isTTY) && !process.env.NO_COLOR && process.env.TERM !== "dumb",
-    width: Math.min(process.stdout.columns || 100, 120),
-  };
+  const style = styleFor(process.stdout);
   const facets = String(opts.facet ?? "").split(",").map((f: string) => f.trim()).filter(Boolean) as Facet[];
   const unknown = facets.filter((f: Facet) => !FACETS.includes(f));
   if (unknown.length) return fail(`Unknown --facet ${unknown.join(", ")}; choose from ${FACETS.join(", ")}`);
@@ -789,7 +858,7 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
   const revision = opts.head ? commitOf(root, opts.head, "--head") : "working-tree";
   const source = opts.head ? gitRepo(root, revision) : localRepo(root);
   const { hunks, skipped } = await repoHunks(source, config, paths, { chunkLines, overlapLines });
-  if (skipped.length) console.error(`hunch: skipped ${skipped.length} unreadable, binary or oversized file(s)`);
+  if (skipped.length) warn(`skipped ${skipped.length} unreadable, binary or oversized file(s)`);
   const files = new Set(hunks.map((h) => h.file)).size;
   if (opts.dryRun) {
     // Listing open pull requests is free, but judging them is not; how many there are is only
@@ -800,7 +869,7 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
     return;
   }
   if (!hunks.length && !skipped.length) return fail("nothing in scope to search; check `include` and the paths you passed.");
-  console.error(`hunch: searching ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}`);
+  note(`searching ${files} file(s) as ${hunks.length} chunk(s) from ${opts.head ?? "the working tree"}`);
 
   const jev = jevClient(config);
 
@@ -815,7 +884,12 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
     if (!remote) return fail("--prs needs a github.com `origin` remote to list pull requests from.");
     const prMax = opts.prMax === undefined ? 10 : Number(opts.prMax);
     if (!Number.isInteger(prMax) || prMax < 1) return fail("--pr-max must be a positive whole number");
-    console.error(`hunch: checking open pull requests on ${remote.owner}/${remote.repo}`);
+    note(`checking open pull requests on ${remote.owner}/${remote.repo}`);
+    const prStart = Date.now();
+    let read = 0;
+    let titles = 0;
+    const prRegion = liveRegion(process.stderr, (width) => ["",
+      statusLine({ label: "pull request titles read", done: read, total: titles, elapsedMs: Date.now() - prStart, ...liveStyle(width) })]);
     const pulls = await findPulls({
       task,
       slug: `${remote.owner}/${remote.repo}`,
@@ -824,14 +898,18 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
       model: config.model,
       maxInspected: prMax,
       includeDrafts: opts.drafts,
-      onProgress: (d, t) => progress(`read ${d}/${t} pull request titles`, d === t),
-    });
+      onProgress: (d, t) => { read = d; titles = t; prRegion.refresh(); },
+    }).finally(() => prRegion.stop());
     existingMd = pullsMarkdown(pulls);
     existingText = pullsText(pulls, style);
     existingComplete = pulls.complete;
     existingWork = pulls;
   }
 
+  const startedAt = Date.now();
+  const found: FindMatch[] = [];
+  let searched = 0;
+  const region = liveRegion(process.stderr, (width) => searchFrame(found, searched, hunks.length, startedAt, liveStyle(width)));
   const result = await find({
     task,
     mode,
@@ -843,8 +921,11 @@ async function runFind(task: string, paths: string[], opts: Opts, root: string, 
     perFacet: top,
     budget: { concurrency, maxRequests: hunks.length, timeoutSeconds: 3600 },
     client: jev,
-    onProgress: (d, t) => progress(`searched ${d}/${t} chunks`, d === t),
-  });
+    onProgress: (d) => { searched = d; region.refresh(); },
+    // Candidates appear as they are scored. `--top` still cuts the list at the end, so the region
+    // is erased and the report below is the only selection anyone acts on.
+    onMatch: (m) => { found.push(m); region.refresh(); },
+  }).finally(() => region.stop());
   // PR coverage is part of the requested operation, including its machine-readable status.
   if (!existingComplete) {
     result.complete = false;
@@ -907,10 +988,13 @@ async function runInstall(opts: Opts, root: string, repo: RepoReader) {
   let packs: Lock["packs"] = [];
   if (config.packs.length) {
     packs = await resolvePacks(config.packs, { pin: githubFetcher() });
+    const paint = paintFor(process.stderr);
     for (const p of packs) {
       const moved = (previous?.packs ?? []).find((q) => q.id === p.id);
-      const note = !moved ? "copied   " : moved.commit === p.commit ? "unchanged" : "updated  ";
-      console.error(`  ${note}  ${p.id}  ${Object.keys(p.rules).length} rules from ${p.origin}@${p.commit.slice(0, 7)}${p.select.length ? ` (${p.select.join(", ")})` : ""}`);
+      const [word, colour] = !moved ? ["copied   ", paint.green] : moved.commit === p.commit ? ["unchanged", paint.dim] : ["updated  ", paint.yellow];
+      // A selection can name a hundred ids; the lock records them all, the line names a few.
+      const chose = p.select.length > 3 ? `${p.select.slice(0, 3).join(", ")}, +${p.select.length - 3} more` : p.select.join(", ");
+      console.error(`  ${colour(word)}  ${paint.cyan(p.id)}  ${paint.dim(`${Object.keys(p.rules).length} rules from ${p.origin}@${p.commit.slice(0, 7)}${p.select.length ? ` (${chose})` : ""}`)}`);
     }
   }
 
@@ -920,7 +1004,7 @@ async function runInstall(opts: Opts, root: string, repo: RepoReader) {
     const choice = await chooseCompiler({ with: opts.with, effort: opts.effort, model: opts.model, previous: previous?.compiler.model });
     if (!choice) return fail("install cancelled.");
     model = compilerId(choice, config.compileModel);
-    console.error(`hunch: compiling ${docs.length} source(s) with ${describeChoice(choice, config.compileModel)}`);
+    note(`compiling ${docs.length} source(s) with ${describeChoice(choice, config.compileModel)}`);
     if (choice.agent === "gateway") await useVercelLink();
     lock = await compileSources(docs, {
       extractor: extractorFor(choice, config),
@@ -948,10 +1032,10 @@ async function runInstall(opts: Opts, root: string, repo: RepoReader) {
     }, null, 2));
   }
   const written = [copied ? `${copied} rules from ${(lock.packs ?? []).length} pack(s)` : "", compiled ? `${compiled} compiled rules` : ""].filter(Boolean).join(", ") || "no rules";
-  console.error(`hunch: wrote ${LOCK_FILE}: ${written}${skipped ? `, ${skipped} guidance items not checkable per hunk` : ""}. Review and commit it.`);
+  note(`wrote ${LOCK_FILE}: ${written}${skipped ? `, ${skipped} guidance items not checkable per hunk` : ""}. Review and commit it.`);
   const most = compiled + copied + Object.values(config.rules).filter((r) => r.question).length;
   if (most > config.budget.maxRulesPerHunk) {
-    console.error(`hunch: up to ${most} rules can apply to one chunk, but budget.maxRulesPerHunk is ${config.budget.maxRulesPerHunk}; raise it, or check will report the rest as skipped.`);
+    warn(`up to ${most} rules can apply to one chunk, but budget.maxRulesPerHunk is ${config.budget.maxRulesPerHunk}; raise it, or check will report the rest as skipped.`);
   }
   return;
 }
@@ -968,7 +1052,7 @@ async function runConfig(opts: Opts, root: string, repo: RepoReader) {
     return;
   }
   const report = await inspectConfig(loaded, lock, repo, opts.file);
-  console.log(opts.reporter === "json" ? JSON.stringify(report, null, 2) : configText(report));
+  console.log(opts.reporter === "json" ? JSON.stringify(report, null, 2) : configText(report, { color: colorFor(process.stdout) }));
   process.exitCode = report.valid ? 0 : 2;
 }
 
@@ -1018,7 +1102,7 @@ async function runInit(opts: Opts, root: string, explicit: boolean) {
     const rendered = renderConfig(chosen);
     file = rendered.file;
     writeFileSync(join(root, file), rendered.text, { flag: "wx" });
-    console.error(`hunch: wrote ${file}.`);
+    note(`wrote ${file}.`);
   }
   if (wantsWorkflow) {
     mkdirSync(join(root, ".github/workflows"), { recursive: true });
@@ -1026,7 +1110,7 @@ async function runInit(opts: Opts, root: string, explicit: boolean) {
     console.error("hunch: wrote .github/workflows/hunch.yml.");
   }
   if (answers?.installSkill || opts.installSkill) {
-    if (!installSkill(root)) console.error(`hunch: the skill was not installed. Run \`npx ${SKILL_INSTALL.join(" ")}\` yourself.`);
+    if (!installSkill(root)) warn(`the skill was not installed. Run \`npx ${SKILL_INSTALL.join(" ")}\` yourself.`);
   }
   if (answers) return finishWizard(root, answers, { file });
   if (target) console.error(`\nNext:\n\n${nextSteps(target, { configFile: file, compiled: false, secretSet: false, keyDeferred: true })}`);
@@ -1041,7 +1125,7 @@ async function runDoctor(opts: Opts, root: string) {
     remoteUrl: () => originUrl(root),
     env: process.env,
   }, { slug: opts.app ?? "hunch-review" });
-  const { text, failed } = report(checks);
+  const { text, failed } = report(checks, { color: colorFor(process.stdout) });
   console.log(opts.reporter === "json" ? JSON.stringify({ checks, failed }, null, 2) : text);
   process.exitCode = failed ? 1 : 0;
   return;

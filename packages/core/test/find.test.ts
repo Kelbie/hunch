@@ -1,5 +1,5 @@
 import { expect, test } from "bun:test";
-import { bodyOf, FACETS, fileHunks, find, findContext, findMarkdown, findText, mergeAdjacent, type Facet, type FindInput } from "../src/index.js";
+import { bodyOf, FACETS, fileHunks, find, findContext, findMarkdown, findText, matchLayout, matchRow, mergeAdjacent, type Facet, type FindInput } from "../src/index.js";
 
 /** A Jev that answers each facet from a table keyed by file, so ranking is exercised, not guessed. */
 function scripted(byFile: Record<string, Partial<Record<Facet, number>>>, spy?: (state: Record<string, unknown>) => void): FindInput["client"] {
@@ -230,9 +230,11 @@ test("the terminal report leads with a headline, sections each facet, and number
   const text = findText(res, { width: 80 });
   expect(text).toContain("Hunch find · 1 passage in 1 file of 1 searched · search complete");
   expect(text).toContain("edit here — Code that carrying out the task would require editing.");
-  expect(text).toContain("0.90  app/pay.ts:1-3");
-  // A runner-up facet is named, so a chunk that is nearly two things reads as two things.
-  expect(text).toContain("test to update 0.45");
+  // The badge names the winning facet with the same word the JSON's `facet` uses.
+  expect(text).toMatch(/\[EDIT +\] +app\/pay\.ts:1-3/);
+  expect(text).toContain("edit=0.90");
+  // Every question asked of the chunk keeps its score, so a chunk that is nearly two things reads as two.
+  expect(text).toContain("test=0.45");
   // The gutter carries real file line numbers, so a number read off the screen can be jumped to.
   expect(text).toContain("1 │ const a = 1;");
   expect(text).toContain("3 │ const c = 3;");
@@ -287,4 +289,50 @@ test("nothing in the terminal report runs past the terminal", async () => {
   const prose = findText(res, { width: 72, code: false }).split("\n");
   expect(Math.max(...prose.map((l) => l.length))).toBeLessThanOrEqual(72);
   expect(prose.join("\n")).toContain("contract to respect\n");
+});
+
+test("candidates are reported as they are scored, and say so by arriving before the selection", async () => {
+  const streamed: string[] = [];
+  const res = await find({
+    ...base,
+    perFacet: 1,
+    hunks: chunks("a.ts", "b.ts", "c.ts"),
+    client: scripted({ "a.ts": { edit: 0.9 }, "b.ts": { edit: 0.8 }, "c.ts": { edit: 0.2 } }),
+    onMatch: (m) => streamed.push(`${m.file} ${m.facet} ${m.score}`),
+  });
+  // Everything above the threshold is streamed, including the candidate `perFacet` then cuts:
+  // a caller showing these live is showing candidates, which the two lists prove.
+  expect(streamed.sort()).toEqual(["a.ts edit 0.9", "b.ts edit 0.8"]);
+  expect(res.matches.map((m) => m.file)).toEqual(["a.ts"]);
+  // A chunk below the threshold is never streamed, so nothing appears that the report would not.
+  expect(streamed.some((s) => s.startsWith("c.ts"))).toBe(false);
+});
+
+test("a row is laid out the same live as in the report, and never runs past the terminal", async () => {
+  const res = await find({
+    ...base,
+    hunks: [...fileHunks("packages/core/src/payments/idempotency-keys.ts", "export const a = 1;"), ...fileHunks("b.ts", "export const b = 2;")],
+    client: scripted({ "packages/core/src/payments/idempotency-keys.ts": { edit: 0.94, test: 0.42 }, "b.ts": { contract: 0.71 } }),
+  });
+  for (const width of [72, 80, 100, 120, 200]) {
+    const layout = matchLayout(res.matches, width);
+    for (const m of res.matches) {
+      const row = matchRow(m, layout);
+      expect(row.length).toBeLessThanOrEqual(width);
+      // The badge is the JSON's own word for the facet, and the winning score is always on the row.
+      expect(row).toContain(`[${m.facet.toUpperCase()}`);
+      expect(row).toContain(`${m.facet}=${m.score.toFixed(2)}`);
+    }
+    // Rows agree with the report they end up in: the report is these rows, with code between them.
+    const report = findText(res, { width });
+    for (const m of res.matches) expect(report).toContain(matchRow(m, layout));
+  }
+});
+
+test("a path too long for its column keeps the end, which is the part that tells two files apart", () => {
+  const long = { file: "packages/core/src/very/deeply/nested/module/payments/idempotency.ts", startLine: 1, endLine: 9, code: "x", language: null, role: null, facet: "edit" as const, score: 0.9, facets: { edit: 0.9, contract: 0, caller: 0, test: 0, precedent: 0 } };
+  const row = matchRow(long, matchLayout([long], 72));
+  expect(row.length).toBeLessThanOrEqual(72);
+  expect(row).toContain("idempotency.ts:1-9");
+  expect(row).toContain("…");
 });

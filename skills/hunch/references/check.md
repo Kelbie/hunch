@@ -124,7 +124,10 @@ A review keeps what it finds. None of this needs a flag.
 - **Ctrl-C reports what was found.** The first one stops the sending and prints the report, marked
   interrupted; a second quits at once.
 - **Progress is on stderr**, for every reporter at a terminal, so `--reporter json > audit.json`
-  still shows `checked 120/740 hunks` while the file receives only the report.
+  still shows how far along it is while the file receives only the report. At a terminal the last
+  rows hold a live view: the concerns raised so far, then a bar and an estimate of the time left.
+  Those rows are candidates, not the result — localization can still narrow one — and they are
+  erased before the report is printed. Nothing is drawn when stderr is redirected.
 
 The hosted App retries a review whose requests failed, and on its last attempt publishes the
 partial review with the unanswered chunks listed, instead of failing with nothing.

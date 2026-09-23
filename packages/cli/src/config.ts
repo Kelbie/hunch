@@ -14,6 +14,7 @@ import {
   type RepoReader,
   type WireQuestion,
   providerFor,
+  painter,
 } from "../../core/src/index.js";
 
 /**
@@ -150,12 +151,20 @@ export function explainRule(config: Config, lock: Lock | null, id: string): Expl
 /**
  * Pads columns for a terminal. A column after the first wider than `max` is cut with an ellipsis;
  * the first never is, because it holds the id people copy into `--explain` and `--only`.
+ *
+ * `paint` colours a cell by its column once the widths are settled, so colour never moves a column:
+ * the plain report and the coloured one are the same table.
  */
-function table(header: string[], rows: string[][], max = 40): string {
+function table(header: string[], rows: string[][], max = 40, paint?: (cell: string, column: number, row: number) => string): string {
   const cut = (s: string, i: number) => (i > 0 && s.length > max ? `${s.slice(0, max - 1)}…` : s);
   const all = [header, ...rows].map((r) => r.map(cut));
   const widths = header.map((_, i) => Math.max(...all.map((r) => r[i]!.length)));
-  return all.map((r) => `  ${r.map((c, i) => (i === r.length - 1 ? c : c.padEnd(widths[i]!))).join("  ")}`.trimEnd()).join("\n");
+  return all
+    .map((r, row) => `  ${r.map((c, i) => {
+      const cell = i === r.length - 1 ? c : c.padEnd(widths[i]!);
+      return paint ? paint(cell, i, row - 1) : cell;
+    }).join("  ")}`.trimEnd())
+    .join("\n");
 }
 
 /** Zero data retention is something the Gateway enforces, so it is only claimed for a Gateway run. */
@@ -165,12 +174,17 @@ function providerLine(s: ConfigReport["settings"]): string {
     : `gateway (typesafe-ai/jev); zero data retention ${s.zeroDataRetention ? "enforced" : "not enforced"}`;
 }
 
-export function configText(report: ConfigReport): string {
+export function configText(report: ConfigReport, { color = false } = {}): string {
+  const c = painter(color);
   const s = report.settings;
   const out: string[] = [];
-  out.push(report.valid ? `${report.path} is valid.` : `${report.path} has ${report.problems.length} problem${report.problems.length === 1 ? "" : "s"}:`);
-  for (const p of report.problems) out.push(`  ✗ ${p}`);
+  out.push(report.valid
+    ? `${c.bold(report.path)} is ${c.green("valid")}.`
+    : `${c.bold(report.path)} has ${c.red(`${report.problems.length} problem${report.problems.length === 1 ? "" : "s"}`)}:`);
+  for (const p of report.problems) out.push(`  ${c.red("✗")} ${p}`);
   out.push("");
+  // The heading row is dimmed and the setting names are bold: the values are what is being read.
+  const head = (cell: string, col: number, row: number) => (row < 0 ? c.dim(cell) : col === 0 ? c.bold(cell) : cell);
   out.push(table(["SETTING", "VALUE"], [
     ["provider", providerLine(s)],
     ["presets", s.extends.join(", ") || "none"],
@@ -180,9 +194,10 @@ export function configText(report: ConfigReport): string {
     ["failOnError", String(s.failOnError)],
     ["review", `${s.review.chunkLines} lines, ${s.review.overlapLines} whole-file overlap, ${s.review.contextLines} context; localization ${s.review.localize ? "on" : "off"}`],
     ["budget", `${s.budget.maxHunks} hunks, ${s.budget.maxRequests} requests, ${s.budget.maxRulesPerHunk} rules per hunk, ${s.budget.timeoutSeconds}s`],
-    ...(s.packs.length ? [["packs", s.packs.map((p) => (typeof p === "string" ? p : `${p.pack}${p.rules ? ` (${p.rules.join(", ")})` : ""}`)).join("; ")]] : []),
+    // A selection can name a hundred ids; the rule table below lists them. Here, how many.
+    ...(s.packs.length ? [["packs", s.packs.map((p) => (typeof p === "string" ? p : `${p.pack}${p.rules ? ` (${p.rules.length} of its rules)` : ""}`)).join(", ")]] : []),
     ["guidance", `${s.skills === undefined ? "any skills installed in .agents/skills or .claude/skills" : s.skills.length ? s.skills.map((k) => (typeof k === "string" ? k : k.repo)).join(", ") : "no skills"}${s.agentsMd ? ", AGENTS.md" : ""}${s.docs.length ? `, ${s.docs.join(", ")}` : ""}`],
-  ], 100));
+  ], 100, head));
   out.push("");
   if (report.file) {
     out.push(report.file.inScope
@@ -190,9 +205,12 @@ export function configText(report: ConfigReport): string {
       : `${report.file.path} is outside include/ignore, so no rule is asked about it.`);
   } else out.push(`${report.rules.length} rule${report.rules.length === 1 ? "" : "s"}:`);
   if (report.rules.length) {
+    // A rule's level is the thing people scan this table for: it gets the colour `check` gives it.
+    const level = (r: ConfigReport["rules"][number]) => (r.level === "error" ? c.red : r.level === "warn" ? c.yellow : c.dim);
     out.push(table(["RULE", "LEVEL", "TYPE", "REPORTS WHEN", "FILES", "SOURCE"], report.rules.map((r) => [
       r.id, r.level, r.type, r.reports.replace(/ \(0 = first criterion, 1 = last\)/, ""), r.files?.join(", ") ?? "all", r.source,
-    ])));
+    ]), 40, (cell, col, row) =>
+      row < 0 ? c.dim(cell) : col === 0 ? c.cyan(cell) : col === 1 ? level(report.rules[row]!)(cell) : col === 5 ? c.dim(cell) : cell));
   }
   if (!report.file && report.overrides.length) {
     out.push("", "Overrides:");

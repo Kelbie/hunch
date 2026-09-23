@@ -1,6 +1,7 @@
 import { describeChunk, languageOf, roleOf } from "./context.js";
 import type { Hunk } from "./diff.js";
 import { isSetupError, OUTAGE_FAILURES, validateAnswers, type Answer, type JevClient } from "./jev.js";
+import { clipLeft, pad, painter, wrapText, type Painter } from "./style.js";
 
 /**
  * Semantic retrieval over existing code: ask a condition or gather context for a change.
@@ -38,6 +39,15 @@ export const FACET_LABEL: Record<FindFacet, string> = {
   caller: "affected caller",
   test: "test to update",
   precedent: "pattern to follow",
+};
+
+/**
+ * The colour a facet keeps everywhere it appears: in the badge on a row, live and in the final
+ * report. Cyan and the severity colours are deliberately absent — nothing `find` returns is a
+ * defect, and a reader who also runs `check` should never confuse the two reports.
+ */
+const FACET_PAINT: Record<FindFacet, keyof Painter> = {
+  condition: "magenta", edit: "magenta", contract: "blue", caller: "cyan", test: "green", precedent: "yellow",
 };
 
 interface FacetQuestion { instructions: string; criteria: { true: string; false: string } }
@@ -126,6 +136,13 @@ export interface FindInput {
   perFacet?: number;
   budget?: { concurrency?: number; maxRequests?: number; timeoutSeconds?: number };
   onProgress?: (done: number, total: number) => void;
+  /**
+   * Each above-threshold chunk the moment it is scored, so a caller waiting on a repository sweep
+   * can show what has been found so far. These arrive in the order the provider answered, and every
+   * one of them is a candidate, not a result: `selection` still applies at the end, and a match
+   * reported here may be cut by `perFacet`. Anything shown from this must be shown as provisional.
+   */
+  onMatch?: (match: FindMatch) => void;
 }
 
 const TASK_LIMIT = 4000;
@@ -199,7 +216,7 @@ export async function find(input: FindInput): Promise<FindResult> {
     const scores = Object.fromEntries(facets.map((f) => [f, probabilityOf(res.answers[f])])) as Record<FindFacet, number>;
     const best = facets.reduce((a, b) => (scores[b]! > scores[a]! || (scores[b] === scores[a] && PRIORITY.indexOf(b) < PRIORITY.indexOf(a)) ? b : a));
     if (scores[best]! >= minScore) {
-      matches.push({
+      const match: FindMatch = {
         file: hunk.file,
         startLine: hunk.newStart,
         endLine: hunk.newStart + Math.max(hunk.newLines, 1) - 1,
@@ -209,7 +226,9 @@ export async function find(input: FindInput): Promise<FindResult> {
         facet: best,
         score: scores[best]!,
         facets: scores,
-      });
+      };
+      matches.push(match);
+      input.onMatch?.(match);
     }
     input.onProgress?.(++done, input.hunks.length);
   });
@@ -374,15 +393,98 @@ const FENCE: Record<string, string> = {
 };
 const fence = (language: string | null) => (language ? FENCE[language] : undefined);
 
+const ROW_INDENT = 2;
+/** Narrowest location cell worth printing, and the widest one the score columns will make room for. */
+const MIN_LOCATION = 24;
+const COMFORTABLE_LOCATION = 44;
+const locationOf = (m: FindMatch) => `${m.file}:${m.startLine}-${m.endLine}`;
+
+/**
+ * One row's columns, agreed across a set of matches so their cells line up. The live view a
+ * running search draws and the report it prints at the end lay out rows with the same function,
+ * which is why a row watched at second thirty has the shape of the row read at the end.
+ */
+export interface MatchLayout {
+  /** Width of the `[FACET]` badge's contents. */
+  badge: number;
+  /** Width of the `file:start-end` cell; a longer path loses its leading directories. */
+  location: number;
+  /**
+   * A score column per facet asked, or `"best"` when a narrow terminal cannot hold them all and
+   * each row shows only the scores that say something: the one that put it here, and any other
+   * near enough to matter. A score is never dropped altogether — it is the reason the row exists.
+   */
+  columns: readonly FindFacet[] | "best";
+}
+
+/**
+ * In `"best"` mode: the facet that won, then the runners-up worth a second look, strongest first.
+ * Two of them at most — past that the row is as wide as printing every facet, which is the case
+ * `"best"` exists to avoid.
+ */
+const bestCells = (m: FindMatch, asked: readonly FindFacet[]) => [m.facet, ...asked
+  .filter((f) => f !== m.facet && (m.facets[f] ?? 0) >= RUNNER_UP)
+  .sort((a, b) => m.facets[b]! - m.facets[a]!)
+  .slice(0, 2)];
+const RUNNER_UP = 0.4;
+
+/** Score columns for every facet these matches were asked, narrowing to the winning one if need be. */
+export function matchLayout(matches: readonly FindMatch[], width = 100): MatchLayout {
+  const asked = REPORT_FACETS.filter((f) => matches.some((m) => m.facets[f] !== undefined));
+  const badge = Math.max(1, ...asked.map((f) => f.length));
+  const cell = (f: FindFacet | string) => f.length + 6; // " name=0.00"
+  const every = asked.reduce((n, f) => n + cell(f), 0);
+  const gutter = ROW_INDENT + badge + 2 + 2; // indent, the brackets, the gap after them
+  const longest = Math.max(MIN_LOCATION, ...matches.map((m) => locationOf(m).length));
+  // Every score only when the paths still fit beside them. A clipped path costs a reader the file
+  // they were about to open; the four facets that scored near zero cost them nothing.
+  const columns = gutter + Math.min(longest, COMFORTABLE_LOCATION) + every <= width ? asked : "best";
+  const best = Math.max(badge + 6, ...matches.map((m) => bestCells(m, asked).reduce((n, f) => n + cell(f), 0)));
+  const room = width - gutter - (columns === "best" ? best : every);
+  return { badge, location: Math.min(longest, Math.max(MIN_LOCATION, room)), columns };
+}
+
+/**
+ * One match as a line: why it was returned, where it is, and the score behind every question
+ * asked of it. The badge names the facet exactly as `--reporter json` does, so a row read off
+ * the screen and a record read by a program say the same word.
+ */
+export function matchRow(m: FindMatch, layout: MatchLayout, color = false): string {
+  const p = painter(color);
+  const badge = p[FACET_PAINT[m.facet]](`[${pad(m.facet.toUpperCase(), layout.badge)}]`);
+  const cells = layout.columns === "best"
+    ? bestCells(m, REPORT_FACETS).map((f) => (f === m.facet ? p.bold(`${f}=${m.score.toFixed(2)}`) : `${f}=${m.facets[f]!.toFixed(2)}`))
+    : layout.columns.map((f) => {
+      const v = m.facets[f];
+      const cell = `${f}=${v === undefined ? "   —" : v.toFixed(2)}`;
+      return f === m.facet ? p.bold(cell) : v !== undefined && v >= 0.4 ? cell : p.dim(cell);
+    });
+  const location = clipLeft(locationOf(m), layout.location);
+  return `${" ".repeat(ROW_INDENT)}${badge}  ${pad(location, layout.location)} ${cells.join(" ")}`;
+}
+
+/** The matched source under a row, numbered with real file lines so a number read here can be jumped to. */
+export function matchCode(m: FindMatch, { color = false, maxLines = 40 }: { color?: boolean; maxLines?: number } = {}): string[] {
+  const p = painter(color);
+  const all = m.code.split("\n");
+  // A merged passage can run to hundreds of lines, which is right in the Markdown a model reads
+  // and a wall in a terminal a person reads. The row above already says where the rest is.
+  const lines = all.slice(0, maxLines);
+  const numW = String(m.endLine).length;
+  // Lines are never cut: whoever reads this, person or agent, needs the whole line.
+  const out = lines.map((text, i) => `  ${p.dim(`${String(m.startLine + i).padStart(numW)} │`)} ${text}`);
+  if (all.length > lines.length) out.push(`  ${p.dim(`${" ".repeat(numW)} │ … ${plural(all.length - lines.length, "more line")}, to line ${m.endLine}`)}`);
+  return out;
+}
+
 /**
  * Terminal report, laid out like `check`'s: a headline, then one section per facet with its
- * matches and their code. The gutter carries real file line numbers, so a number read off the
- * screen is a number you can jump to.
+ * matches and their code. Every row carries its own badge and scores, so a row copied out of
+ * the report still says what it is.
  */
 export function findText(result: FindResult, options: FindTextOptions = {}): string {
   const { color = false, width = 100, code: showCode = true, maxLines = 40, existing = "" } = options;
-  const paint = (codes: string) => (s: string) => (color ? `\x1b[${codes}m${s}\x1b[0m` : s);
-  const bold = paint("1"), dim = paint("2"), green = paint("32"), yellow = paint("33"), cyan = paint("36"), magenta = paint("35");
+  const { bold, dim, green, yellow } = painter(color);
   const out: string[] = [];
 
   const groups = REPORT_FACETS.map((facet) => ({ facet, matches: mergeAdjacent(result.matches.filter((m) => m.facet === facet)) })).filter((g) => g.matches.length);
@@ -395,6 +497,8 @@ export function findText(result: FindResult, options: FindTextOptions = {}): str
   out.push(wrapText(`Selection: ${result.selection.returned} of ${result.selection.matched} above-threshold chunks returned; minimum ${result.selection.minScore}, per-facet limit ${result.selection.perFacet ?? "none"}.`, 0, width));
   if (existing) out.push("", existing.trimEnd());
 
+  // One layout across every section, so the columns do not jump between facets.
+  const layout = matchLayout(groups.flatMap((g) => g.matches), width);
   for (const { facet, matches } of groups) {
     // The name and its question on one line when they fit, the question indented under it when
     // they do not: nothing in this report may run past the terminal it is printed in.
@@ -402,23 +506,9 @@ export function findText(result: FindResult, options: FindTextOptions = {}): str
     out.push("", head.length <= width
       ? `${bold(FACET_LABEL[facet])} ${dim(`— ${FACET_QUESTION[facet]}`)}`
       : `${bold(FACET_LABEL[facet])}\n${dim(wrapText(FACET_QUESTION[facet], 2, width))}`);
-    const locW = Math.max(...matches.map((m) => `${m.file}:${m.startLine}-${m.endLine}`.length));
     for (const m of matches) {
-      const also = REPORT_FACETS.filter((f) => f !== facet && (m.facets[f] ?? 0) >= 0.4).map((f) => `${FACET_LABEL[f]} ${m.facets[f]!.toFixed(2)}`);
-      const tags = [m.role ? `${m.role} file` : "", ...also].filter(Boolean);
-      out.push("");
-      out.push(`  ${magenta(m.score.toFixed(2))}  ${cyan(`${m.file}:${m.startLine}-${m.endLine}`.padEnd(locW))}${tags.length ? `  ${dim(`· ${tags.join(" · ")}`)}` : ""}`);
-      if (!showCode) continue;
-      const all = m.code.split("\n");
-      // A merged passage can run to hundreds of lines, which is right in the Markdown a model
-      // reads and a wall in a terminal a person reads. The heading already says where the rest is.
-      const lines = all.slice(0, maxLines);
-      const numW = String(m.endLine).length;
-      for (const [i, text] of lines.entries()) {
-        // Lines are never cut: whoever reads this, person or agent, needs the whole line.
-        out.push(`  ${dim(`${String(m.startLine + i).padStart(numW)} │`)} ${text}`);
-      }
-      if (all.length > lines.length) out.push(`  ${dim(`${" ".repeat(numW)} │ … ${plural(all.length - lines.length, "more line")}, to line ${m.endLine}`)}`);
+      out.push("", matchRow(m, layout, color));
+      if (showCode) out.push(...matchCode(m, { color, maxLines }));
     }
   }
 
@@ -447,19 +537,6 @@ export interface FindTextOptions {
 
 const count = (n: number) => n.toLocaleString("en-US");
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
-
-/** Word wrap at an indent, matching the terminal report in report.ts. */
-export function wrapText(text: string, indent: number, width = 100): string {
-  const max = Math.max(40, width - indent);
-  const lines: string[] = [];
-  let line = "";
-  for (const word of text.split(/\s+/).filter(Boolean)) {
-    if (line && line.length + 1 + word.length > max) { lines.push(line); line = word; }
-    else line = line ? `${line} ${word}` : word;
-  }
-  if (line) lines.push(line);
-  return lines.map((l) => " ".repeat(indent) + l).join("\n");
-}
 
 async function pool<T>(items: T[], size: number, fn: (item: T) => Promise<void>) {
   const queue = [...items];

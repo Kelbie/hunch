@@ -1,5 +1,5 @@
 import { estimateTokens } from "./diff.js";
-import { wrapText as wrap } from "./find.js";
+import { painter, wrapText as wrap } from "./style.js";
 import type { JevClient } from "./jev.js";
 
 /**
@@ -266,8 +266,7 @@ export interface PullsTextOptions {
  */
 export function pullsText(result: PullsResult, { color = false, width = 100 }: PullsTextOptions = {}): string {
   if (!result.matches.length && !result.notices.length) return "";
-  const paint = (codes: string) => (s: string) => (color ? `\x1b[${codes}m${s}\x1b[0m` : s);
-  const bold = paint("1"), dim = paint("2"), yellow = paint("33"), cyan = paint("36"), magenta = paint("35"), red = paint("31");
+  const { bold, dim, yellow, cyan, magenta, red } = painter(color);
   const out: string[] = [bold("Existing work")];
 
   const strong = result.matches.filter((m) => m.verdict === "duplicate" && m.score >= 0.7);

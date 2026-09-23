@@ -14,6 +14,7 @@ export * from "./pulls.js";
 export * from "./report.js";
 export * from "./schema.js";
 export * from "./skills.js";
+export * from "./style.js";
 export * from "./packs.js";
 export * from "./threads.js";
 export { evaluateConfigSource } from "./load/static-ts.js";

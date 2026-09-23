@@ -32,6 +32,13 @@ export interface CheckInput {
   /** Source at the reviewed head/index/working tree, never policy from the head. */
   readChangedFile?: (path: string) => Promise<string | null>;
   onProgress?: (done: number, total: number) => void;
+  /**
+   * Each concern the moment a rule raises it, so a caller waiting on a long review can show what
+   * has been flagged so far. These are the baseline findings: localization runs afterwards and may
+   * narrow a range or split one of them, so anything shown from here is provisional until the
+   * result is returned. Findings that never arrive are not absence of concern — read `complete`.
+   */
+  onFinding?: (finding: Finding) => void;
   /** Ask only these rule ids, to try a rule without paying for the rest. */
   only?: readonly string[];
   /**
@@ -244,6 +251,7 @@ export async function check(input: CheckInput): Promise<CheckResult> {
         source: rule.source,
       };
       findings.push(finding);
+      input.onFinding?.(finding);
       if (config.review.localize) localization.push({ finding, hunk, question: rule.question, state });
     });
   }

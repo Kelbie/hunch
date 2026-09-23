@@ -57,6 +57,12 @@ Keep redirected output outside the repository to avoid searching a previous repo
 JSON carries individual scored chunks. Markdown and terminal output merge adjacent passages for
 reading; a merged score is a maximum of chunk scores, not an evaluation of the combined passage.
 
+A sweep of a whole repository runs for minutes. At a terminal the last rows show what has been
+found so far — one row per candidate, badged with the facet that matched and carrying the score of
+every question asked of it — above a bar and an estimate of the time left. Those rows are
+above-threshold candidates: `--top` still cuts them at the end, so the report below is the
+selection to act on. The rows are erased before it, and nothing is drawn when stderr is redirected.
+
 ## Context size
 
 The default chunks are up to 150 lines, split near top-level boundaries where possible, with a
