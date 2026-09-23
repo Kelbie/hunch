@@ -195,6 +195,12 @@ test("the config reference documents every option the schema accepts", () => {
 test("SKILL.md fits the Agent Skills limits, so installers and agents load all of it", () => {
   const skill = readFileSync(join(SKILL, "SKILL.md"), "utf8");
   const front = /^---\n([\s\S]*?)\n---\n/.exec(skill)![1]!;
+  // `npx skills add` parses this as YAML and installs nothing when it cannot, so an unquoted
+  // colon in a value — "needs a model: a key" — silently makes the skill uninstallable.
+  const parsed = Bun.YAML.parse(front) as Record<string, unknown>;
+  expect(typeof parsed.name).toBe("string");
+  expect(typeof parsed.description).toBe("string");
+  expect(typeof parsed.compatibility).toBe("string");
   expect(/^name: hunch$/m.test(front)).toBe(true);
   const description = /^description: (.+)$/m.exec(front)![1]!;
   expect(description.length).toBeLessThanOrEqual(1024);

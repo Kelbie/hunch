@@ -3,7 +3,7 @@ name: hunch
 description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task before planning it, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, install rule packs and compiled guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
 argument-hint: "[setup|auth|config|rules|packs|install|check|find|doctor|eval|operator] [what you want]"
 allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
-compatibility: Node 22+ and git. gh for doctor and find --prs. check, find and eval need a model: a key, a Vercel login, or SemIf on this machine, which needs no account at all. Stored once with auth login.
+compatibility: Node 22+ and git. gh for doctor and find --prs. check, find and eval need a model — a key, a Vercel login, or SemIf on this machine, which needs no account at all. Stored once with auth login.
 metadata:
   version: "0.22.0"
 ---
