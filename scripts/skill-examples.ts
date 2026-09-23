@@ -380,11 +380,26 @@ const offline = (text: string) => text.replace(/<!-- case: [\w-]+ -->[\s\S]*?<!-
 mkdirSync(OUT, { recursive: true });
 let stale: string[] = [];
 if (onlyPage && !pages.some(page => page.file === `${onlyPage}.md`)) throw new Error(`Unknown page: ${onlyPage}`);
+/**
+ * The first line that changed, with its heading. A page is rebuilt from real runs, so it goes stale
+ * when a command's output changes — but it also goes stale when a command behaves differently on
+ * the machine that checks it, and a bare filename cannot tell those apart.
+ */
+function firstDifference(committed: string, current: string): string {
+  const was = committed.split("\n");
+  const now = current.split("\n");
+  const at = was.findIndex((line, i) => line !== now[i]);
+  if (at < 0) return ` (${was.length > now.length ? "committed" : "current"} page is longer)`;
+  const heading = now.slice(0, at + 1).reverse().find((line) => line.startsWith("### ")) ?? "";
+  return ` (${heading.replace("### ", "") || `line ${at + 1}`}: committed ${JSON.stringify(was[at] ?? "")}, now ${JSON.stringify(now[at] ?? "")})`;
+}
+
 for (const page of pages.filter(page => !onlyPage || page.file === `${onlyPage}.md`)) {
   const text = render(page);
   const path = join(OUT, page.file);
   if (checking) {
-    if (!existsSync(path) || offline(readFileSync(path, "utf8")) !== offline(text)) stale.push(page.file);
+    const committed = existsSync(path) ? offline(readFileSync(path, "utf8")) : "";
+    if (committed !== offline(text)) stale.push(`${page.file}${firstDifference(committed, offline(text))}`);
   } else writeFileSync(path, text);
 }
 if (checking && stale.length) {
