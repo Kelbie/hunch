@@ -1,6 +1,6 @@
 ---
 name: hunch
-description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, install rule packs and compiled guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
+description: Search a repository by behavior with Jev when exact words or symbols are unknown, gather context for a coding task before planning it, or run recurring semantic review rules. Use for questions such as "where are errors swallowed?", "find retries of side effects", "what code would cancellation affect?", and hunch or /hunch requests. Also use to configure rules, review branches or pull requests, install rule packs and compiled guidance, diagnose missing reviews, and evaluate rules. Prefer grep for exact strings and symbols; verify semantic candidates in source before editing or reporting bugs.
 argument-hint: "[setup|auth|config|rules|packs|install|check|find|doctor|eval|operator] [what you want]"
 allowed-tools: Bash(npx -y --min-release-age=0 @kelbie/hunch *) Bash(npx @kelbie/hunch *) Bash(bun run hunch *)
 compatibility: Node 22+ and git. gh for doctor and find --prs. A model key or Vercel login, stored once with auth login, only for check, find and eval.
@@ -16,6 +16,10 @@ It returns scores and source locations, not generated explanations. Choose the c
 - **Locate an existing behavior:** `find "<yes/no question>" --mode condition`.
 - **Prepare a change:** `find "<intended change>"` ranks implementation, contracts, callers, tests and precedents.
 - **Apply recurring policy:** `check` evaluates configured concerns on diffs; `check --all` evaluates whole files.
+
+`find` answers "where do I even start?". It reads every chunk in scope, so it reaches code whose
+words nobody could have guessed. Reach for it first and reach for it again as the task changes
+shape; narrowing it to paths you already suspect defeats it. Use `rg` for what you can spell.
 
 Search is candidate discovery. A score is not a proven bug, calibrated accuracy, or permission to
 edit. A negative result does not establish that the behavior is absent.
@@ -90,11 +94,18 @@ against it.
 
 Read [find.md](references/find.md) for the search workflow and question examples.
 
+Run it early. On unfamiliar code `find` is the cheapest way to turn a request into a list of files
+worth opening, so it belongs near the start of a task rather than after a manual hunt has stalled.
+Searching again as the task changes shape is ordinary use.
+
 1. Decide whether the prompt describes existing behavior or a future change. Use condition mode
    for the former and task mode for the latter. Split independent concerns into separate searches.
-2. Search the repository without lexical prefilters. Respect explicit path/privacy constraints and
-   inspect configured scope; do not infer paths from likely filenames. Use `--dry-run` to inspect
-   scope when needed. Do not make broad scans conditional on guessed identifiers.
+2. Search the whole repository. Do not prefilter by guessed vocabulary, and do not narrow to the
+   files you already suspect: a search restricted to what you assumed can only confirm it, and a
+   path you already know did not need a semantic search. Pass paths only for scope the user set,
+   or for a repository too large to sweep, and then name a subsystem rather than a file. Respect
+   explicit path/privacy constraints and inspect configured `include`/`ignore`. Use `--dry-run` to
+   price a sweep before deciding to cut it down.
 3. Inspect `complete`, notices, threshold and output limits. Use `--top 0` for all above-threshold
    candidates. Empty output means no returned candidates under those settings.
 4. Read the source, surrounding guards, callers and tests. Use symbol search after discovery to

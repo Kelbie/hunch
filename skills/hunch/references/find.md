@@ -5,6 +5,27 @@ embedding index or a lexical candidate filter, then returns scored source ranges
 or project config are required. Flags: [cli.md](cli.md#hunch-find). Captured task-search output:
 [examples/find.md](../examples/find.md).
 
+## When to reach for it
+
+`find` is for the moment you do not know where to start. It reads every selected chunk and asks
+your question of each one, so it returns code whose vocabulary you could not have guessed: a smart
+grep, where the pattern is a sentence about behavior rather than a string.
+
+That makes it one of the first commands to run on a task rather than a last resort. Turning a
+request into a ranked list of files worth opening costs less than reading the wrong ones, and
+searching again once the task has changed shape is ordinary use, not waste. Run it, read what it
+returns, refine the sentence, run it again.
+
+It follows that restricting the search undoes it. A `find` narrowed to the files you already
+suspect can only confirm what you assumed, and if you knew the path you did not need a semantic
+search to reach it. Pass paths only for scope the user set, or when a repository is too large to
+sweep in one go — and then name a subsystem, not the file you have in mind. `--dry-run` prices a
+sweep without sending anything, so the size of a repository is a question you can answer before
+deciding to narrow it.
+
+Prefer `rg` for an exact string, symbol or import. Prefer `find` for a behavior, a rule or an
+intention — for everything you cannot spell.
+
 ## Choose the question
 
 | Intent | Command | Meaning of a high score |
