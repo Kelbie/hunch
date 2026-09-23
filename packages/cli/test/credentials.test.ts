@@ -233,7 +233,10 @@ test("signing in to SemIf checks the interpreter before remembering it, and stor
   // Nothing to sign in to means nothing to fail on: SemIf alone is a working setup.
   expect(hunch(["auth", "status"], { config }).status ?? 0).toBe(0);
 
-  expect(hunch(["auth", "logout", "--provider", "semif"], { config }).stderr).toContain("the SemIf install");
+  const out = hunch(["auth", "logout", "--provider", "semif"], { config });
+  expect(out.stderr).toContain("where SemIf is");
+  // It forgets an install; it does not delete one, and it must not imply that it did.
+  expect(out.stderr).not.toMatch(/removed.*the SemIf install/);
   expect(readSemifInstall(join(config, "credentials"))).toBeNull();
 });
 

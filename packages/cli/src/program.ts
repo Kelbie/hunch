@@ -715,7 +715,12 @@ function runAuthLogout(opts: Opts) {
   const key = opts.provider && opts.provider !== "vercel" && opts.provider !== "semif" ? [keyNameFor(opts.provider as KeyProvider)] : undefined;
   const removed: string[] = opts.provider === "vercel" || opts.provider === "semif" ? [] : removeCredentials(key ?? KEY_NAMES);
   if ((!opts.provider || opts.provider === "vercel") && removeVercelLink()) removed.push("the Vercel project");
-  if ((!opts.provider || opts.provider === "semif") && removeSemifInstall()) removed.push("the SemIf install");
+  const semifPython = process.env.SEMIF_PYTHON;
+  if ((!opts.provider || opts.provider === "semif") && removeSemifInstall()) {
+    removed.push("where SemIf is");
+    // Forgetting where SemIf is does not delete it, and it is several gigabytes; say where it stayed.
+    if (semifPython?.startsWith(semifVenvPath())) console.error(`hunch: the SemIf virtualenv is still at ${semifVenvPath()}. Delete it to free the space.`);
+  }
   console.error(removed.length ? `hunch: removed ${removed.join(" and ")} from ${credentialsPath()}.` : "hunch: nothing stored to remove.");
 }
 
